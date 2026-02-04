@@ -1,0 +1,10 @@
+{
+  "name": "@autocitas/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./eslint-base": "./eslint.base.cjs",
+    "./prettier": "./prettier.config.cjs",
+    "./tsconfig-base": "./tsconfig.base.json"
+  }
+}

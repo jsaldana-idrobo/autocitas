@@ -1,0 +1,28 @@
+---
+import "../styles/global.css";
+import { AdminApp } from "../components/admin/AdminApp";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin · Autocitas</title>
+  </head>
+  <body class="min-h-screen text-slate-900">
+    <main class="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-16">
+      <section class="mb-10">
+        <span class="inline-flex items-center gap-2 rounded-full bg-primary-100 px-4 py-1 text-xs font-semibold text-primary-700">
+          Panel Administracion
+        </span>
+        <h1 class="mt-4 text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
+          Gestiona tu negocio
+        </h1>
+        <p class="mt-3 max-w-2xl text-base text-slate-600">
+          Administra servicios, recursos, bloqueos y citas con un flujo rapido y simple.
+        </p>
+      </section>
+      <AdminApp client:load />
+    </main>
+  </body>
+</html>

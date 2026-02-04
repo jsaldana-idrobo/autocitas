@@ -1,0 +1,251 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { apiRequest } from "../../lib/api";
+
+interface BusinessResponse {
+  business: {
+    _id: string;
+    name: string;
+    slug: string;
+    timezone: string;
+  };
+  services: ServiceItem[];
+  resources: ResourceItem[];
+}
+
+interface ServiceItem {
+  _id: string;
+  name: string;
+  durationMinutes: number;
+  price?: number;
+  allowedResourceIds?: string[];
+}
+
+interface ResourceItem {
+  _id: string;
+  name: string;
+}
+
+interface AvailabilitySlot {
+  startTime: string;
+  endTime: string;
+  resourceIds: string[];
+}
+
+export function BookingApp({ slug }: { slug: string }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [business, setBusiness] = useState<BusinessResponse | null>(null);
+  const [serviceId, setServiceId] = useState("");
+  const [date, setDate] = useState("");
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [resourceId, setResourceId] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+
+  const service = useMemo(
+    () => business?.services.find((item) => item._id === serviceId) ?? null,
+    [business, serviceId]
+  );
+
+  const availableResources = useMemo(() => {
+    if (!business) return [];
+    if (!service || !service.allowedResourceIds || service.allowedResourceIds.length === 0) {
+      return business.resources;
+    }
+    return business.resources.filter((resource) =>
+      service.allowedResourceIds?.includes(resource._id)
+    );
+  }, [business, service]);
+
+  useEffect(() => {
+    async function loadBusiness() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await apiRequest<BusinessResponse>(`/public/businesses/${slug}`);
+        setBusiness(data);
+        setServiceId(data.services[0]?._id ?? "");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo cargar el negocio");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadBusiness();
+  }, [slug]);
+
+  async function loadAvailability(selectedDate: string, selectedService: string, selectedResource?: string) {
+    if (!selectedDate || !selectedService) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const resourceQuery = selectedResource ? `&resourceId=${selectedResource}` : "";
+      const data = await apiRequest<{ slots: AvailabilitySlot[] }>(
+        `/public/businesses/${slug}/availability?date=${selectedDate}&serviceId=${selectedService}${resourceQuery}`
+      );
+      setSlots(data.slots);
+      setSelectedSlot(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo cargar disponibilidad");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleBooking() {
+    if (!serviceId || !selectedSlot || !customerName || !customerPhone) {
+      setError("Completa todos los datos antes de reservar.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiRequest<{ appointmentId: string }>(
+        `/public/businesses/${slug}/appointments`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            serviceId,
+            resourceId: resourceId || undefined,
+            startTime: selectedSlot,
+            customerName,
+            customerPhone
+          })
+        }
+      );
+      setConfirmation(`Reserva creada: ${response.appointmentId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo crear la cita");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading && !business) {
+    return <div className="card p-6">Cargando...</div>;
+  }
+
+  if (!business) {
+    return <div className="card p-6">No se encontro el negocio.</div>;
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="card p-6">
+        <h2 className="text-2xl font-semibold">{business.business.name}</h2>
+        <p className="mt-2 text-sm text-slate-500">Reserva tu cita en minutos.</p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <label className="block text-sm font-medium">
+            Servicio
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              value={serviceId}
+              onChange={(event) => {
+                const nextService = event.target.value;
+                setServiceId(nextService);
+                setResourceId("");
+                if (date) void loadAvailability(date, nextService);
+              }}
+            >
+              {business.services.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name} ({item.durationMinutes} min)
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-medium">
+            Fecha
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value);
+                void loadAvailability(event.target.value, serviceId, resourceId);
+              }}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+            />
+          </label>
+          <label className="block text-sm font-medium">
+            Profesional
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              value={resourceId}
+              onChange={(event) => {
+                const nextResource = event.target.value;
+                setResourceId(nextResource);
+                if (date) void loadAvailability(date, serviceId, nextResource || undefined);
+              }}
+            >
+              <option value="">Cualquiera</option>
+              {availableResources.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6">
+          <p className="text-sm font-medium">Horarios disponibles</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {slots.length === 0 && (
+              <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
+            )}
+            {slots.map((slot) => (
+              <button
+                key={slot.startTime}
+                className={`rounded-full px-3 py-2 text-sm ${
+                  selectedSlot === slot.startTime
+                    ? "bg-primary-600 text-white"
+                    : "bg-white text-slate-700 shadow-sm"
+                }`}
+                onClick={() => setSelectedSlot(slot.startTime)}
+              >
+                {new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <aside className="card p-6">
+        <h3 className="text-lg font-semibold">Confirmar reserva</h3>
+        <p className="mt-1 text-sm text-slate-500">Completa tus datos.</p>
+        {error && <p className="mt-4 rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+        {confirmation && (
+          <p className="mt-4 rounded-md bg-green-50 p-2 text-sm text-green-700">{confirmation}</p>
+        )}
+        <div className="mt-4 space-y-3">
+          <input
+            placeholder="Nombre"
+            value={customerName}
+            onChange={(event) => setCustomerName(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2"
+          />
+          <input
+            placeholder="Telefono"
+            value={customerPhone}
+            onChange={(event) => setCustomerPhone(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2"
+          />
+          <button
+            className="w-full rounded-xl bg-primary-600 px-4 py-2 text-white"
+            onClick={() => void handleBooking()}
+            disabled={loading}
+          >
+            {loading ? "Procesando..." : "Reservar"}
+          </button>
+          <div className="text-xs text-slate-500">
+            Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "@autocitas/config/tsconfig-base",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
