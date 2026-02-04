@@ -13,6 +13,10 @@ import { assertNotInPast, assertSameDayAllowed } from "./policies";
 const DEFAULT_TIMEZONE = "America/Bogota";
 const STATUS_ACTIVE = "active";
 const STATUS_BOOKED = "booked";
+const ERR_BUSINESS_NOT_FOUND = "Business not found";
+const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
+const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
+const ERR_SERVICE_NOT_FOUND = "Service not found";
 
 interface SlotAvailability {
   startTime: string;
@@ -144,7 +148,7 @@ export class PublicService {
   async getPublicBusiness(slug: string) {
     const business = await this.businessModel.findOne({ slug }).lean();
     if (!business || business.status !== STATUS_ACTIVE) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     const [services, resources] = await Promise.all([
@@ -167,7 +171,7 @@ export class PublicService {
   }) {
     const business = await this.businessModel.findOne({ slug: params.slug }).lean();
     if (!business || business.status !== STATUS_ACTIVE) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     const timezone = business.timezone || DEFAULT_TIMEZONE;
@@ -176,14 +180,14 @@ export class PublicService {
     assertSameDayAllowed(dateLocal, business);
 
     if (!isValidObjectId(params.serviceId)) {
-      throw new BadRequestException("Invalid serviceId.");
+      throw new BadRequestException(ERR_INVALID_SERVICE_ID);
     }
 
     const service = await this.serviceModel
       .findOne({ _id: params.serviceId, businessId: business._id, active: true })
       .lean();
     if (!service) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException(ERR_SERVICE_NOT_FOUND);
     }
 
     const dayIndex = dateLocal.weekday % 7;
@@ -194,7 +198,11 @@ export class PublicService {
       return { slots: [] };
     }
 
-    const { openLocal, closeLocal } = parseBusinessHours(dateLocal, dayHours.openTime, dayHours.closeTime);
+    const { openLocal, closeLocal } = parseBusinessHours(
+      dateLocal,
+      dayHours.openTime,
+      dayHours.closeTime
+    );
     if (closeLocal <= openLocal) {
       return { slots: [] };
     }
@@ -205,7 +213,7 @@ export class PublicService {
     );
 
     if (params.resourceId && !isValidObjectId(params.resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     const resourceQuery: Record<string, unknown> = {
@@ -265,22 +273,22 @@ export class PublicService {
   async createAppointment(slug: string, payload: CreateAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
     if (!business || business.status !== STATUS_ACTIVE) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     if (!isValidObjectId(payload.serviceId)) {
-      throw new BadRequestException("Invalid serviceId.");
+      throw new BadRequestException(ERR_INVALID_SERVICE_ID);
     }
 
     if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     const service = await this.serviceModel
       .findOne({ _id: payload.serviceId, businessId: business._id, active: true })
       .lean();
     if (!service) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException(ERR_SERVICE_NOT_FOUND);
     }
 
     const timezone = business.timezone || DEFAULT_TIMEZONE;

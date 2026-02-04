@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 
 interface BusinessResponse {
@@ -32,6 +32,7 @@ interface AvailabilitySlot {
 }
 
 const DEFAULT_TIMEZONE = "America/Bogota";
+const PHONE_MIN_LEN = 7;
 
 function getTodayInTimezone(timezone: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -63,6 +64,10 @@ function formatDateTime(iso: string, timezone: string) {
   });
 }
 
+function normalizePhone(value: string) {
+  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+}
+
 export function BookingApp({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,8 +81,12 @@ export function BookingApp({ slug }: { slug: string }) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
 
+  const normalizedPhone = normalizePhone(customerPhone);
   const canSubmit =
-    !!serviceId && !!selectedSlot && customerName.trim().length > 0 && customerPhone.trim().length > 0;
+    !!serviceId &&
+    !!selectedSlot &&
+    customerName.trim().length > 0 &&
+    normalizedPhone.length >= PHONE_MIN_LEN;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
@@ -95,6 +104,27 @@ export function BookingApp({ slug }: { slug: string }) {
   }, [business, service]);
 
   const timezone = business?.business.timezone || DEFAULT_TIMEZONE;
+
+  const loadAvailability = useCallback(
+    async (selectedDate: string, selectedService: string, selectedResource?: string) => {
+      if (!selectedDate || !selectedService) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const resourceQuery = selectedResource ? `&resourceId=${selectedResource}` : "";
+        const data = await apiRequest<{ slots: AvailabilitySlot[] }>(
+          `/public/businesses/${slug}/availability?date=${selectedDate}&serviceId=${selectedService}${resourceQuery}`
+        );
+        setSlots(data.slots);
+        setSelectedSlot(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo cargar disponibilidad");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [slug]
+  );
 
   useEffect(() => {
     async function loadBusiness() {
@@ -118,29 +148,15 @@ export function BookingApp({ slug }: { slug: string }) {
     }
 
     void loadBusiness();
-  }, [slug]);
-
-  async function loadAvailability(selectedDate: string, selectedService: string, selectedResource?: string) {
-    if (!selectedDate || !selectedService) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const resourceQuery = selectedResource ? `&resourceId=${selectedResource}` : "";
-      const data = await apiRequest<{ slots: AvailabilitySlot[] }>(
-        `/public/businesses/${slug}/availability?date=${selectedDate}&serviceId=${selectedService}${resourceQuery}`
-      );
-      setSlots(data.slots);
-      setSelectedSlot(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar disponibilidad");
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [loadAvailability, slug]);
 
   async function handleBooking() {
-    if (!serviceId || !selectedSlot || !customerName || !customerPhone) {
+    if (!serviceId || !selectedSlot || !customerName.trim() || !normalizedPhone) {
       setError("Completa todos los datos antes de reservar.");
+      return;
+    }
+    if (normalizedPhone.length < PHONE_MIN_LEN) {
+      setError("Ingresa un telefono valido.");
       return;
     }
     setLoading(true);
@@ -155,7 +171,7 @@ export function BookingApp({ slug }: { slug: string }) {
             resourceId: resourceId || undefined,
             startTime: selectedSlot,
             customerName,
-            customerPhone
+            customerPhone: normalizedPhone
           })
         }
       );
@@ -175,11 +191,17 @@ export function BookingApp({ slug }: { slug: string }) {
     return <div className="card p-6">No se encontro el negocio.</div>;
   }
 
+  if (business.services.length === 0) {
+    return <div className="card p-6">Este negocio aun no tiene servicios activos.</div>;
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="card p-6">
         <h2 className="text-2xl font-semibold">{business.business.name}</h2>
-        <p className="mt-2 text-sm text-slate-500">Reserva tu cita en minutos.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Reserva tu cita en minutos · Zona horaria {timezone}
+        </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <label className="block text-sm font-medium">
@@ -242,19 +264,19 @@ export function BookingApp({ slug }: { slug: string }) {
             {slots.length === 0 && (
               <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
             )}
-              {slots.map((slot) => (
-                <button
-                  key={slot.startTime}
-                  className={`rounded-full px-3 py-2 text-sm ${
-                    selectedSlot === slot.startTime
-                      ? "bg-primary-600 text-white"
-                      : "bg-white text-slate-700 shadow-sm"
-                  }`}
-                  onClick={() => setSelectedSlot(slot.startTime)}
-                >
-                  {formatTime(slot.startTime, timezone)}
-                </button>
-              ))}
+            {slots.map((slot) => (
+              <button
+                key={slot.startTime}
+                className={`rounded-full px-3 py-2 text-sm ${
+                  selectedSlot === slot.startTime
+                    ? "bg-primary-600 text-white"
+                    : "bg-white text-slate-700 shadow-sm"
+                }`}
+                onClick={() => setSelectedSlot(slot.startTime)}
+              >
+                {formatTime(slot.startTime, timezone)}
+              </button>
+            ))}
           </div>
         </div>
       </section>
@@ -291,9 +313,7 @@ export function BookingApp({ slug }: { slug: string }) {
           </button>
           <div className="text-xs text-slate-500">
             Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
-            <div>
-              Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}
-            </div>
+            <div>Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}</div>
           </div>
         </div>
       </aside>

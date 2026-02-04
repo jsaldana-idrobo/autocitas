@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types, isValidObjectId } from "mongoose";
+import { Model, isValidObjectId } from "mongoose";
 import { hash } from "bcryptjs";
 import { Block } from "../schemas/block.schema";
 import { Business } from "../schemas/business.schema";
@@ -24,6 +24,10 @@ import { UpdateStaffDto } from "./dto/update-staff.dto";
 import { JwtPayload } from "./auth/jwt.strategy";
 
 const DEFAULT_TIMEZONE = "America/Bogota";
+const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
+const ERR_BUSINESS_NOT_FOUND = "Business not found";
+const ERR_RESOURCE_NOT_FOUND = "Resource not found";
+const ERR_NO_UPDATES = "No updates provided.";
 
 export class AdminService {
   constructor(
@@ -42,7 +46,7 @@ export class AdminService {
 
     const business = await this.businessModel.findById(businessId).lean();
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     return business;
@@ -105,7 +109,7 @@ export class AdminService {
     }
 
     if (Object.keys(payload).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const update: Record<string, unknown> = { ...payload };
@@ -150,12 +154,14 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     if (!isValidObjectId(payload.resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
-    const resource = await this.resourceModel.findOne({ _id: payload.resourceId, businessId }).lean();
+    const resource = await this.resourceModel
+      .findOne({ _id: payload.resourceId, businessId })
+      .lean();
     if (!resource) {
-      throw new NotFoundException("Resource not found");
+      throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
     }
 
     const passwordHash = await hash(payload.password, 10);
@@ -192,7 +198,7 @@ export class AdminService {
 
     const business = await this.businessModel.findById(payload.businessId).lean();
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     const passwordHash = await hash(payload.password, 10);
@@ -215,7 +221,7 @@ export class AdminService {
     const update: Record<string, unknown> = {};
     if (payload.resourceId) {
       if (!isValidObjectId(payload.resourceId)) {
-        throw new BadRequestException("Invalid resourceId.");
+        throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
       }
       update.resourceId = payload.resourceId;
     }
@@ -227,7 +233,7 @@ export class AdminService {
     }
 
     if (Object.keys(update).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const staff = await this.adminUserModel
@@ -256,11 +262,11 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     if (!isValidObjectId(resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     if (Object.keys(payload).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const resource = await this.resourceModel
@@ -268,7 +274,7 @@ export class AdminService {
       .lean();
 
     if (!resource) {
-      throw new NotFoundException("Resource not found");
+      throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
     }
 
     return resource;
@@ -278,7 +284,7 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     const startTime = new Date(payload.startTime);
@@ -300,7 +306,12 @@ export class AdminService {
     });
   }
 
-  async updateBlock(businessId: string, blockId: string, payload: UpdateBlockDto, resourceId?: string) {
+  async updateBlock(
+    businessId: string,
+    blockId: string,
+    payload: UpdateBlockDto,
+    resourceId?: string
+  ) {
     await this.getBusinessContext(businessId);
 
     if (!isValidObjectId(blockId)) {
@@ -308,7 +319,7 @@ export class AdminService {
     }
 
     if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     const update: Record<string, unknown> = { ...payload };
@@ -327,7 +338,7 @@ export class AdminService {
       update.endTime = endTime;
     }
     if (Object.keys(update).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
     if (update.startTime && update.endTime && update.endTime <= update.startTime) {
       throw new BadRequestException("Block endTime must be after startTime.");
@@ -371,14 +382,14 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     if (!isValidObjectId(resourceId)) {
-      throw new BadRequestException("Invalid resourceId.");
+      throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
     const resource = await this.resourceModel
       .findOneAndUpdate({ _id: resourceId, businessId }, { active: false }, { new: true })
       .lean();
     if (!resource) {
-      throw new NotFoundException("Resource not found");
+      throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
     }
 
     return { deleted: true };
@@ -388,7 +399,7 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     if (Object.keys(payload).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const business = await this.businessModel
@@ -396,7 +407,7 @@ export class AdminService {
       .lean();
 
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     return business;
@@ -421,7 +432,7 @@ export class AdminService {
       update["policies.allowSameDay"] = payload.allowSameDay;
     }
     if (Object.keys(update).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const business = await this.businessModel
@@ -429,7 +440,7 @@ export class AdminService {
       .lean();
 
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     return business.policies;
@@ -447,7 +458,7 @@ export class AdminService {
       .lean();
 
     if (!business) {
-      throw new NotFoundException("Business not found");
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
     return business.hours;

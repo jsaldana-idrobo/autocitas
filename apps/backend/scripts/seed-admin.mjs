@@ -18,7 +18,9 @@ if (!process.env.MONGODB_URI) {
 }
 
 if (!email || !password) {
-  console.error("Usage: node scripts/seed-admin.mjs --email you@domain.com --password secret [--businessName Name] [--businessSlug slug]");
+  console.error(
+    "Usage: node scripts/seed-admin.mjs --email you@domain.com --password secret [--businessName Name] [--businessSlug slug]"
+  );
   process.exit(1);
 }
 

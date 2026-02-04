@@ -1,4 +1,12 @@
-import { ArrayUnique, IsArray, IsBoolean, IsInt, IsOptional, IsPositive, IsString } from "class-validator";
+import {
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString
+} from "class-validator";
 
 export class CreateServiceDto {
   @IsString()

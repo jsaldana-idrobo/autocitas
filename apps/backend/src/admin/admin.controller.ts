@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards
+} from "@nestjs/common";
 import { Request } from "express";
 import { JwtPayload } from "./auth/jwt.strategy";
 import { AdminService } from "./admin.service";
@@ -20,6 +32,8 @@ interface AuthenticatedRequest extends Request {
   user: JwtPayload;
 }
 
+const ERR_STAFF_RESOURCE_NOT_LINKED = "Staff resource not linked";
+
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)
 export class AdminController {
@@ -35,7 +49,7 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
       return this.adminService.listAppointments(businessId, date, req.user.resourceId, status);
     }
@@ -52,7 +66,7 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
       return this.adminService.updateAppointmentStatus(
         businessId,
@@ -63,7 +77,6 @@ export class AdminController {
     }
     return this.adminService.updateAppointmentStatus(businessId, appointmentId, body.status);
   }
-
 
   @Get(":businessId")
   getBusiness(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
@@ -151,9 +164,12 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.adminService.createBlock(businessId, { ...body, resourceId: req.user.resourceId });
+      return this.adminService.createBlock(businessId, {
+        ...body,
+        resourceId: req.user.resourceId
+      });
     }
     return this.adminService.createBlock(businessId, body);
   }
@@ -163,7 +179,7 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
       return this.adminService.listBlocks(businessId, req.user.resourceId);
     }
@@ -180,7 +196,7 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
       const rest = { ...body };
       delete rest.resourceId;
@@ -199,7 +215,7 @@ export class AdminController {
     this.adminService.ensureBusinessAccess(req.user, businessId);
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
-        throw new ForbiddenException("Staff resource not linked");
+        throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
       return this.adminService.deleteBlock(businessId, blockId, req.user.resourceId);
     }

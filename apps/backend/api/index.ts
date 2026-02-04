@@ -1,4 +1,4 @@
-import { ValidationPipe } from "@nestjs/common";
+import { RequestMethod, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -23,7 +23,12 @@ async function bootstrap(): Promise<ExpressHandler> {
     origin: true,
     credentials: true
   });
-  app.setGlobalPrefix("api");
+  app.setGlobalPrefix("api", {
+    exclude: [
+      { path: "/", method: RequestMethod.GET },
+      { path: "health", method: RequestMethod.GET }
+    ]
+  });
   await app.init();
   return server as unknown as ExpressHandler;
 }

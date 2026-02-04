@@ -8,7 +8,11 @@ function parseJwt(token: string): { role: Role; resourceId?: string; businessId?
     const payload = token.split(".")[1];
     if (!payload) return { role: "unknown" };
     const json = JSON.parse(atob(payload));
-    return { role: json.role ?? "unknown", resourceId: json.resourceId, businessId: json.businessId };
+    return {
+      role: json.role ?? "unknown",
+      resourceId: json.resourceId,
+      businessId: json.businessId
+    };
   } catch {
     return { role: "unknown" };
   }
