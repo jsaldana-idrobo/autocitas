@@ -77,11 +77,14 @@ export function useAdminCalendar(api: AdminApiContext) {
         ...payload,
         startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined
       };
-      await apiRequest(`/admin/businesses/${api.businessId}/appointments/${appointmentId}/details`, {
-        method: "PATCH",
-        body: JSON.stringify(payloadToSend),
-        ...api.authHeaders
-      });
+      await apiRequest(
+        `/admin/businesses/${api.businessId}/appointments/${appointmentId}/details`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(payloadToSend),
+          ...api.authHeaders
+        }
+      );
       await loadCalendarData();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando cita");

@@ -28,7 +28,10 @@ export function CalendarGrid({
     return labels;
   }, []);
 
-  const serviceMap = useMemo(() => new Map(services.map((service) => [service._id, service])), [services]);
+  const serviceMap = useMemo(
+    () => new Map(services.map((service) => [service._id, service])),
+    [services]
+  );
   const resourceMap = useMemo(
     () => new Map(resources.map((resource) => [resource._id, resource])),
     [resources]
@@ -53,7 +56,10 @@ export function CalendarGrid({
       </div>
       {days.map((day) => (
         <div key={day} className="relative border border-slate-100 bg-white">
-          <div className="absolute inset-0" style={{ height: minutesInDay * (SLOT_HEIGHT / intervalMinutes) }}>
+          <div
+            className="absolute inset-0"
+            style={{ height: minutesInDay * (SLOT_HEIGHT / intervalMinutes) }}
+          >
             {Array.from({ length: minutesInDay / intervalMinutes }).map((_, index) => (
               <div
                 key={index}
@@ -67,9 +73,11 @@ export function CalendarGrid({
             .map((block) => {
               const start = new Date(block.startTime);
               const end = new Date(block.endTime);
-              const top = clamp(minutesFromStart(start), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes);
+              const top =
+                clamp(minutesFromStart(start), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes);
               const height =
-                clamp(minutesFromStart(end), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes) - top;
+                clamp(minutesFromStart(end), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes) -
+                top;
               return (
                 <div
                   key={block._id}
@@ -85,11 +93,15 @@ export function CalendarGrid({
             .map((appt) => {
               const start = new Date(appt.startTime);
               const end = new Date(appt.endTime);
-              const top = clamp(minutesFromStart(start), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes);
+              const top =
+                clamp(minutesFromStart(start), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes);
               const height =
-                clamp(minutesFromStart(end), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes) - top;
+                clamp(minutesFromStart(end), 0, minutesInDay) * (SLOT_HEIGHT / intervalMinutes) -
+                top;
               const service = serviceMap.get(appt.serviceId);
-              const resourceLabel = appt.resourceId ? resourceMap.get(appt.resourceId)?.name : undefined;
+              const resourceLabel = appt.resourceId
+                ? resourceMap.get(appt.resourceId)?.name
+                : undefined;
               const statusClass = statusStyles[appt.status] || "bg-slate-100 text-slate-700";
               const statusLabel = statusLabels[appt.status] || appt.status;
               const accent = getServiceColor(appt.serviceId);
@@ -104,12 +116,18 @@ export function CalendarGrid({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: accent }}
+                    />
                     <div className="font-semibold">{appt.customerName}</div>
                   </div>
                   <div className="truncate">{service?.name ?? "Servicio"}</div>
                   <div>
-                    {new Date(appt.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(appt.startTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
                   </div>
                 </button>
               );

@@ -46,8 +46,16 @@ export function CalendarSection({
     customerPhone: string;
     startTime: string;
   }) => void;
-  onCreateBlock: (payload: { startTime: string; endTime: string; resourceId?: string; reason?: string }) => void;
-  onUpdateAppointment: (appointmentId: string, payload: { serviceId?: string; resourceId?: string; startTime?: string }) => void;
+  onCreateBlock: (payload: {
+    startTime: string;
+    endTime: string;
+    resourceId?: string;
+    reason?: string;
+  }) => void;
+  onUpdateAppointment: (
+    appointmentId: string,
+    payload: { serviceId?: string; resourceId?: string; startTime?: string }
+  ) => void;
   onCancelAppointment: (appointmentId: string) => void;
   role: "owner" | "staff" | "platform_admin" | "unknown";
   resourceId?: string;
@@ -85,9 +93,15 @@ export function CalendarSection({
 
   const summary = useMemo(() => {
     const weekAppointments = filteredAppointments.filter((appt) => appt.status !== "cancelled");
-    const todayAppointments = weekAppointments.filter((appt) => isSameDay(appt.startTime, todayValue));
+    const todayAppointments = weekAppointments.filter((appt) =>
+      isSameDay(appt.startTime, todayValue)
+    );
     const blockedCount = filteredBlocks.length;
-    return { weekAppointments: weekAppointments.length, todayAppointments: todayAppointments.length, blockedCount };
+    return {
+      weekAppointments: weekAppointments.length,
+      todayAppointments: todayAppointments.length,
+      blockedCount
+    };
   }, [filteredAppointments, filteredBlocks, todayValue]);
 
   return (

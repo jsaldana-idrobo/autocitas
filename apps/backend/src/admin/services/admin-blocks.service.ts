@@ -68,7 +68,12 @@ export class AdminBlocksService {
     });
   }
 
-  async updateBlock(businessId: string, blockId: string, payload: UpdateBlockDto, resourceId?: string) {
+  async updateBlock(
+    businessId: string,
+    blockId: string,
+    payload: UpdateBlockDto,
+    resourceId?: string
+  ) {
     await this.businessContext.getBusinessContext(businessId);
 
     if (!isValidObjectId(blockId)) {
@@ -86,7 +91,12 @@ export class AdminBlocksService {
     const update = this.parseBlockUpdate(payload);
 
     if (update.startTime && update.endTime) {
-      await this.ensureNoAppointmentConflict(businessId, update.startTime as Date, update.endTime as Date, resourceId);
+      await this.ensureNoAppointmentConflict(
+        businessId,
+        update.startTime as Date,
+        update.endTime as Date,
+        resourceId
+      );
     }
 
     const query: Record<string, unknown> = { _id: blockId, businessId };

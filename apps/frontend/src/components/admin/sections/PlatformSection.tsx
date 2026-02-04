@@ -146,7 +146,10 @@ export function PlatformSection({
         </div>
         <div className="mt-4 space-y-2">
           {owners.map((owner) => (
-            <div key={owner._id} className="card-muted flex flex-wrap items-center justify-between gap-3 p-3">
+            <div
+              key={owner._id}
+              className="card-muted flex flex-wrap items-center justify-between gap-3 p-3"
+            >
               <div>
                 <p className="font-medium">{owner.email}</p>
                 <p className="text-xs text-slate-500">{owner.businessId ?? "-"}</p>
@@ -166,12 +169,17 @@ export function PlatformSection({
         </div>
         <div className="mt-4 space-y-2">
           {staff.map((member) => (
-            <div key={member._id} className="card-muted flex flex-wrap items-center justify-between gap-3 p-3">
+            <div
+              key={member._id}
+              className="card-muted flex flex-wrap items-center justify-between gap-3 p-3"
+            >
               <div>
                 <p className="font-medium">{member.email}</p>
                 <p className="text-xs text-slate-500">{member.businessId ?? "-"}</p>
               </div>
-              <span className="text-xs text-slate-500">{member.active ? "Activo" : "Inactivo"}</span>
+              <span className="text-xs text-slate-500">
+                {member.active ? "Activo" : "Inactivo"}
+              </span>
             </div>
           ))}
           {staff.length === 0 && <p className="text-sm text-slate-500">No hay staff.</p>}
@@ -207,7 +215,10 @@ export function PlatformSection({
             value={appointmentsSearch}
             onChange={(event) => setAppointmentsSearch(event.target.value)}
           />
-          <button className="rounded-xl bg-primary-600 px-4 py-2 text-white" onClick={() => void loadAppointments()}>
+          <button
+            className="rounded-xl bg-primary-600 px-4 py-2 text-white"
+            onClick={() => void loadAppointments()}
+          >
             Buscar
           </button>
         </div>
@@ -216,7 +227,8 @@ export function PlatformSection({
             <div key={item._id} className="card-muted p-3">
               <p className="font-medium">{item.customerName}</p>
               <p className="text-xs text-slate-500">
-                {new Date(item.startTime).toLocaleString()} - {new Date(item.endTime).toLocaleString()}
+                {new Date(item.startTime).toLocaleString()} -{" "}
+                {new Date(item.endTime).toLocaleString()}
               </p>
               <p className="text-xs text-slate-500">
                 {item.customerPhone} · {item.status} · {item.businessId ?? "-"}

@@ -47,10 +47,7 @@ export class AdminPlatformService {
   }
 
   async listPlatformUsers(role: "owner" | "staff") {
-    return this.adminUserModel
-      .find({ role })
-      .select(SELECT_WITHOUT_PASSWORD)
-      .lean();
+    return this.adminUserModel.find({ role }).select(SELECT_WITHOUT_PASSWORD).lean();
   }
 
   async listPlatformAppointmentsWithSearch(

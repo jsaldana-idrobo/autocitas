@@ -17,7 +17,10 @@ export function useAdminPlatform(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<BusinessProfile[]>("/admin/platform/businesses", api.authHeaders);
+      const data = await apiRequest<BusinessProfile[]>(
+        "/admin/platform/businesses",
+        api.authHeaders
+      );
       setBusinesses(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando negocios");
@@ -30,7 +33,10 @@ export function useAdminPlatform(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=owner", api.authHeaders);
+      const data = await apiRequest<StaffItem[]>(
+        "/admin/platform/users?role=owner",
+        api.authHeaders
+      );
       setPlatformOwners(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando owners");
@@ -43,7 +49,10 @@ export function useAdminPlatform(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=staff", api.authHeaders);
+      const data = await apiRequest<StaffItem[]>(
+        "/admin/platform/users?role=staff",
+        api.authHeaders
+      );
       setPlatformStaff(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando staff");
@@ -52,7 +61,11 @@ export function useAdminPlatform(api: AdminApiContext) {
     }
   }
 
-  async function loadPlatformAppointments(nextDate?: string, nextStatus?: string, nextSearch?: string) {
+  async function loadPlatformAppointments(
+    nextDate?: string,
+    nextStatus?: string,
+    nextSearch?: string
+  ) {
     api.setLoading(true);
     api.resetError();
     try {
@@ -64,7 +77,10 @@ export function useAdminPlatform(api: AdminApiContext) {
       if (statusValue) params.set("status", statusValue);
       if (searchValue) params.set("search", searchValue);
       const query = params.toString() ? `?${params.toString()}` : "";
-      const data = await apiRequest<AppointmentItem[]>(`/admin/platform/appointments${query}`, api.authHeaders);
+      const data = await apiRequest<AppointmentItem[]>(
+        `/admin/platform/appointments${query}`,
+        api.authHeaders
+      );
       setPlatformAppointments(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando citas globales");

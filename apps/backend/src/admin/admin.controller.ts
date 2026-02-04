@@ -78,7 +78,15 @@ export class AdminController {
         to
       );
     }
-    return this.appointments.listAppointments(businessId, date, undefined, status, search, from, to);
+    return this.appointments.listAppointments(
+      businessId,
+      date,
+      undefined,
+      status,
+      search,
+      from,
+      to
+    );
   }
 
   @Post(":businessId/appointments")
@@ -121,7 +129,13 @@ export class AdminController {
         req.user.role
       );
     }
-    return this.appointments.updateAppointmentStatus(businessId, appointmentId, body.status, undefined, req.user.role);
+    return this.appointments.updateAppointmentStatus(
+      businessId,
+      appointmentId,
+      body.status,
+      undefined,
+      req.user.role
+    );
   }
 
   @Patch(":businessId/appointments/:appointmentId/details")

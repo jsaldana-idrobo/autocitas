@@ -99,8 +99,7 @@ export function BookingApp({ slug }: { slug: string }) {
     normalizedPhone.length >= PHONE_MIN_LEN;
   const canCancel =
     appointmentId.trim().length > 0 && normalizedManagePhone.length >= PHONE_MIN_LEN && !loading;
-  const canReschedule =
-    canCancel && rescheduleTime.trim().length > 0;
+  const canReschedule = canCancel && rescheduleTime.trim().length > 0;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
@@ -219,7 +218,11 @@ export function BookingApp({ slug }: { slug: string }) {
   }
 
   async function handleReschedule() {
-    if (!appointmentId.trim() || normalizedManagePhone.length < PHONE_MIN_LEN || !rescheduleTime.trim()) {
+    if (
+      !appointmentId.trim() ||
+      normalizedManagePhone.length < PHONE_MIN_LEN ||
+      !rescheduleTime.trim()
+    ) {
       setManageMessage(RESCHEDULE_HELP);
       return;
     }
@@ -257,176 +260,174 @@ export function BookingApp({ slug }: { slug: string }) {
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <section className="card p-6">
-        <h2 className="text-2xl font-semibold">{business.business.name}</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Reserva tu cita en minutos · Zona horaria {timezone}
-        </p>
+        <section className="card p-6">
+          <h2 className="text-2xl font-semibold">{business.business.name}</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Reserva tu cita en minutos · Zona horaria {timezone}
+          </p>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <label className="block text-sm font-medium">
-            Servicio
-            <select
-              className={`mt-1 w-full ${INPUT_CLASS}`}
-              value={serviceId}
-              onChange={(event) => {
-                const nextService = event.target.value;
-                setServiceId(nextService);
-                setResourceId("");
-                setSelectedSlot(null);
-                if (date) void loadAvailability(date, nextService);
-              }}
-            >
-              {business.services.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.name} ({item.durationMinutes} min)
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm font-medium">
-            Fecha
-            <input
-              type="date"
-              value={date}
-              min={getTodayInTimezone(timezone)}
-              onChange={(event) => {
-                setDate(event.target.value);
-                void loadAvailability(event.target.value, serviceId, resourceId);
-              }}
-              className={`mt-1 w-full ${INPUT_CLASS}`}
-            />
-          </label>
-          <label className="block text-sm font-medium">
-            Profesional
-            <select
-              className={`mt-1 w-full ${INPUT_CLASS}`}
-              value={resourceId}
-              onChange={(event) => {
-                const nextResource = event.target.value;
-                setResourceId(nextResource);
-                if (date) void loadAvailability(date, serviceId, nextResource || undefined);
-              }}
-            >
-              <option value="">Cualquiera</option>
-              {availableResources.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="mt-6">
-          <p className="text-sm font-medium">Horarios disponibles</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {slots.length === 0 && (
-              <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
-            )}
-            {slots.map((slot) => (
-              <button
-                key={slot.startTime}
-                className={`rounded-full px-3 py-2 text-sm ${
-                  selectedSlot === slot.startTime
-                    ? "bg-primary-600 text-white"
-                    : "bg-white text-slate-700 shadow-sm"
-                }`}
-                onClick={() => setSelectedSlot(slot.startTime)}
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <label className="block text-sm font-medium">
+              Servicio
+              <select
+                className={`mt-1 w-full ${INPUT_CLASS}`}
+                value={serviceId}
+                onChange={(event) => {
+                  const nextService = event.target.value;
+                  setServiceId(nextService);
+                  setResourceId("");
+                  setSelectedSlot(null);
+                  if (date) void loadAvailability(date, nextService);
+                }}
               >
-                {formatTime(slot.startTime, timezone)}
-              </button>
-            ))}
+                {business.services.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name} ({item.durationMinutes} min)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-medium">
+              Fecha
+              <input
+                type="date"
+                value={date}
+                min={getTodayInTimezone(timezone)}
+                onChange={(event) => {
+                  setDate(event.target.value);
+                  void loadAvailability(event.target.value, serviceId, resourceId);
+                }}
+                className={`mt-1 w-full ${INPUT_CLASS}`}
+              />
+            </label>
+            <label className="block text-sm font-medium">
+              Profesional
+              <select
+                className={`mt-1 w-full ${INPUT_CLASS}`}
+                value={resourceId}
+                onChange={(event) => {
+                  const nextResource = event.target.value;
+                  setResourceId(nextResource);
+                  if (date) void loadAvailability(date, serviceId, nextResource || undefined);
+                }}
+              >
+                <option value="">Cualquiera</option>
+                {availableResources.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        </div>
-      </section>
 
-      <aside className="card p-6">
-        <h3 className="text-lg font-semibold">Confirmar reserva</h3>
-        <p className="mt-1 text-sm text-slate-500">Completa tus datos.</p>
-        {error && <p className="mt-4 rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</p>}
-        {confirmation && (
-          <p className="mt-4 rounded-md bg-green-50 p-2 text-sm text-green-700">{confirmation}</p>
+          <div className="mt-6">
+            <p className="text-sm font-medium">Horarios disponibles</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {slots.length === 0 && (
+                <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
+              )}
+              {slots.map((slot) => (
+                <button
+                  key={slot.startTime}
+                  className={`rounded-full px-3 py-2 text-sm ${
+                    selectedSlot === slot.startTime
+                      ? "bg-primary-600 text-white"
+                      : "bg-white text-slate-700 shadow-sm"
+                  }`}
+                  onClick={() => setSelectedSlot(slot.startTime)}
+                >
+                  {formatTime(slot.startTime, timezone)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <aside className="card p-6">
+          <h3 className="text-lg font-semibold">Confirmar reserva</h3>
+          <p className="mt-1 text-sm text-slate-500">Completa tus datos.</p>
+          {error && <p className="mt-4 rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+          {confirmation && (
+            <p className="mt-4 rounded-md bg-green-50 p-2 text-sm text-green-700">{confirmation}</p>
+          )}
+          <div className="mt-4 space-y-3">
+            <input
+              placeholder="Nombre"
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              className={`w-full ${INPUT_CLASS}`}
+            />
+            <input
+              placeholder={LABEL_PHONE}
+              type="tel"
+              value={customerPhone}
+              onChange={(event) => setCustomerPhone(event.target.value)}
+              className={`w-full ${INPUT_CLASS}`}
+            />
+            <button
+              className={`w-full rounded-xl bg-primary-600 px-4 py-2 text-white ${
+                !canSubmit || loading ? DISABLED_OPACITY : ""
+              }`}
+              onClick={() => void handleBooking()}
+              disabled={!canSubmit || loading}
+            >
+              {loading ? "Procesando..." : "Reservar"}
+            </button>
+            <div className="text-xs text-slate-500">
+              Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
+              <div>Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <section className="card mt-6 p-6">
+        <h3 className="text-lg font-semibold">Gestionar cita</h3>
+        <p className="mt-1 text-sm text-slate-500">Cancela o reprograma una cita existente.</p>
+        {manageMessage && (
+          <p className="mt-4 rounded-md bg-slate-50 p-2 text-sm text-slate-700">{manageMessage}</p>
         )}
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
           <input
-            placeholder="Nombre"
-            value={customerName}
-            onChange={(event) => setCustomerName(event.target.value)}
-            className={`w-full ${INPUT_CLASS}`}
+            placeholder="ID de la cita"
+            value={appointmentId}
+            onChange={(event) => setAppointmentId(event.target.value)}
+            className={INPUT_CLASS}
           />
           <input
             placeholder={LABEL_PHONE}
             type="tel"
-            value={customerPhone}
-            onChange={(event) => setCustomerPhone(event.target.value)}
-            className={`w-full ${INPUT_CLASS}`}
+            value={managePhone}
+            onChange={(event) => setManagePhone(event.target.value)}
+            className={INPUT_CLASS}
           />
-          <button
-            className={`w-full rounded-xl bg-primary-600 px-4 py-2 text-white ${
-              !canSubmit || loading ? DISABLED_OPACITY : ""
-            }`}
-            onClick={() => void handleBooking()}
-            disabled={!canSubmit || loading}
-          >
-            {loading ? "Procesando..." : "Reservar"}
-          </button>
-          <div className="text-xs text-slate-500">
-            Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
-            <div>Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}</div>
-          </div>
+          <input
+            type="datetime-local"
+            value={rescheduleTime}
+            onChange={(event) => setRescheduleTime(event.target.value)}
+            className={INPUT_CLASS}
+          />
         </div>
-      </aside>
-      </div>
-      <section className="card mt-6 p-6">
-      <h3 className="text-lg font-semibold">Gestionar cita</h3>
-      <p className="mt-1 text-sm text-slate-500">
-        Cancela o reprograma una cita existente.
-      </p>
-      {manageMessage && (
-        <p className="mt-4 rounded-md bg-slate-50 p-2 text-sm text-slate-700">{manageMessage}</p>
-      )}
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <input
-          placeholder="ID de la cita"
-          value={appointmentId}
-          onChange={(event) => setAppointmentId(event.target.value)}
-          className={INPUT_CLASS}
-        />
-        <input
-          placeholder={LABEL_PHONE}
-          type="tel"
-          value={managePhone}
-          onChange={(event) => setManagePhone(event.target.value)}
-          className={INPUT_CLASS}
-        />
-        <input
-          type="datetime-local"
-          value={rescheduleTime}
-          onChange={(event) => setRescheduleTime(event.target.value)}
-          className={INPUT_CLASS}
-        />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          className={`rounded-xl border border-slate-200 px-4 py-2 text-sm ${
-            !canCancel ? DISABLED_OPACITY : ""
-          }`}
-          onClick={() => void handleCancel()}
-          disabled={!canCancel}
-        >
-          Cancelar cita
-        </button>
-        <button
-          className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
-            !canReschedule ? DISABLED_OPACITY : ""
-          }`}
-          onClick={() => void handleReschedule()}
-          disabled={!canReschedule}
-        >
-          Reprogramar
-        </button>
-      </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            className={`rounded-xl border border-slate-200 px-4 py-2 text-sm ${
+              !canCancel ? DISABLED_OPACITY : ""
+            }`}
+            onClick={() => void handleCancel()}
+            disabled={!canCancel}
+          >
+            Cancelar cita
+          </button>
+          <button
+            className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
+              !canReschedule ? DISABLED_OPACITY : ""
+            }`}
+            onClick={() => void handleReschedule()}
+            disabled={!canReschedule}
+          >
+            Reprogramar
+          </button>
+        </div>
       </section>
     </>
   );

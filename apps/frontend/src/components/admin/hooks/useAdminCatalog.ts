@@ -15,7 +15,10 @@ export function useAdminCatalog(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<ServiceItem[]>(`/admin/businesses/${api.businessId}/services`, api.authHeaders);
+      const data = await apiRequest<ServiceItem[]>(
+        `/admin/businesses/${api.businessId}/services`,
+        api.authHeaders
+      );
       setServices(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando servicios");
@@ -31,7 +34,10 @@ export function useAdminCatalog(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<ResourceItem[]>(`/admin/businesses/${api.businessId}/resources`, api.authHeaders);
+      const data = await apiRequest<ResourceItem[]>(
+        `/admin/businesses/${api.businessId}/resources`,
+        api.authHeaders
+      );
       setResources(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando recursos");
@@ -44,7 +50,10 @@ export function useAdminCatalog(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<StaffItem[]>(`/admin/businesses/${api.businessId}/staff`, api.authHeaders);
+      const data = await apiRequest<StaffItem[]>(
+        `/admin/businesses/${api.businessId}/staff`,
+        api.authHeaders
+      );
       setStaff(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando staff");
@@ -198,7 +207,10 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
   }
 
-  async function updateStaff(staffId: string, payload: { resourceId?: string; password?: string; active?: boolean }) {
+  async function updateStaff(
+    staffId: string,
+    payload: { resourceId?: string; password?: string; active?: boolean }
+  ) {
     api.resetError();
     try {
       api.setLoading(true);

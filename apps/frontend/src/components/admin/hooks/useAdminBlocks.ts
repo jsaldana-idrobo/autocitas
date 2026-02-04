@@ -12,7 +12,10 @@ export function useAdminBlocks(api: AdminApiContext) {
     api.setLoading(true);
     api.resetError();
     try {
-      const data = await apiRequest<BlockItem[]>(`/admin/businesses/${api.businessId}/blocks`, api.authHeaders);
+      const data = await apiRequest<BlockItem[]>(
+        `/admin/businesses/${api.businessId}/blocks`,
+        api.authHeaders
+      );
       setBlocks(data);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando bloqueos");

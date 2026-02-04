@@ -82,7 +82,10 @@ export function CalendarModal({
         </div>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
-          <button className="rounded-xl border border-slate-200 px-3 py-1 text-sm" onClick={onClose}>
+          <button
+            className="rounded-xl border border-slate-200 px-3 py-1 text-sm"
+            onClick={onClose}
+          >
             Cancelar
           </button>
           <button

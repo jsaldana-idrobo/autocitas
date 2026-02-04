@@ -395,7 +395,11 @@ export class PublicService {
     };
   }
 
-  async rescheduleAppointment(slug: string, appointmentId: string, payload: RescheduleAppointmentDto) {
+  async rescheduleAppointment(
+    slug: string,
+    appointmentId: string,
+    payload: RescheduleAppointmentDto
+  ) {
     const business = await this.businessModel.findOne({ slug }).lean();
     if (!business || business.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);

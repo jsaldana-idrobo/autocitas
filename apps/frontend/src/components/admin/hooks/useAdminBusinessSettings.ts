@@ -15,7 +15,10 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
       const [businessData, policiesData, hoursData] = await Promise.all([
         apiRequest<BusinessProfile>(`/admin/businesses/${api.businessId}`, api.authHeaders),
         apiRequest<Policies>(`/admin/businesses/${api.businessId}/policies`, api.authHeaders),
-        apiRequest<BusinessHoursItem[]>(`/admin/businesses/${api.businessId}/hours`, api.authHeaders)
+        apiRequest<BusinessHoursItem[]>(
+          `/admin/businesses/${api.businessId}/hours`,
+          api.authHeaders
+        )
       ]);
       setBusinessProfile(businessData);
       setPolicies(policiesData);
@@ -45,7 +48,9 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
           }
           return { dayOfWeek: index, openTime, closeTime };
         })
-        .filter((item): item is { dayOfWeek: number; openTime: string; closeTime: string } => Boolean(item));
+        .filter((item): item is { dayOfWeek: number; openTime: string; closeTime: string } =>
+          Boolean(item)
+        );
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Horario invalido");
       return;

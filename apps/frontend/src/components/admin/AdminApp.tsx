@@ -102,7 +102,11 @@ export function AdminApp() {
   }
 
   async function onPlatformTab() {
-    await Promise.all([platform.loadBusinesses(), platform.loadPlatformOwners(), platform.loadPlatformStaff()]);
+    await Promise.all([
+      platform.loadBusinesses(),
+      platform.loadPlatformOwners(),
+      platform.loadPlatformStaff()
+    ]);
     const nextDate = platform.platformAppointmentsDate || getTodayValue();
     if (!platform.platformAppointmentsDate) {
       platform.setPlatformAppointmentsDate(nextDate);
@@ -128,11 +132,19 @@ export function AdminApp() {
       appointments.setAppointmentsDate(nextDate);
     }
     if (role === "staff") {
-      await appointments.loadAppointments(nextDate, appointments.appointmentsStatus, appointments.appointmentsSearch);
+      await appointments.loadAppointments(
+        nextDate,
+        appointments.appointmentsStatus,
+        appointments.appointmentsSearch
+      );
       return;
     }
     await Promise.all([
-      appointments.loadAppointments(nextDate, appointments.appointmentsStatus, appointments.appointmentsSearch),
+      appointments.loadAppointments(
+        nextDate,
+        appointments.appointmentsStatus,
+        appointments.appointmentsSearch
+      ),
       catalog.ensureResourcesLoaded(),
       catalog.ensureServicesLoaded()
     ]);
@@ -282,7 +294,10 @@ export function AdminApp() {
       )}
 
       {activeTab === "policies" && role !== "staff" && (
-        <PoliciesSection policies={businessSettings.policies} savePolicies={businessSettings.savePolicies} />
+        <PoliciesSection
+          policies={businessSettings.policies}
+          savePolicies={businessSettings.savePolicies}
+        />
       )}
 
       {activeTab === "appointments" && (

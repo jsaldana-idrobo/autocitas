@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { DateTime } from "luxon";
 import { Model, isValidObjectId } from "mongoose";
@@ -138,7 +143,9 @@ export class AdminAppointmentsService {
   ) {
     const business = await this.businessContext.getBusinessContext(businessId);
     const service = await this.catalogService.assertService(businessId, payload.serviceId);
-    const resourceId = payload.resourceId ? await this.catalogService.assertResource(businessId, payload.resourceId) : undefined;
+    const resourceId = payload.resourceId
+      ? await this.catalogService.assertResource(businessId, payload.resourceId)
+      : undefined;
     this.ensureServiceResource(service, resourceId);
 
     const timezone = business.timezone || DEFAULT_TIMEZONE;
@@ -148,7 +155,12 @@ export class AdminAppointmentsService {
     }
 
     this.assertWithinBusinessHours(business, startLocal, service.durationMinutes);
-    await this.ensureNoConflicts(businessId, startLocal, service.durationMinutes, resourceId ?? undefined);
+    await this.ensureNoConflicts(
+      businessId,
+      startLocal,
+      service.durationMinutes,
+      resourceId ?? undefined
+    );
 
     const startUtc = startLocal.toUTC();
     const endUtc = startUtc.plus({ minutes: service.durationMinutes });
@@ -279,7 +291,11 @@ export class AdminAppointmentsService {
     }
   }
 
-  private assertWithinBusinessHours(business: Business, startLocal: DateTime, durationMinutes: number) {
+  private assertWithinBusinessHours(
+    business: Business,
+    startLocal: DateTime,
+    durationMinutes: number
+  ) {
     const dayIndex = startLocal.weekday % 7;
     const dayHours = business.hours?.find((hour) => hour.dayOfWeek === dayIndex);
     if (!dayHours) {
@@ -287,8 +303,18 @@ export class AdminAppointmentsService {
     }
     const [openHour, openMinute] = dayHours.openTime.split(":").map(Number);
     const [closeHour, closeMinute] = dayHours.closeTime.split(":").map(Number);
-    const openLocal = startLocal.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
-    const closeLocal = startLocal.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
+    const openLocal = startLocal.set({
+      hour: openHour,
+      minute: openMinute,
+      second: 0,
+      millisecond: 0
+    });
+    const closeLocal = startLocal.set({
+      hour: closeHour,
+      minute: closeMinute,
+      second: 0,
+      millisecond: 0
+    });
     const endLocal = startLocal.plus({ minutes: durationMinutes });
     if (startLocal < openLocal || endLocal > closeLocal) {
       throw new BadRequestException(ERR_OUTSIDE_HOURS);

@@ -7,11 +7,7 @@ import { CreateResourceDto } from "../dto/create-resource.dto";
 import { CreateServiceDto } from "../dto/create-service.dto";
 import { UpdateResourceDto } from "../dto/update-resource.dto";
 import { UpdateServiceDto } from "../dto/update-service.dto";
-import {
-  ERR_INVALID_RESOURCE_ID,
-  ERR_RESOURCE_NOT_FOUND,
-  ERR_NO_UPDATES
-} from "./admin.constants";
+import { ERR_INVALID_RESOURCE_ID, ERR_RESOURCE_NOT_FOUND, ERR_NO_UPDATES } from "./admin.constants";
 import { AdminBusinessContextService } from "./admin-business-context.service";
 
 @Injectable()
@@ -30,7 +26,9 @@ export class AdminCatalogService {
   async createService(businessId: string, payload: CreateServiceDto) {
     await this.businessContext.getBusinessContext(businessId);
 
-    const allowedResourceIds = (payload.allowedResourceIds || []).filter((id) => isValidObjectId(id));
+    const allowedResourceIds = (payload.allowedResourceIds || []).filter((id) =>
+      isValidObjectId(id)
+    );
 
     return this.serviceModel.create({
       businessId,
@@ -113,12 +111,17 @@ export class AdminCatalogService {
       throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
-    const resource = await this.resourceModel.findOneAndDelete({ _id: resourceId, businessId }).lean();
+    const resource = await this.resourceModel
+      .findOneAndDelete({ _id: resourceId, businessId })
+      .lean();
     if (!resource) {
       throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
     }
 
-    await this.serviceModel.updateMany({ businessId }, { $pull: { allowedResourceIds: resourceId } });
+    await this.serviceModel.updateMany(
+      { businessId },
+      { $pull: { allowedResourceIds: resourceId } }
+    );
 
     return resource;
   }
@@ -127,7 +130,9 @@ export class AdminCatalogService {
     if (!isValidObjectId(serviceId)) {
       throw new BadRequestException("Invalid serviceId.");
     }
-    const service = await this.serviceModel.findOne({ _id: serviceId, businessId, active: true }).lean();
+    const service = await this.serviceModel
+      .findOne({ _id: serviceId, businessId, active: true })
+      .lean();
     if (!service) {
       throw new NotFoundException("Service not found");
     }
@@ -138,7 +143,9 @@ export class AdminCatalogService {
     if (!isValidObjectId(resourceId)) {
       throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
-    const resource = await this.resourceModel.findOne({ _id: resourceId, businessId, active: true }).lean();
+    const resource = await this.resourceModel
+      .findOne({ _id: resourceId, businessId, active: true })
+      .lean();
     if (!resource) {
       throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
     }

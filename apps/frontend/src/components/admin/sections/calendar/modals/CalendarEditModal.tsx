@@ -23,10 +23,11 @@ export function CalendarEditModal({
   onClose: () => void;
 }) {
   const [serviceId, setServiceId] = useState(appointment.serviceId);
-  const [resourceId, setResourceId] = useState(fixedResourceId || appointment.resourceId ?? "");
+  const [resourceId, setResourceId] = useState(fixedResourceId ?? appointment.resourceId ?? "");
   const [startTime, setStartTime] = useState(toLocalInputValue(appointment.startTime));
   const [error, setError] = useState("");
-  const serviceName = services.find((service) => service._id === appointment.serviceId)?.name ?? "Servicio";
+  const serviceName =
+    services.find((service) => service._id === appointment.serviceId)?.name ?? "Servicio";
   const statusLabel = statusLabels[appointment.status] || appointment.status;
 
   return (
@@ -74,11 +75,17 @@ export function CalendarEditModal({
         </div>
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
         <div className="mt-4 flex justify-between gap-2">
-          <button className="rounded-xl border border-slate-200 px-3 py-1 text-sm" onClick={onCancel}>
+          <button
+            className="rounded-xl border border-slate-200 px-3 py-1 text-sm"
+            onClick={onCancel}
+          >
             Cancelar cita
           </button>
           <div className="flex gap-2">
-            <button className="rounded-xl border border-slate-200 px-3 py-1 text-sm" onClick={onClose}>
+            <button
+              className="rounded-xl border border-slate-200 px-3 py-1 text-sm"
+              onClick={onClose}
+            >
               Cerrar
             </button>
             <button

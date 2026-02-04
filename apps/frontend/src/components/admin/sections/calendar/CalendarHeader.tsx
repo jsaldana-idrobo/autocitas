@@ -34,10 +34,16 @@ export function CalendarHeader({
         <p className="text-xs text-slate-500">Lunes a domingo · {weekStart}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <button className="rounded-xl border border-slate-200 px-3 py-1 text-xs" onClick={onPrevWeek}>
+        <button
+          className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+          onClick={onPrevWeek}
+        >
           Semana anterior
         </button>
-        <button className="rounded-xl border border-slate-200 px-3 py-1 text-xs" onClick={onNextWeek}>
+        <button
+          className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+          onClick={onNextWeek}
+        >
           Semana siguiente
         </button>
         <select
@@ -65,10 +71,16 @@ export function CalendarHeader({
             ))}
           </select>
         )}
-        <button className="rounded-xl bg-primary-600 px-3 py-1 text-xs text-white" onClick={onCreateAppointment}>
+        <button
+          className="rounded-xl bg-primary-600 px-3 py-1 text-xs text-white"
+          onClick={onCreateAppointment}
+        >
           Nueva cita
         </button>
-        <button className="rounded-xl border border-slate-200 px-3 py-1 text-xs" onClick={onCreateBlock}>
+        <button
+          className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+          onClick={onCreateBlock}
+        >
           Bloquear horario
         </button>
       </div>
