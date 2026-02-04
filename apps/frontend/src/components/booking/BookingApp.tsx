@@ -76,6 +76,9 @@ export function BookingApp({ slug }: { slug: string }) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
 
+  const canSubmit =
+    !!serviceId && !!selectedSlot && customerName.trim().length > 0 && customerPhone.trim().length > 0;
+
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
     [business, serviceId]
@@ -272,14 +275,17 @@ export function BookingApp({ slug }: { slug: string }) {
           />
           <input
             placeholder="Telefono"
+            type="tel"
             value={customerPhone}
             onChange={(event) => setCustomerPhone(event.target.value)}
             className="w-full rounded-xl border border-slate-200 px-3 py-2"
           />
           <button
-            className="w-full rounded-xl bg-primary-600 px-4 py-2 text-white"
+            className={`w-full rounded-xl bg-primary-600 px-4 py-2 text-white ${
+              !canSubmit || loading ? "opacity-60" : ""
+            }`}
             onClick={() => void handleBooking()}
-            disabled={loading}
+            disabled={!canSubmit || loading}
           >
             {loading ? "Procesando..." : "Reservar"}
           </button>
