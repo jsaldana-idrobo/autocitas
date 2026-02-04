@@ -30,6 +30,15 @@ export class Appointment {
 
   @Prop({ default: "booked" })
   status!: AppointmentStatus;
+
+  @Prop({ default: 0 })
+  rescheduleCount!: number;
+
+  @Prop()
+  lastRescheduledAt?: Date;
+
+  @Prop({ type: [Number], default: [] })
+  reminderSentHours!: number[];
 }
 
 export const AppointmentSchema = SchemaFactory.createForClass(Appointment);

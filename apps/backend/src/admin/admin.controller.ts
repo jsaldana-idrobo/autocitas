@@ -44,6 +44,7 @@ export class AdminController {
     @Param("businessId") businessId: string,
     @Query("date") date: string | undefined,
     @Query("status") status: "booked" | "cancelled" | "completed" | undefined,
+    @Query("search") search: string | undefined,
     @Req() req: AuthenticatedRequest
   ) {
     this.adminService.ensureBusinessAccess(req.user, businessId);
@@ -51,9 +52,9 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.adminService.listAppointments(businessId, date, req.user.resourceId, status);
+      return this.adminService.listAppointments(businessId, date, req.user.resourceId, status, search);
     }
-    return this.adminService.listAppointments(businessId, date, undefined, status);
+    return this.adminService.listAppointments(businessId, date, undefined, status, search);
   }
 
   @Patch(":businessId/appointments/:appointmentId")
@@ -72,10 +73,11 @@ export class AdminController {
         businessId,
         appointmentId,
         body.status,
-        req.user.resourceId
+        req.user.resourceId,
+        req.user.role
       );
     }
-    return this.adminService.updateAppointmentStatus(businessId, appointmentId, body.status);
+    return this.adminService.updateAppointmentStatus(businessId, appointmentId, body.status, undefined, req.user.role);
   }
 
   @Get(":businessId")

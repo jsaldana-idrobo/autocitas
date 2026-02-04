@@ -9,6 +9,8 @@ export function AppointmentsSection({
   setAppointmentsDate,
   appointmentsStatus,
   setAppointmentsStatus,
+  appointmentsSearch,
+  setAppointmentsSearch,
   loadAppointments,
   updateAppointmentStatus
 }: {
@@ -19,6 +21,8 @@ export function AppointmentsSection({
   setAppointmentsDate: (value: string) => void;
   appointmentsStatus: string;
   setAppointmentsStatus: (value: string) => void;
+  appointmentsSearch: string;
+  setAppointmentsSearch: (value: string) => void;
   loadAppointments: () => void;
   updateAppointmentStatus: (appointmentId: string, status: string) => void;
 }) {
@@ -42,6 +46,12 @@ export function AppointmentsSection({
           <option value="completed">Completadas</option>
           <option value="cancelled">Canceladas</option>
         </select>
+        <input
+          className="rounded-xl border border-slate-200 px-3 py-2"
+          placeholder="Buscar por nombre o telefono"
+          value={appointmentsSearch}
+          onChange={(event) => setAppointmentsSearch(event.target.value)}
+        />
         <button
           className="rounded-xl bg-primary-600 px-4 py-2 text-white"
           onClick={() => void loadAppointments()}

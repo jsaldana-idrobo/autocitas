@@ -8,6 +8,8 @@ import { Business } from "../schemas/business.schema";
 import { Resource } from "../schemas/resource.schema";
 import { Service } from "../schemas/service.schema";
 import { CreateAppointmentDto } from "./dto/create-appointment.dto";
+import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
+import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto";
 import { assertNotInPast, assertSameDayAllowed } from "./policies";
 
 const DEFAULT_TIMEZONE = "America/Bogota";
@@ -17,6 +19,10 @@ const ERR_BUSINESS_NOT_FOUND = "Business not found";
 const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
 const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
 const ERR_SERVICE_NOT_FOUND = "Service not found";
+const ERR_START_TIME_PAST = "Start time must be in the future.";
+const ERR_APPOINTMENT_NOT_FOUND = "Appointment not found";
+const ERR_CANCEL_WINDOW = "Cancellation window has passed.";
+const ERR_RESCHEDULE_LIMIT = "Reschedule limit reached.";
 
 interface SlotAvailability {
   startTime: string;
@@ -134,6 +140,15 @@ function generateSlots(params: {
   }
 
   return Array.from(slotMap.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+function filterSlotsForToday(slots: SlotAvailability[], dateLocal: DateTime, timezone: string) {
+  const now = DateTime.now().setZone(timezone);
+  if (!dateLocal.hasSame(now, "day")) {
+    return slots;
+  }
+  const nowUtcMillis = now.toUTC().toMillis();
+  return slots.filter((slot) => DateTime.fromISO(slot.startTime).toMillis() > nowUtcMillis);
 }
 
 export class PublicService {
@@ -267,7 +282,8 @@ export class PublicService {
       blockMap
     });
 
-    return { slots };
+    const filtered = filterSlotsForToday(slots, dateLocal, timezone);
+    return { slots: filtered };
   }
 
   async createAppointment(slug: string, payload: CreateAppointmentDto) {
@@ -298,6 +314,10 @@ export class PublicService {
     }
     assertNotInPast(startLocal.startOf("day"), business);
     assertSameDayAllowed(startLocal, business);
+    const nowLocal = DateTime.now().setZone(timezone);
+    if (startLocal <= nowLocal) {
+      throw new BadRequestException(ERR_START_TIME_PAST);
+    }
 
     const startUtc = startLocal.toUTC();
     const endUtc = startUtc.plus({ minutes: service.durationMinutes });
@@ -335,6 +355,124 @@ export class PublicService {
       startTime: created.startTime,
       endTime: created.endTime,
       resourceId: created.resourceId
+    };
+  }
+
+  async cancelAppointment(slug: string, appointmentId: string, payload: CancelAppointmentDto) {
+    const business = await this.businessModel.findOne({ slug }).lean();
+    if (!business || business.status !== STATUS_ACTIVE) {
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+    }
+
+    if (!isValidObjectId(appointmentId)) {
+      throw new BadRequestException("Invalid appointmentId.");
+    }
+
+    const phone = payload.customerPhone.trim();
+    const appointment = await this.appointmentModel
+      .findOne({ _id: appointmentId, businessId: business._id, customerPhone: phone })
+      .lean();
+
+    if (!appointment) {
+      throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
+    }
+
+    const timezone = business.timezone || DEFAULT_TIMEZONE;
+    const now = DateTime.now().setZone(timezone);
+    const start = DateTime.fromJSDate(appointment.startTime).setZone(timezone);
+    const cancellationHours = business.policies?.cancellationHours ?? 24;
+    if (start.diff(now, "hours").hours < cancellationHours) {
+      throw new BadRequestException(ERR_CANCEL_WINDOW);
+    }
+
+    const updated = await this.appointmentModel
+      .findOneAndUpdate({ _id: appointment._id }, { status: "cancelled" }, { new: true })
+      .lean();
+
+    return {
+      appointmentId: updated?._id ?? appointment._id,
+      status: "cancelled"
+    };
+  }
+
+  async rescheduleAppointment(slug: string, appointmentId: string, payload: RescheduleAppointmentDto) {
+    const business = await this.businessModel.findOne({ slug }).lean();
+    if (!business || business.status !== STATUS_ACTIVE) {
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+    }
+
+    if (!isValidObjectId(appointmentId)) {
+      throw new BadRequestException("Invalid appointmentId.");
+    }
+
+    const phone = payload.customerPhone.trim();
+    const appointment = await this.appointmentModel
+      .findOne({ _id: appointmentId, businessId: business._id, customerPhone: phone })
+      .lean();
+
+    if (!appointment) {
+      throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
+    }
+
+    const rescheduleLimit = business.policies?.rescheduleLimit ?? 1;
+    if ((appointment.rescheduleCount ?? 0) >= rescheduleLimit) {
+      throw new BadRequestException(ERR_RESCHEDULE_LIMIT);
+    }
+
+    const timezone = business.timezone || DEFAULT_TIMEZONE;
+    const startLocal = DateTime.fromISO(payload.startTime, { zone: timezone });
+    if (!startLocal.isValid) {
+      throw new BadRequestException("Invalid startTime format.");
+    }
+    assertNotInPast(startLocal.startOf("day"), business);
+    assertSameDayAllowed(startLocal, business);
+
+    const nowLocal = DateTime.now().setZone(timezone);
+    if (startLocal <= nowLocal) {
+      throw new BadRequestException(ERR_START_TIME_PAST);
+    }
+
+    const availability = await this.getAvailability({
+      slug,
+      date: startLocal.toISODate() ?? "",
+      serviceId: appointment.serviceId.toString(),
+      resourceId: appointment.resourceId?.toString()
+    });
+
+    const startUtc = startLocal.toUTC();
+    const slot = availability.slots.find((item) => item.startTime === startUtc.toISO());
+    if (!slot) {
+      throw new ConflictException("Selected time is no longer available.");
+    }
+
+    const resourceId = appointment.resourceId?.toString() || slot.resourceIds[0];
+    if (!resourceId) {
+      throw new ConflictException("No resource available for selected time.");
+    }
+
+    const durationMinutes = Math.round(
+      (appointment.endTime.getTime() - appointment.startTime.getTime()) / 60000
+    );
+    const endUtc = startUtc.plus({ minutes: durationMinutes });
+    const updated = await this.appointmentModel
+      .findOneAndUpdate(
+        { _id: appointment._id },
+        {
+          startTime: startUtc.toJSDate(),
+          endTime: endUtc.toJSDate(),
+          resourceId,
+          rescheduleCount: (appointment.rescheduleCount ?? 0) + 1,
+          lastRescheduledAt: new Date()
+        },
+        { new: true }
+      )
+      .lean();
+
+    return {
+      appointmentId: updated?._id ?? appointment._id,
+      startTime: updated?.startTime ?? startUtc.toJSDate(),
+      endTime: updated?.endTime ?? endUtc.toJSDate(),
+      resourceId: updated?.resourceId ?? resourceId
     };
   }
 }

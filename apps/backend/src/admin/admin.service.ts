@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
 import { hash } from "bcryptjs";
+import { DateTime } from "luxon";
 import { Block } from "../schemas/block.schema";
 import { Business } from "../schemas/business.schema";
 import { Appointment } from "../schemas/appointment.schema";
@@ -28,6 +29,12 @@ const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
 const ERR_BUSINESS_NOT_FOUND = "Business not found";
 const ERR_RESOURCE_NOT_FOUND = "Resource not found";
 const ERR_NO_UPDATES = "No updates provided.";
+const ERR_CANCEL_WINDOW = "Cancellation window has passed.";
+const ERR_APPOINTMENT_NOT_FOUND = "Appointment not found";
+const SELECT_WITHOUT_PASSWORD = "-passwordHash";
+const ERR_BLOCK_APPOINTMENT_CONFLICT = "Block overlaps with existing appointments.";
+const ERR_BLOCK_NOT_FOUND = "Block not found";
+const ERR_INVALID_DATE_FORMAT = "Invalid date format. Use YYYY-MM-DD.";
 
 export class AdminService {
   constructor(
@@ -146,7 +153,7 @@ export class AdminService {
     await this.getBusinessContext(businessId);
     return this.adminUserModel
       .find({ businessId, role: { $in: ["owner", "staff"] } })
-      .select("-passwordHash")
+      .select(SELECT_WITHOUT_PASSWORD)
       .lean();
   }
 
@@ -178,6 +185,58 @@ export class AdminService {
 
   async listBusinesses() {
     return this.businessModel.find().lean();
+  }
+
+  async listPlatformUsers(role: "owner" | "staff") {
+    return this.adminUserModel
+      .find({ role })
+      .select(SELECT_WITHOUT_PASSWORD)
+      .lean();
+  }
+
+  async listPlatformAppointments(date?: string, status?: "booked" | "cancelled" | "completed") {
+    const query: Record<string, unknown> = {};
+    if (status) {
+      query.status = status;
+    }
+    if (date) {
+      const start = new Date(`${date}T00:00:00.000Z`);
+      const end = new Date(`${date}T23:59:59.999Z`);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
+      }
+      query.startTime = { $gte: start, $lte: end };
+    }
+    return this.appointmentModel.find(query).lean();
+  }
+
+  async listPlatformAppointmentsWithSearch(
+    date?: string,
+    status?: "booked" | "cancelled" | "completed",
+    search?: string
+  ) {
+    const query: Record<string, unknown> = {};
+    if (status) {
+      query.status = status;
+    }
+    if (date) {
+      const start = new Date(`${date}T00:00:00.000Z`);
+      const end = new Date(`${date}T23:59:59.999Z`);
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
+      }
+      query.startTime = { $gte: start, $lte: end };
+    }
+    if (search) {
+      const trimmed = search.trim();
+      if (trimmed.length > 0) {
+        query.$or = [
+          { customerName: { $regex: trimmed, $options: "i" } },
+          { customerPhone: { $regex: trimmed, $options: "i" } }
+        ];
+      }
+    }
+    return this.appointmentModel.find(query).lean();
   }
 
   async createBusiness(payload: CreateBusinessDto) {
@@ -297,6 +356,16 @@ export class AdminService {
       throw new BadRequestException("Block endTime must be after startTime.");
     }
 
+    const hasConflict = await this.hasAppointmentConflict(
+      businessId,
+      startTime,
+      endTime,
+      payload.resourceId ?? undefined
+    );
+    if (hasConflict) {
+      throw new BadRequestException(ERR_BLOCK_APPOINTMENT_CONFLICT);
+    }
+
     return this.blockModel.create({
       businessId,
       resourceId: payload.resourceId,
@@ -322,37 +391,27 @@ export class AdminService {
       throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
     }
 
-    const update: Record<string, unknown> = { ...payload };
-    if (payload.startTime) {
-      const startTime = new Date(payload.startTime);
-      if (Number.isNaN(startTime.getTime())) {
-        throw new BadRequestException("Invalid startTime format.");
-      }
-      update.startTime = startTime;
-    }
-    if (payload.endTime) {
-      const endTime = new Date(payload.endTime);
-      if (Number.isNaN(endTime.getTime())) {
-        throw new BadRequestException("Invalid endTime format.");
-      }
-      update.endTime = endTime;
-    }
-    if (Object.keys(update).length === 0) {
-      throw new BadRequestException(ERR_NO_UPDATES);
-    }
-    if (update.startTime && update.endTime && update.endTime <= update.startTime) {
-      throw new BadRequestException("Block endTime must be after startTime.");
-    }
+    const update = this.parseBlockUpdate(payload);
 
     const query: Record<string, unknown> = { _id: blockId, businessId };
     if (resourceId) {
       query.resourceId = resourceId;
     }
 
+    const existingBlock = await this.blockModel.findOne(query).lean();
+    if (!existingBlock) {
+      throw new NotFoundException(ERR_BLOCK_NOT_FOUND);
+    }
+    const nextStart = (update.startTime as Date | undefined) ?? existingBlock.startTime;
+    const nextEnd = (update.endTime as Date | undefined) ?? existingBlock.endTime;
+    const nextResource =
+      (update.resourceId as string | undefined) ?? existingBlock.resourceId?.toString();
+    await this.ensureNoAppointmentConflict(businessId, nextStart, nextEnd, nextResource);
+
     const block = await this.blockModel.findOneAndUpdate(query, update, { new: true }).lean();
 
     if (!block) {
-      throw new NotFoundException("Block not found");
+      throw new NotFoundException(ERR_BLOCK_NOT_FOUND);
     }
 
     return block;
@@ -372,7 +431,7 @@ export class AdminService {
 
     const block = await this.blockModel.findOneAndDelete(query).lean();
     if (!block) {
-      throw new NotFoundException("Block not found");
+      throw new NotFoundException(ERR_BLOCK_NOT_FOUND);
     }
 
     return { deleted: true };
@@ -468,7 +527,8 @@ export class AdminService {
     businessId: string,
     date?: string,
     resourceId?: string,
-    status?: "booked" | "cancelled" | "completed"
+    status?: "booked" | "cancelled" | "completed",
+    search?: string
   ) {
     await this.getBusinessContext(businessId);
 
@@ -483,9 +543,18 @@ export class AdminService {
       const start = new Date(`${date}T00:00:00.000Z`);
       const end = new Date(`${date}T23:59:59.999Z`);
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-        throw new BadRequestException("Invalid date format. Use YYYY-MM-DD.");
+        throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
       }
       query.startTime = { $gte: start, $lte: end };
+    }
+    if (search) {
+      const trimmed = search.trim();
+      if (trimmed.length > 0) {
+        query.$or = [
+          { customerName: { $regex: trimmed, $options: "i" } },
+          { customerPhone: { $regex: trimmed, $options: "i" } }
+        ];
+      }
     }
 
     return this.appointmentModel.find(query).lean();
@@ -495,7 +564,8 @@ export class AdminService {
     businessId: string,
     appointmentId: string,
     status: "booked" | "cancelled" | "completed",
-    resourceId?: string
+    resourceId?: string,
+    role?: JwtPayload["role"]
   ) {
     await this.getBusinessContext(businessId);
 
@@ -508,14 +578,88 @@ export class AdminService {
       query.resourceId = resourceId;
     }
 
+    if (status === "cancelled" && role && role !== "platform_admin") {
+      const business = await this.businessModel.findById(businessId).lean();
+      if (!business) {
+        throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+      }
+      const appointment = await this.appointmentModel.findOne(query).lean();
+      if (!appointment) {
+        throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
+      }
+      const timezone = business.timezone || DEFAULT_TIMEZONE;
+      const now = DateTime.now().setZone(timezone);
+      const start = DateTime.fromJSDate(appointment.startTime).setZone(timezone);
+      const cancellationHours = business.policies?.cancellationHours ?? 24;
+      if (start.diff(now, "hours").hours < cancellationHours) {
+        throw new BadRequestException(ERR_CANCEL_WINDOW);
+      }
+    }
+
     const appointment = await this.appointmentModel
       .findOneAndUpdate(query, { status }, { new: true })
       .lean();
 
     if (!appointment) {
-      throw new NotFoundException("Appointment not found");
+      throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
     }
 
     return appointment;
+  }
+
+  private async hasAppointmentConflict(
+    businessId: string,
+    startTime: Date,
+    endTime: Date,
+    resourceId?: string
+  ) {
+    const query: Record<string, unknown> = {
+      businessId,
+      status: "booked",
+      startTime: { $lt: endTime },
+      endTime: { $gt: startTime }
+    };
+    if (resourceId) {
+      query.resourceId = resourceId;
+    }
+    const count = await this.appointmentModel.countDocuments(query);
+    return count > 0;
+  }
+
+  private parseBlockUpdate(payload: UpdateBlockDto) {
+    const update: Record<string, unknown> = { ...payload };
+    if (payload.startTime) {
+      const startTime = new Date(payload.startTime);
+      if (Number.isNaN(startTime.getTime())) {
+        throw new BadRequestException("Invalid startTime format.");
+      }
+      update.startTime = startTime;
+    }
+    if (payload.endTime) {
+      const endTime = new Date(payload.endTime);
+      if (Number.isNaN(endTime.getTime())) {
+        throw new BadRequestException("Invalid endTime format.");
+      }
+      update.endTime = endTime;
+    }
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException(ERR_NO_UPDATES);
+    }
+    if (update.startTime && update.endTime && update.endTime <= update.startTime) {
+      throw new BadRequestException("Block endTime must be after startTime.");
+    }
+    return update;
+  }
+
+  private async ensureNoAppointmentConflict(
+    businessId: string,
+    startTime: Date,
+    endTime: Date,
+    resourceId?: string
+  ) {
+    const hasConflict = await this.hasAppointmentConflict(businessId, startTime, endTime, resourceId);
+    if (hasConflict) {
+      throw new BadRequestException(ERR_BLOCK_APPOINTMENT_CONFLICT);
+    }
   }
 }

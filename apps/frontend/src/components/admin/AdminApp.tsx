@@ -45,8 +45,15 @@ export function AdminApp() {
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [appointmentsDate, setAppointmentsDate] = useState("");
   const [appointmentsStatus, setAppointmentsStatus] = useState("");
+  const [appointmentsSearch, setAppointmentsSearch] = useState("");
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
   const [ownerBusinessId, setOwnerBusinessId] = useState("");
+  const [platformOwners, setPlatformOwners] = useState<StaffItem[]>([]);
+  const [platformStaff, setPlatformStaff] = useState<StaffItem[]>([]);
+  const [platformAppointments, setPlatformAppointments] = useState<AppointmentItem[]>([]);
+  const [platformAppointmentsDate, setPlatformAppointmentsDate] = useState("");
+  const [platformAppointmentsStatus, setPlatformAppointmentsStatus] = useState("");
+  const [platformAppointmentsSearch, setPlatformAppointmentsSearch] = useState("");
 
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
@@ -199,15 +206,17 @@ export function AdminApp() {
     }
   }
 
-  async function loadAppointments(nextDate?: string, nextStatus?: string) {
+  async function loadAppointments(nextDate?: string, nextStatus?: string, nextSearch?: string) {
     setLoading(true);
     resetError();
     try {
       const params = new URLSearchParams();
       const dateValue = nextDate ?? appointmentsDate;
       const statusValue = nextStatus ?? appointmentsStatus;
+      const searchValue = nextSearch ?? appointmentsSearch;
       if (dateValue) params.set("date", dateValue);
       if (statusValue) params.set("status", statusValue);
+      if (searchValue) params.set("search", searchValue);
       const query = params.toString() ? `?${params.toString()}` : "";
       const data = await apiRequest<AppointmentItem[]>(
         `/admin/businesses/${businessId}/appointments${query}`,
@@ -229,6 +238,53 @@ export function AdminApp() {
       setBusinesses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error cargando negocios");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPlatformOwners() {
+    setLoading(true);
+    resetError();
+    try {
+      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=owner", authHeaders);
+      setPlatformOwners(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error cargando owners");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPlatformStaff() {
+    setLoading(true);
+    resetError();
+    try {
+      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=staff", authHeaders);
+      setPlatformStaff(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error cargando staff");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadPlatformAppointments(nextDate?: string, nextStatus?: string, nextSearch?: string) {
+    setLoading(true);
+    resetError();
+    try {
+      const params = new URLSearchParams();
+      const dateValue = nextDate ?? platformAppointmentsDate;
+      const statusValue = nextStatus ?? platformAppointmentsStatus;
+      const searchValue = nextSearch ?? platformAppointmentsSearch;
+      if (dateValue) params.set("date", dateValue);
+      if (statusValue) params.set("status", statusValue);
+      if (searchValue) params.set("search", searchValue);
+      const query = params.toString() ? `?${params.toString()}` : "";
+      const data = await apiRequest<AppointmentItem[]>(`/admin/platform/appointments${query}`, authHeaders);
+      setPlatformAppointments(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error cargando citas globales");
     } finally {
       setLoading(false);
     }
@@ -654,36 +710,67 @@ export function AdminApp() {
     }
   }
 
+  async function onPlatformTab() {
+    await Promise.all([loadBusinesses(), loadPlatformOwners(), loadPlatformStaff()]);
+    const nextDate = platformAppointmentsDate || getTodayValue();
+    if (!platformAppointmentsDate) {
+      setPlatformAppointmentsDate(nextDate);
+    }
+    await loadPlatformAppointments(nextDate, platformAppointmentsStatus, platformAppointmentsSearch);
+  }
+
+  async function onBlocksTab() {
+    if (role === "staff") {
+      await loadBlocks();
+      return;
+    }
+    await Promise.all([loadBlocks(), ensureResourcesLoaded()]);
+  }
+
+  async function onAppointmentsTab() {
+    const nextDate = appointmentsDate || getTodayValue();
+    if (!appointmentsDate) {
+      setAppointmentsDate(nextDate);
+    }
+    if (role === "staff") {
+      await loadAppointments(nextDate, appointmentsStatus, appointmentsSearch);
+      return;
+    }
+    await Promise.all([
+      loadAppointments(nextDate, appointmentsStatus, appointmentsSearch),
+      ensureResourcesLoaded(),
+      ensureServicesLoaded()
+    ]);
+  }
+
   function handleTabSelect(tab: TabKey) {
     setActiveTab(tab);
-    if (tab === "platform") void loadBusinesses();
-    if (tab === "services") void loadServices();
-    if (tab === "resources") void loadResources();
-    if (tab === "staff") void Promise.all([loadStaff(), ensureResourcesLoaded()]);
+    if (tab === "platform") {
+      void onPlatformTab();
+      return;
+    }
+    if (tab === "services") {
+      void loadServices();
+      return;
+    }
+    if (tab === "resources") {
+      void loadResources();
+      return;
+    }
+    if (tab === "staff") {
+      void Promise.all([loadStaff(), ensureResourcesLoaded()]);
+      return;
+    }
     if (tab === "blocks") {
-      if (role === "staff") {
-        void loadBlocks();
-      } else {
-        void Promise.all([loadBlocks(), ensureResourcesLoaded()]);
-      }
+      void onBlocksTab();
+      return;
     }
     if (tab === "business" || tab === "hours" || tab === "policies") {
       void loadBusinessSettings();
+      return;
     }
     if (tab === "appointments") {
-      const nextDate = appointmentsDate || getTodayValue();
-      if (!appointmentsDate) {
-        setAppointmentsDate(nextDate);
-      }
-      if (role === "staff") {
-        void loadAppointments(nextDate, appointmentsStatus);
-      } else {
-        void Promise.all([
-          loadAppointments(nextDate, appointmentsStatus),
-          ensureResourcesLoaded(),
-          ensureServicesLoaded()
-        ]);
-      }
+      void onAppointmentsTab();
     }
   }
 
@@ -716,6 +803,18 @@ export function AdminApp() {
             selectBusiness(id);
             setOwnerBusinessId(id);
           }}
+          owners={platformOwners}
+          staff={platformStaff}
+          appointments={platformAppointments}
+          appointmentsDate={platformAppointmentsDate}
+          setAppointmentsDate={setPlatformAppointmentsDate}
+          appointmentsStatus={platformAppointmentsStatus}
+          setAppointmentsStatus={setPlatformAppointmentsStatus}
+          appointmentsSearch={platformAppointmentsSearch}
+          setAppointmentsSearch={setPlatformAppointmentsSearch}
+          loadOwners={loadPlatformOwners}
+          loadStaff={loadPlatformStaff}
+          loadAppointments={() => loadPlatformAppointments()}
         />
       )}
 
@@ -796,6 +895,8 @@ export function AdminApp() {
           setAppointmentsDate={setAppointmentsDate}
           appointmentsStatus={appointmentsStatus}
           setAppointmentsStatus={setAppointmentsStatus}
+          appointmentsSearch={appointmentsSearch}
+          setAppointmentsSearch={setAppointmentsSearch}
           loadAppointments={() => loadAppointments()}
           updateAppointmentStatus={updateAppointmentStatus}
         />

@@ -33,6 +33,11 @@ interface AvailabilitySlot {
 
 const DEFAULT_TIMEZONE = "America/Bogota";
 const PHONE_MIN_LEN = 7;
+const RESCHEDULE_HELP =
+  "Para reprogramar, ingresa el ID de la cita, tu telefono y la nueva fecha/hora.";
+const LABEL_PHONE = "Telefono";
+const INPUT_CLASS = "rounded-xl border border-slate-200 px-3 py-2";
+const DISABLED_OPACITY = "opacity-60";
 
 function getTodayInTimezone(timezone: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -80,13 +85,22 @@ export function BookingApp({ slug }: { slug: string }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [appointmentId, setAppointmentId] = useState("");
+  const [managePhone, setManagePhone] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [manageMessage, setManageMessage] = useState<string | null>(null);
 
   const normalizedPhone = normalizePhone(customerPhone);
+  const normalizedManagePhone = normalizePhone(managePhone);
   const canSubmit =
     !!serviceId &&
     !!selectedSlot &&
     customerName.trim().length > 0 &&
     normalizedPhone.length >= PHONE_MIN_LEN;
+  const canCancel =
+    appointmentId.trim().length > 0 && normalizedManagePhone.length >= PHONE_MIN_LEN && !loading;
+  const canReschedule =
+    canCancel && rescheduleTime.trim().length > 0;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
@@ -183,6 +197,51 @@ export function BookingApp({ slug }: { slug: string }) {
     }
   }
 
+  async function handleCancel() {
+    if (!appointmentId.trim() || normalizedManagePhone.length < PHONE_MIN_LEN) {
+      setManageMessage("Ingresa el ID de la cita y tu telefono.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setManageMessage(null);
+    try {
+      await apiRequest(`/public/businesses/${slug}/appointments/${appointmentId.trim()}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ customerPhone: normalizedManagePhone })
+      });
+      setManageMessage("Cita cancelada correctamente.");
+    } catch (err) {
+      setManageMessage(err instanceof Error ? err.message : "No se pudo cancelar la cita");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleReschedule() {
+    if (!appointmentId.trim() || normalizedManagePhone.length < PHONE_MIN_LEN || !rescheduleTime.trim()) {
+      setManageMessage(RESCHEDULE_HELP);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setManageMessage(null);
+    try {
+      await apiRequest(
+        `/public/businesses/${slug}/appointments/${appointmentId.trim()}/reschedule`,
+        {
+          method: "POST",
+          body: JSON.stringify({ customerPhone: normalizedManagePhone, startTime: rescheduleTime })
+        }
+      );
+      setManageMessage("Cita reprogramada correctamente.");
+    } catch (err) {
+      setManageMessage(err instanceof Error ? err.message : "No se pudo reprogramar la cita");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (loading && !business) {
     return <div className="card p-6">Cargando...</div>;
   }
@@ -196,7 +255,8 @@ export function BookingApp({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="card p-6">
         <h2 className="text-2xl font-semibold">{business.business.name}</h2>
         <p className="mt-2 text-sm text-slate-500">
@@ -207,7 +267,7 @@ export function BookingApp({ slug }: { slug: string }) {
           <label className="block text-sm font-medium">
             Servicio
             <select
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className={`mt-1 w-full ${INPUT_CLASS}`}
               value={serviceId}
               onChange={(event) => {
                 const nextService = event.target.value;
@@ -234,13 +294,13 @@ export function BookingApp({ slug }: { slug: string }) {
                 setDate(event.target.value);
                 void loadAvailability(event.target.value, serviceId, resourceId);
               }}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className={`mt-1 w-full ${INPUT_CLASS}`}
             />
           </label>
           <label className="block text-sm font-medium">
             Profesional
             <select
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className={`mt-1 w-full ${INPUT_CLASS}`}
               value={resourceId}
               onChange={(event) => {
                 const nextResource = event.target.value;
@@ -293,18 +353,18 @@ export function BookingApp({ slug }: { slug: string }) {
             placeholder="Nombre"
             value={customerName}
             onChange={(event) => setCustomerName(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2"
+            className={`w-full ${INPUT_CLASS}`}
           />
           <input
-            placeholder="Telefono"
+            placeholder={LABEL_PHONE}
             type="tel"
             value={customerPhone}
             onChange={(event) => setCustomerPhone(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2"
+            className={`w-full ${INPUT_CLASS}`}
           />
           <button
             className={`w-full rounded-xl bg-primary-600 px-4 py-2 text-white ${
-              !canSubmit || loading ? "opacity-60" : ""
+              !canSubmit || loading ? DISABLED_OPACITY : ""
             }`}
             onClick={() => void handleBooking()}
             disabled={!canSubmit || loading}
@@ -317,6 +377,57 @@ export function BookingApp({ slug }: { slug: string }) {
           </div>
         </div>
       </aside>
-    </div>
+      </div>
+      <section className="card mt-6 p-6">
+      <h3 className="text-lg font-semibold">Gestionar cita</h3>
+      <p className="mt-1 text-sm text-slate-500">
+        Cancela o reprograma una cita existente.
+      </p>
+      {manageMessage && (
+        <p className="mt-4 rounded-md bg-slate-50 p-2 text-sm text-slate-700">{manageMessage}</p>
+      )}
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <input
+          placeholder="ID de la cita"
+          value={appointmentId}
+          onChange={(event) => setAppointmentId(event.target.value)}
+          className={INPUT_CLASS}
+        />
+        <input
+          placeholder={LABEL_PHONE}
+          type="tel"
+          value={managePhone}
+          onChange={(event) => setManagePhone(event.target.value)}
+          className={INPUT_CLASS}
+        />
+        <input
+          type="datetime-local"
+          value={rescheduleTime}
+          onChange={(event) => setRescheduleTime(event.target.value)}
+          className={INPUT_CLASS}
+        />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          className={`rounded-xl border border-slate-200 px-4 py-2 text-sm ${
+            !canCancel ? DISABLED_OPACITY : ""
+          }`}
+          onClick={() => void handleCancel()}
+          disabled={!canCancel}
+        >
+          Cancelar cita
+        </button>
+        <button
+          className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
+            !canReschedule ? DISABLED_OPACITY : ""
+          }`}
+          onClick={() => void handleReschedule()}
+          disabled={!canReschedule}
+        >
+          Reprogramar
+        </button>
+      </div>
+      </section>
+    </>
   );
 }

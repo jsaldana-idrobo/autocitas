@@ -30,6 +30,7 @@ export interface StaffItem {
   role: string;
   active: boolean;
   resourceId?: string;
+  businessId?: string;
 }
 
 export interface BlockItem {
@@ -61,6 +62,7 @@ export interface AppointmentItem {
   startTime: string;
   endTime: string;
   status: string;
+  businessId?: string;
 }
 
 export interface BusinessProfile {

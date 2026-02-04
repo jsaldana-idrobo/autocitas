@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { Request } from "express";
 import { AdminService } from "./admin.service";
 import { CreateBusinessDto } from "./dto/create-business.dto";
@@ -31,5 +31,22 @@ export class PlatformController {
   createOwner(@Body() body: CreateOwnerDto, @Req() req: AuthenticatedRequest) {
     this.adminService.ensurePlatformAdmin(req.user);
     return this.adminService.createOwner(body);
+  }
+
+  @Get("users")
+  listUsers(@Query("role") role: "owner" | "staff", @Req() req: AuthenticatedRequest) {
+    this.adminService.ensurePlatformAdmin(req.user);
+    return this.adminService.listPlatformUsers(role);
+  }
+
+  @Get("appointments")
+  listAppointments(
+    @Query("date") date: string | undefined,
+    @Query("status") status: "booked" | "cancelled" | "completed" | undefined,
+    @Query("search") search: string | undefined,
+    @Req() req: AuthenticatedRequest
+  ) {
+    this.adminService.ensurePlatformAdmin(req.user);
+    return this.adminService.listPlatformAppointmentsWithSearch(date, status, search);
   }
 }
