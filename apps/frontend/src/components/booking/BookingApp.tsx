@@ -31,6 +31,38 @@ interface AvailabilitySlot {
   resourceIds: string[];
 }
 
+const DEFAULT_TIMEZONE = "America/Bogota";
+
+function getTodayInTimezone(timezone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  return formatter.format(new Date());
+}
+
+function formatTime(iso: string, timezone: string) {
+  return new Date(iso).toLocaleTimeString("es-CO", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function formatDateTime(iso: string, timezone: string) {
+  return new Date(iso).toLocaleString("es-CO", {
+    timeZone: timezone,
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 export function BookingApp({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +91,8 @@ export function BookingApp({ slug }: { slug: string }) {
     );
   }, [business, service]);
 
+  const timezone = business?.business.timezone || DEFAULT_TIMEZONE;
+
   useEffect(() => {
     async function loadBusiness() {
       setLoading(true);
@@ -66,7 +100,13 @@ export function BookingApp({ slug }: { slug: string }) {
       try {
         const data = await apiRequest<BusinessResponse>(`/public/businesses/${slug}`);
         setBusiness(data);
-        setServiceId(data.services[0]?._id ?? "");
+        const defaultServiceId = data.services[0]?._id ?? "";
+        setServiceId(defaultServiceId);
+        const today = getTodayInTimezone(data.business.timezone || DEFAULT_TIMEZONE);
+        setDate(today);
+        if (defaultServiceId) {
+          void loadAvailability(today, defaultServiceId);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo cargar el negocio");
       } finally {
@@ -148,6 +188,7 @@ export function BookingApp({ slug }: { slug: string }) {
                 const nextService = event.target.value;
                 setServiceId(nextService);
                 setResourceId("");
+                setSelectedSlot(null);
                 if (date) void loadAvailability(date, nextService);
               }}
             >
@@ -163,6 +204,7 @@ export function BookingApp({ slug }: { slug: string }) {
             <input
               type="date"
               value={date}
+              min={getTodayInTimezone(timezone)}
               onChange={(event) => {
                 setDate(event.target.value);
                 void loadAvailability(event.target.value, serviceId, resourceId);
@@ -197,19 +239,19 @@ export function BookingApp({ slug }: { slug: string }) {
             {slots.length === 0 && (
               <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
             )}
-            {slots.map((slot) => (
-              <button
-                key={slot.startTime}
-                className={`rounded-full px-3 py-2 text-sm ${
-                  selectedSlot === slot.startTime
-                    ? "bg-primary-600 text-white"
-                    : "bg-white text-slate-700 shadow-sm"
-                }`}
-                onClick={() => setSelectedSlot(slot.startTime)}
-              >
-                {new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </button>
-            ))}
+              {slots.map((slot) => (
+                <button
+                  key={slot.startTime}
+                  className={`rounded-full px-3 py-2 text-sm ${
+                    selectedSlot === slot.startTime
+                      ? "bg-primary-600 text-white"
+                      : "bg-white text-slate-700 shadow-sm"
+                  }`}
+                  onClick={() => setSelectedSlot(slot.startTime)}
+                >
+                  {formatTime(slot.startTime, timezone)}
+                </button>
+              ))}
           </div>
         </div>
       </section>
@@ -243,6 +285,9 @@ export function BookingApp({ slug }: { slug: string }) {
           </button>
           <div className="text-xs text-slate-500">
             Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
+            <div>
+              Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}
+            </div>
           </div>
         </div>
       </aside>
