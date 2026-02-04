@@ -9,11 +9,18 @@ import { Business, BusinessSchema } from "../schemas/business.schema";
 import { Resource, ResourceSchema } from "../schemas/resource.schema";
 import { Service, ServiceSchema } from "../schemas/service.schema";
 import { AdminController } from "./admin.controller";
-import { AdminService } from "./admin.service";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { JwtStrategy } from "./auth/jwt.strategy";
 import { PlatformController } from "./platform.controller";
+import { AdminAccessService } from "./services/admin-access.service";
+import { AdminAppointmentsService } from "./services/admin-appointments.service";
+import { AdminBlocksService } from "./services/admin-blocks.service";
+import { AdminBusinessContextService } from "./services/admin-business-context.service";
+import { AdminBusinessService } from "./services/admin-business.service";
+import { AdminCatalogService } from "./services/admin-catalog.service";
+import { AdminPlatformService } from "./services/admin-platform.service";
+import { AdminStaffService } from "./services/admin-staff.service";
 
 @Module({
   imports: [
@@ -32,6 +39,17 @@ import { PlatformController } from "./platform.controller";
     ])
   ],
   controllers: [AuthController, AdminController, PlatformController],
-  providers: [AuthService, AdminService, JwtStrategy]
+  providers: [
+    AuthService,
+    AdminAccessService,
+    AdminAppointmentsService,
+    AdminBlocksService,
+    AdminBusinessContextService,
+    AdminBusinessService,
+    AdminCatalogService,
+    AdminPlatformService,
+    AdminStaffService,
+    JwtStrategy
+  ]
 })
 export class AdminModule {}

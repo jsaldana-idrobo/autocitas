@@ -5,6 +5,7 @@ export type TabKey =
   | "resources"
   | "staff"
   | "blocks"
+  | "calendar"
   | "hours"
   | "policies"
   | "appointments";
@@ -82,6 +83,7 @@ export const tabConfig: { key: TabKey; label: string }[] = [
   { key: "resources", label: "Recursos" },
   { key: "staff", label: "Staff" },
   { key: "blocks", label: "Bloqueos" },
+  { key: "calendar", label: "Calendario" },
   { key: "hours", label: "Horarios" },
   { key: "policies", label: "Politicas" },
   { key: "appointments", label: "Citas" }
@@ -95,9 +97,10 @@ export const ownerTabs: TabKey[] = [
   "resources",
   "staff",
   "blocks",
+  "calendar",
   "hours",
   "policies",
   "appointments"
 ];
 
-export const staffTabs: TabKey[] = ["blocks", "appointments"];
+export const staffTabs: TabKey[] = ["blocks", "calendar", "appointments"];

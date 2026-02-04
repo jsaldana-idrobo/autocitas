@@ -1,0 +1,152 @@
+import { useState } from "react";
+import { apiRequest } from "../../../lib/api";
+import { AppointmentItem, BlockItem } from "../types";
+import { addDays, getWeekStartValue, toIsoIfPossible } from "../utils";
+import { AdminApiContext } from "./types";
+
+export function useAdminCalendar(api: AdminApiContext) {
+  const [calendarWeekStart, setCalendarWeekStart] = useState(getWeekStartValue());
+  const [calendarInterval, setCalendarInterval] = useState(30);
+  const [calendarResourceId, setCalendarResourceId] = useState("");
+  const [calendarAppointments, setCalendarAppointments] = useState<AppointmentItem[]>([]);
+  const [calendarBlocks, setCalendarBlocks] = useState<BlockItem[]>([]);
+
+  async function loadCalendarData(nextWeekStart = calendarWeekStart) {
+    if (!api.businessId) {
+      setCalendarAppointments([]);
+      setCalendarBlocks([]);
+      return;
+    }
+    api.setLoading(true);
+    api.resetError();
+    try {
+      const from = `${nextWeekStart}T00:00:00.000Z`;
+      const to = `${addDays(nextWeekStart, 7)}T00:00:00.000Z`;
+      const appointments = await apiRequest<AppointmentItem[]>(
+        `/admin/businesses/${api.businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        api.authHeaders
+      );
+      const blocks = await apiRequest<BlockItem[]>(
+        `/admin/businesses/${api.businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        api.authHeaders
+      );
+      setCalendarAppointments(appointments);
+      setCalendarBlocks(blocks);
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error cargando calendario");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  async function createAppointment(payload: {
+    serviceId: string;
+    resourceId?: string;
+    customerName: string;
+    customerPhone: string;
+    startTime: string;
+  }) {
+    api.resetError();
+    try {
+      api.setLoading(true);
+      const payloadToSend = {
+        ...payload,
+        startTime: toIsoIfPossible(payload.startTime)
+      };
+      await apiRequest(`/admin/businesses/${api.businessId}/appointments`, {
+        method: "POST",
+        body: JSON.stringify(payloadToSend),
+        ...api.authHeaders
+      });
+      await loadCalendarData();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error creando cita");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  async function updateAppointmentDetails(
+    appointmentId: string,
+    payload: { serviceId?: string; resourceId?: string; startTime?: string }
+  ) {
+    api.resetError();
+    try {
+      api.setLoading(true);
+      const payloadToSend = {
+        ...payload,
+        startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined
+      };
+      await apiRequest(`/admin/businesses/${api.businessId}/appointments/${appointmentId}/details`, {
+        method: "PATCH",
+        body: JSON.stringify(payloadToSend),
+        ...api.authHeaders
+      });
+      await loadCalendarData();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error actualizando cita");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  async function cancelAppointment(appointmentId: string) {
+    api.resetError();
+    try {
+      api.setLoading(true);
+      await apiRequest(`/admin/businesses/${api.businessId}/appointments/${appointmentId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "cancelled" }),
+        ...api.authHeaders
+      });
+      await loadCalendarData();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error actualizando cita");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  async function createCalendarBlock(payload: {
+    startTime: string;
+    endTime: string;
+    resourceId?: string;
+    reason?: string;
+  }) {
+    api.resetError();
+    try {
+      api.setLoading(true);
+      const payloadToSend = {
+        ...payload,
+        startTime: toIsoIfPossible(payload.startTime),
+        endTime: toIsoIfPossible(payload.endTime)
+      };
+      await apiRequest(`/admin/businesses/${api.businessId}/blocks`, {
+        method: "POST",
+        body: JSON.stringify(payloadToSend),
+        ...api.authHeaders
+      });
+      await loadCalendarData();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  return {
+    calendarWeekStart,
+    setCalendarWeekStart,
+    calendarInterval,
+    setCalendarInterval,
+    calendarResourceId,
+    setCalendarResourceId,
+    calendarAppointments,
+    calendarBlocks,
+    loadCalendarData,
+    createAppointment,
+    updateAppointmentDetails,
+    cancelAppointment,
+    createCalendarBlock
+  };
+}

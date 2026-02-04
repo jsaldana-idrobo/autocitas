@@ -1,33 +1,26 @@
 import React, { useMemo, useState } from "react";
-import { apiRequest } from "../../lib/api";
-import { useAdminSession } from "./useAdminSession";
-import {
-  AppointmentItem,
-  BlockItem,
-  BusinessHoursItem,
-  BusinessProfile,
-  Policies,
-  ResourceItem,
-  ServiceItem,
-  StaffItem,
-  TabKey,
-  ownerTabs,
-  staffTabs
-} from "./types";
-import { getTodayValue, toIsoIfPossible } from "./utils";
 import { AdminHeader } from "./components/AdminHeader";
-import { AdminNav } from "./components/AdminNav";
 import { AdminLogin } from "./components/AdminLogin";
-import { PlatformSection } from "./sections/PlatformSection";
-import { BusinessSection } from "./sections/BusinessSection";
-import { ServicesSection } from "./sections/ServicesSection";
-import { ResourcesSection } from "./sections/ResourcesSection";
-import { StaffSection } from "./sections/StaffSection";
-import { BlocksSection } from "./sections/BlocksSection";
-import { HoursSection } from "./sections/HoursSection";
-import { PoliciesSection } from "./sections/PoliciesSection";
+import { AdminNav } from "./components/AdminNav";
 import { AppointmentsSection } from "./sections/AppointmentsSection";
-import { dayLabels } from "./types";
+import { BlocksSection } from "./sections/BlocksSection";
+import { BusinessSection } from "./sections/BusinessSection";
+import { HoursSection } from "./sections/HoursSection";
+import { PlatformSection } from "./sections/PlatformSection";
+import { PoliciesSection } from "./sections/PoliciesSection";
+import { ResourcesSection } from "./sections/ResourcesSection";
+import { ServicesSection } from "./sections/ServicesSection";
+import { StaffSection } from "./sections/StaffSection";
+import { CalendarSection } from "./sections/CalendarSection";
+import { getTodayValue, addDays } from "./utils";
+import { useAdminSession } from "./useAdminSession";
+import { ownerTabs, staffTabs, TabKey } from "./types";
+import { useAdminPlatform } from "./hooks/useAdminPlatform";
+import { useAdminCatalog } from "./hooks/useAdminCatalog";
+import { useAdminBusinessSettings } from "./hooks/useAdminBusinessSettings";
+import { useAdminBlocks } from "./hooks/useAdminBlocks";
+import { useAdminAppointments } from "./hooks/useAdminAppointments";
+import { useAdminCalendar } from "./hooks/useAdminCalendar";
 
 export function AdminApp() {
   const { token, businessId, role, resourceId, login, logout, selectBusiness } = useAdminSession();
@@ -35,30 +28,25 @@ export function AdminApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [services, setServices] = useState<ServiceItem[]>([]);
-  const [resources, setResources] = useState<ResourceItem[]>([]);
-  const [staff, setStaff] = useState<StaffItem[]>([]);
-  const [blocks, setBlocks] = useState<BlockItem[]>([]);
-  const [hours, setHours] = useState<BusinessHoursItem[]>([]);
-  const [policies, setPolicies] = useState<Policies | null>(null);
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>({});
-  const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
-  const [appointmentsDate, setAppointmentsDate] = useState("");
-  const [appointmentsStatus, setAppointmentsStatus] = useState("");
-  const [appointmentsSearch, setAppointmentsSearch] = useState("");
-  const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
-  const [ownerBusinessId, setOwnerBusinessId] = useState("");
-  const [platformOwners, setPlatformOwners] = useState<StaffItem[]>([]);
-  const [platformStaff, setPlatformStaff] = useState<StaffItem[]>([]);
-  const [platformAppointments, setPlatformAppointments] = useState<AppointmentItem[]>([]);
-  const [platformAppointmentsDate, setPlatformAppointmentsDate] = useState("");
-  const [platformAppointmentsStatus, setPlatformAppointmentsStatus] = useState("");
-  const [platformAppointmentsSearch, setPlatformAppointmentsSearch] = useState("");
+  const authHeaders = useMemo(() => ({ token }), [token]);
+  const resetError = () => setError(null);
 
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
-  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const apiContext = {
+    authHeaders,
+    businessId,
+    role,
+    resourceId,
+    setLoading,
+    setError,
+    resetError
+  };
+
+  const platform = useAdminPlatform(apiContext);
+  const catalog = useAdminCatalog(apiContext);
+  const businessSettings = useAdminBusinessSettings(apiContext);
+  const blocks = useAdminBlocks(apiContext);
+  const appointments = useAdminAppointments(apiContext);
+  const calendar = useAdminCalendar(apiContext);
 
   React.useEffect(() => {
     if (role === "staff") {
@@ -70,10 +58,6 @@ export function AdminApp() {
   }, [role]);
 
   const isAuthed = token.length > 0 && (role === "platform_admin" || businessId.length > 0);
-
-  const resetError = () => setError(null);
-
-  const authHeaders = useMemo(() => ({ token }), [token]);
 
   const availableTabs =
     role === "staff"
@@ -117,629 +101,40 @@ export function AdminApp() {
     logout();
   }
 
-  async function loadServices() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<ServiceItem[]>(
-        `/admin/businesses/${businessId}/services`,
-        authHeaders
-      );
-      setServices(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando servicios");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadResources() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<ResourceItem[]>(
-        `/admin/businesses/${businessId}/resources`,
-        authHeaders
-      );
-      setResources(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando recursos");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadStaff() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<StaffItem[]>(
-        `/admin/businesses/${businessId}/staff`,
-        authHeaders
-      );
-      setStaff(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando staff");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadBlocks() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<BlockItem[]>(
-        `/admin/businesses/${businessId}/blocks`,
-        authHeaders
-      );
-      setBlocks(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando bloqueos");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadBusinessSettings() {
-    setLoading(true);
-    resetError();
-    try {
-      const business = await apiRequest<
-        BusinessProfile & { hours: BusinessHoursItem[]; policies: Policies }
-      >(`/admin/businesses/${businessId}`, authHeaders);
-      setHours(business.hours || []);
-      setPolicies(business.policies || null);
-      setBusinessProfile({
-        _id: business._id,
-        name: business.name,
-        slug: business.slug,
-        timezone: business.timezone,
-        contactPhone: business.contactPhone,
-        address: business.address,
-        status: business.status
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando negocio");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadAppointments(nextDate?: string, nextStatus?: string, nextSearch?: string) {
-    setLoading(true);
-    resetError();
-    try {
-      const params = new URLSearchParams();
-      const dateValue = nextDate ?? appointmentsDate;
-      const statusValue = nextStatus ?? appointmentsStatus;
-      const searchValue = nextSearch ?? appointmentsSearch;
-      if (dateValue) params.set("date", dateValue);
-      if (statusValue) params.set("status", statusValue);
-      if (searchValue) params.set("search", searchValue);
-      const query = params.toString() ? `?${params.toString()}` : "";
-      const data = await apiRequest<AppointmentItem[]>(
-        `/admin/businesses/${businessId}/appointments${query}`,
-        authHeaders
-      );
-      setAppointments(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando citas");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadBusinesses() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<BusinessProfile[]>("/admin/platform/businesses", authHeaders);
-      setBusinesses(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando negocios");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadPlatformOwners() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=owner", authHeaders);
-      setPlatformOwners(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando owners");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadPlatformStaff() {
-    setLoading(true);
-    resetError();
-    try {
-      const data = await apiRequest<StaffItem[]>("/admin/platform/users?role=staff", authHeaders);
-      setPlatformStaff(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando staff");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function loadPlatformAppointments(nextDate?: string, nextStatus?: string, nextSearch?: string) {
-    setLoading(true);
-    resetError();
-    try {
-      const params = new URLSearchParams();
-      const dateValue = nextDate ?? platformAppointmentsDate;
-      const statusValue = nextStatus ?? platformAppointmentsStatus;
-      const searchValue = nextSearch ?? platformAppointmentsSearch;
-      if (dateValue) params.set("date", dateValue);
-      if (statusValue) params.set("status", statusValue);
-      if (searchValue) params.set("search", searchValue);
-      const query = params.toString() ? `?${params.toString()}` : "";
-      const data = await apiRequest<AppointmentItem[]>(`/admin/platform/appointments${query}`, authHeaders);
-      setPlatformAppointments(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error cargando citas globales");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createBusiness(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") || "").trim(),
-      slug: String(form.get("slug") || "").trim(),
-      timezone: String(form.get("timezone") || "").trim() || undefined,
-      contactPhone: String(form.get("contactPhone") || "").trim() || undefined,
-      address: String(form.get("address") || "").trim() || undefined,
-      status: (String(form.get("status") || "").trim() as "active" | "inactive") || undefined
-    };
-
-    try {
-      setLoading(true);
-      await apiRequest("/admin/platform/businesses", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      await loadBusinesses();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando negocio");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createOwner(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      businessId: String(form.get("businessId") || "").trim(),
-      email: String(form.get("email") || "").trim(),
-      password: String(form.get("password") || "").trim()
-    };
-
-    try {
-      setLoading(true);
-      await apiRequest("/admin/platform/owners", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      setOwnerBusinessId("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando owner");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createService(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") || "").trim(),
-      durationMinutes: Number(form.get("durationMinutes")),
-      price: form.get("price") ? Number(form.get("price")) : undefined
-    };
-    if (!payload.name || !payload.durationMinutes || payload.durationMinutes <= 0) {
-      setError("Nombre y duracion son obligatorios.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/services`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      await loadServices();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando servicio");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateService(serviceId: string, payload: Partial<ServiceItem>) {
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/services/${serviceId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      setEditingServiceId(null);
-      await loadServices();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error actualizando servicio");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createResource(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") || "").trim()
-    };
-    if (!payload.name) {
-      setError("El nombre del recurso es obligatorio.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/resources`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      await loadResources();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando recurso");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateResource(resourceIdValue: string, payload: Partial<ResourceItem>) {
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/resources/${resourceIdValue}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      setEditingResourceId(null);
-      await loadResources();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error actualizando recurso");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function deleteResource(resourceIdValue: string) {
-    if (!confirm("Deseas desactivar este recurso?")) {
-      return;
-    }
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/resources/${resourceIdValue}`, {
-        method: "DELETE",
-        ...authHeaders
-      });
-      await loadResources();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error eliminando recurso");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createStaff(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      email: String(form.get("email") || "").trim(),
-      password: String(form.get("password") || "").trim(),
-      resourceId: String(form.get("resourceId") || "").trim()
-    };
-    if (!payload.email || !payload.password || !payload.resourceId) {
-      setError("Email, password y recurso son obligatorios.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/staff`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      await loadStaff();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando staff");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateStaff(
-    staffId: string,
-    payload: { resourceId?: string; password?: string; active?: boolean }
-  ) {
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/staff/${staffId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      setEditingStaffId(null);
-      await loadStaff();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error actualizando staff");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function createBlock(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const startRaw = String(form.get("startTime") || "").trim();
-    const endRaw = String(form.get("endTime") || "").trim();
-    const payload = {
-      startTime: toIsoIfPossible(startRaw),
-      endTime: toIsoIfPossible(endRaw),
-      resourceId: String(form.get("resourceId") || "").trim() || undefined,
-      reason: String(form.get("reason") || "").trim() || undefined
-    };
-    if (role === "staff" && resourceId) {
-      payload.resourceId = resourceId;
-    }
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/blocks`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      event.currentTarget.reset();
-      await loadBlocks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error creando bloqueo");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateBlock(blockId: string, payload: Partial<BlockItem>) {
-    resetError();
-    const payloadToSend = {
-      ...payload,
-      startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined,
-      endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
-    };
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/blocks/${blockId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payloadToSend),
-        ...authHeaders
-      });
-      setEditingBlockId(null);
-      await loadBlocks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error actualizando bloqueo");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function updateAppointmentStatus(appointmentId: string, status: string) {
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/appointments/${appointmentId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-        ...authHeaders
-      });
-      await loadAppointments();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error actualizando cita");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function deleteBlock(blockId: string) {
-    if (!confirm("Deseas eliminar este bloqueo?")) {
-      return;
-    }
-    resetError();
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/blocks/${blockId}`, {
-        method: "DELETE",
-        ...authHeaders
-      });
-      await loadBlocks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error eliminando bloqueo");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function saveHours(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    let payloadHours: { dayOfWeek: number; openTime: string; closeTime: string }[] = [];
-    try {
-      payloadHours = dayLabels
-        .map((_, index) => {
-          const openTime = String(form.get(`open-${index}`) || "").trim();
-          const closeTime = String(form.get(`close-${index}`) || "").trim();
-          if (!openTime && !closeTime) {
-            return null;
-          }
-          if (!openTime || !closeTime) {
-            throw new Error(`Completa horario de ${dayLabels[index]}.`);
-          }
-          return { dayOfWeek: index, openTime, closeTime };
-        })
-        .filter(
-          (item): item is { dayOfWeek: number; openTime: string; closeTime: string } =>
-            item !== null
-        );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error validando horarios");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      if (payloadHours.length === 0) {
-        throw new Error("Define al menos un horario.");
-      }
-      await apiRequest(`/admin/businesses/${businessId}/hours`, {
-        method: "PATCH",
-        body: JSON.stringify({ hours: payloadHours }),
-        ...authHeaders
-      });
-      await loadBusinessSettings();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando horarios");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function savePolicies(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      cancellationHours: Number(form.get("cancellationHours")),
-      rescheduleLimit: Number(form.get("rescheduleLimit")),
-      allowSameDay: form.get("allowSameDay") === "on"
-    };
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}/policies`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      await loadBusinessSettings();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando politicas");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function saveBusinessProfile(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    resetError();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") || "").trim() || undefined,
-      slug: String(form.get("slug") || "").trim() || undefined,
-      timezone: String(form.get("timezone") || "").trim() || undefined,
-      contactPhone: String(form.get("contactPhone") || "").trim() || undefined,
-      address: String(form.get("address") || "").trim() || undefined,
-      status: (String(form.get("status") || "").trim() as "active" | "inactive") || undefined
-    };
-
-    try {
-      setLoading(true);
-      await apiRequest(`/admin/businesses/${businessId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-        ...authHeaders
-      });
-      await loadBusinessSettings();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error guardando negocio");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function ensureResourcesLoaded() {
-    if (resources.length === 0) {
-      await loadResources();
-    }
-  }
-
-  async function ensureServicesLoaded() {
-    if (services.length === 0) {
-      await loadServices();
-    }
-  }
-
   async function onPlatformTab() {
-    await Promise.all([loadBusinesses(), loadPlatformOwners(), loadPlatformStaff()]);
-    const nextDate = platformAppointmentsDate || getTodayValue();
-    if (!platformAppointmentsDate) {
-      setPlatformAppointmentsDate(nextDate);
+    await Promise.all([platform.loadBusinesses(), platform.loadPlatformOwners(), platform.loadPlatformStaff()]);
+    const nextDate = platform.platformAppointmentsDate || getTodayValue();
+    if (!platform.platformAppointmentsDate) {
+      platform.setPlatformAppointmentsDate(nextDate);
     }
-    await loadPlatformAppointments(nextDate, platformAppointmentsStatus, platformAppointmentsSearch);
+    await platform.loadPlatformAppointments(
+      nextDate,
+      platform.platformAppointmentsStatus,
+      platform.platformAppointmentsSearch
+    );
   }
 
   async function onBlocksTab() {
     if (role === "staff") {
-      await loadBlocks();
+      await blocks.loadBlocks();
       return;
     }
-    await Promise.all([loadBlocks(), ensureResourcesLoaded()]);
+    await Promise.all([blocks.loadBlocks(), catalog.ensureResourcesLoaded()]);
   }
 
   async function onAppointmentsTab() {
-    const nextDate = appointmentsDate || getTodayValue();
-    if (!appointmentsDate) {
-      setAppointmentsDate(nextDate);
+    const nextDate = appointments.appointmentsDate || getTodayValue();
+    if (!appointments.appointmentsDate) {
+      appointments.setAppointmentsDate(nextDate);
     }
     if (role === "staff") {
-      await loadAppointments(nextDate, appointmentsStatus, appointmentsSearch);
+      await appointments.loadAppointments(nextDate, appointments.appointmentsStatus, appointments.appointmentsSearch);
       return;
     }
     await Promise.all([
-      loadAppointments(nextDate, appointmentsStatus, appointmentsSearch),
-      ensureResourcesLoaded(),
-      ensureServicesLoaded()
+      appointments.loadAppointments(nextDate, appointments.appointmentsStatus, appointments.appointmentsSearch),
+      catalog.ensureResourcesLoaded(),
+      catalog.ensureServicesLoaded()
     ]);
   }
 
@@ -750,23 +145,28 @@ export function AdminApp() {
       return;
     }
     if (tab === "services") {
-      void loadServices();
+      void catalog.loadServices();
       return;
     }
     if (tab === "resources") {
-      void loadResources();
+      void catalog.loadResources();
       return;
     }
     if (tab === "staff") {
-      void Promise.all([loadStaff(), ensureResourcesLoaded()]);
+      void Promise.all([catalog.loadStaff(), catalog.ensureResourcesLoaded()]);
       return;
     }
     if (tab === "blocks") {
       void onBlocksTab();
       return;
     }
+    if (tab === "calendar") {
+      void Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()]);
+      void calendar.loadCalendarData();
+      return;
+    }
     if (tab === "business" || tab === "hours" || tab === "policies") {
-      void loadBusinessSettings();
+      void businessSettings.loadBusinessSettings();
       return;
     }
     if (tab === "appointments") {
@@ -793,112 +193,141 @@ export function AdminApp() {
 
       {activeTab === "platform" && role === "platform_admin" && (
         <PlatformSection
-          businesses={businesses}
-          ownerBusinessId={ownerBusinessId}
-          setOwnerBusinessId={setOwnerBusinessId}
-          loadBusinesses={loadBusinesses}
-          createBusiness={createBusiness}
-          createOwner={createOwner}
+          businesses={platform.businesses}
+          ownerBusinessId={platform.ownerBusinessId}
+          setOwnerBusinessId={platform.setOwnerBusinessId}
+          loadBusinesses={platform.loadBusinesses}
+          createBusiness={platform.createBusiness}
+          createOwner={platform.createOwner}
           onSelectBusiness={(id) => {
             selectBusiness(id);
-            setOwnerBusinessId(id);
+            platform.setOwnerBusinessId(id);
           }}
-          owners={platformOwners}
-          staff={platformStaff}
-          appointments={platformAppointments}
-          appointmentsDate={platformAppointmentsDate}
-          setAppointmentsDate={setPlatformAppointmentsDate}
-          appointmentsStatus={platformAppointmentsStatus}
-          setAppointmentsStatus={setPlatformAppointmentsStatus}
-          appointmentsSearch={platformAppointmentsSearch}
-          setAppointmentsSearch={setPlatformAppointmentsSearch}
-          loadOwners={loadPlatformOwners}
-          loadStaff={loadPlatformStaff}
-          loadAppointments={() => loadPlatformAppointments()}
+          owners={platform.platformOwners}
+          staff={platform.platformStaff}
+          appointments={platform.platformAppointments}
+          appointmentsDate={platform.platformAppointmentsDate}
+          setAppointmentsDate={platform.setPlatformAppointmentsDate}
+          appointmentsStatus={platform.platformAppointmentsStatus}
+          setAppointmentsStatus={platform.setPlatformAppointmentsStatus}
+          appointmentsSearch={platform.platformAppointmentsSearch}
+          setAppointmentsSearch={platform.setPlatformAppointmentsSearch}
+          loadOwners={platform.loadPlatformOwners}
+          loadStaff={platform.loadPlatformStaff}
+          loadAppointments={() => platform.loadPlatformAppointments()}
         />
       )}
 
       {activeTab === "business" && role !== "staff" && (
         <BusinessSection
-          businessProfile={businessProfile}
-          loadBusinessSettings={loadBusinessSettings}
-          saveBusinessProfile={saveBusinessProfile}
+          businessProfile={businessSettings.businessProfile}
+          loadBusinessSettings={businessSettings.loadBusinessSettings}
+          saveBusinessProfile={businessSettings.saveBusinessProfile}
         />
       )}
 
       {activeTab === "services" && role !== "staff" && (
         <ServicesSection
-          services={services}
-          resources={resources}
-          editingServiceId={editingServiceId}
-          setEditingServiceId={setEditingServiceId}
-          createService={createService}
-          updateService={updateService}
-          loadServices={loadServices}
-          ensureResourcesLoaded={ensureResourcesLoaded}
+          services={catalog.services}
+          resources={catalog.resources}
+          editingServiceId={catalog.editingServiceId}
+          setEditingServiceId={catalog.setEditingServiceId}
+          createService={catalog.createService}
+          updateService={catalog.updateService}
+          loadServices={catalog.loadServices}
+          ensureResourcesLoaded={catalog.ensureResourcesLoaded}
         />
       )}
 
       {activeTab === "resources" && role !== "staff" && (
         <ResourcesSection
-          resources={resources}
-          editingResourceId={editingResourceId}
-          setEditingResourceId={setEditingResourceId}
-          createResource={createResource}
-          updateResource={updateResource}
-          deleteResource={deleteResource}
-          loadResources={loadResources}
+          resources={catalog.resources}
+          editingResourceId={catalog.editingResourceId}
+          setEditingResourceId={catalog.setEditingResourceId}
+          createResource={catalog.createResource}
+          updateResource={catalog.updateResource}
+          deleteResource={catalog.deleteResource}
+          loadResources={catalog.loadResources}
         />
       )}
 
       {activeTab === "staff" && role !== "staff" && (
         <StaffSection
-          staff={staff}
-          resources={resources}
-          editingStaffId={editingStaffId}
-          setEditingStaffId={setEditingStaffId}
-          createStaff={createStaff}
-          updateStaff={updateStaff}
-          loadStaff={loadStaff}
+          staff={catalog.staff}
+          resources={catalog.resources}
+          editingStaffId={catalog.editingStaffId}
+          setEditingStaffId={catalog.setEditingStaffId}
+          createStaff={catalog.createStaff}
+          updateStaff={catalog.updateStaff}
+          loadStaff={catalog.loadStaff}
+          loadResources={catalog.loadResources}
         />
       )}
 
       {activeTab === "blocks" && (
         <BlocksSection
-          blocks={blocks}
-          resources={resources}
-          role={role}
-          resourceId={resourceId}
-          editingBlockId={editingBlockId}
-          setEditingBlockId={setEditingBlockId}
-          createBlock={createBlock}
-          updateBlock={updateBlock}
-          deleteBlock={deleteBlock}
-          loadBlocks={loadBlocks}
+          blocks={blocks.blocks}
+          resources={catalog.resources}
+          editingBlockId={blocks.editingBlockId}
+          setEditingBlockId={blocks.setEditingBlockId}
+          createBlock={blocks.createBlock}
+          updateBlock={blocks.updateBlock}
+          deleteBlock={blocks.deleteBlock}
+          loadBlocks={blocks.loadBlocks}
         />
       )}
 
       {activeTab === "hours" && role !== "staff" && (
-        <HoursSection hours={hours} saveHours={saveHours} />
+        <HoursSection hours={businessSettings.hours} saveHours={businessSettings.saveHours} />
       )}
 
       {activeTab === "policies" && role !== "staff" && (
-        <PoliciesSection policies={policies} savePolicies={savePolicies} />
+        <PoliciesSection policies={businessSettings.policies} savePolicies={businessSettings.savePolicies} />
       )}
 
       {activeTab === "appointments" && (
         <AppointmentsSection
-          appointments={appointments}
-          services={services}
-          resources={resources}
-          appointmentsDate={appointmentsDate}
-          setAppointmentsDate={setAppointmentsDate}
-          appointmentsStatus={appointmentsStatus}
-          setAppointmentsStatus={setAppointmentsStatus}
-          appointmentsSearch={appointmentsSearch}
-          setAppointmentsSearch={setAppointmentsSearch}
-          loadAppointments={() => loadAppointments()}
-          updateAppointmentStatus={updateAppointmentStatus}
+          appointments={appointments.appointments}
+          services={catalog.services}
+          resources={catalog.resources}
+          appointmentsDate={appointments.appointmentsDate}
+          setAppointmentsDate={appointments.setAppointmentsDate}
+          appointmentsStatus={appointments.appointmentsStatus}
+          setAppointmentsStatus={appointments.setAppointmentsStatus}
+          appointmentsSearch={appointments.appointmentsSearch}
+          setAppointmentsSearch={appointments.setAppointmentsSearch}
+          loadAppointments={() => appointments.loadAppointments()}
+          updateAppointmentStatus={appointments.updateAppointmentStatus}
+        />
+      )}
+
+      {activeTab === "calendar" && (
+        <CalendarSection
+          weekStart={calendar.calendarWeekStart}
+          intervalMinutes={calendar.calendarInterval}
+          onPrevWeek={() => {
+            const prev = addDays(calendar.calendarWeekStart, -7);
+            calendar.setCalendarWeekStart(prev);
+            void calendar.loadCalendarData(prev);
+          }}
+          onNextWeek={() => {
+            const next = addDays(calendar.calendarWeekStart, 7);
+            calendar.setCalendarWeekStart(next);
+            void calendar.loadCalendarData(next);
+          }}
+          onIntervalChange={calendar.setCalendarInterval}
+          onSelectResource={calendar.setCalendarResourceId}
+          selectedResourceId={calendar.calendarResourceId}
+          resources={catalog.resources}
+          services={catalog.services}
+          appointments={calendar.calendarAppointments}
+          blocks={calendar.calendarBlocks}
+          onCreateAppointment={calendar.createAppointment}
+          onCreateBlock={calendar.createCalendarBlock}
+          onUpdateAppointment={calendar.updateAppointmentDetails}
+          onCancelAppointment={calendar.cancelAppointment}
+          role={role}
+          resourceId={resourceId}
         />
       )}
 
