@@ -1,13 +1,15 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
-import express, { type Express } from "express";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import express from "express";
 import { AppModule } from "../src/app.module";
 
-let cachedServer: Express | null = null;
+type ExpressHandler = (req: VercelRequest, res: VercelResponse) => void;
 
-async function bootstrap(): Promise<Express> {
+let cachedServer: ExpressHandler | null = null;
+
+async function bootstrap(): Promise<ExpressHandler> {
   const server = express();
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalPipes(
@@ -23,7 +25,7 @@ async function bootstrap(): Promise<Express> {
   });
   app.setGlobalPrefix("api");
   await app.init();
-  return server;
+  return server as unknown as ExpressHandler;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

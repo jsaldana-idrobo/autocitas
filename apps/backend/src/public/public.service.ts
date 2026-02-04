@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { DateTime } from "luxon";
-import { Model, Types } from "mongoose";
+import { Model, Types, isValidObjectId } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema";
 import { Block } from "../schemas/block.schema";
 import { Business } from "../schemas/business.schema";
@@ -175,7 +175,7 @@ export class PublicService {
     assertNotInPast(dateLocal, business);
     assertSameDayAllowed(dateLocal, business);
 
-    if (!Types.ObjectId.isValid(params.serviceId)) {
+    if (!isValidObjectId(params.serviceId)) {
       throw new BadRequestException("Invalid serviceId.");
     }
 
@@ -187,7 +187,9 @@ export class PublicService {
     }
 
     const dayIndex = dateLocal.weekday % 7;
-    const dayHours = business.hours?.find((hour) => hour.dayOfWeek === dayIndex);
+    const dayHours = business.hours?.find(
+      (hour: Business["hours"][number]) => hour.dayOfWeek === dayIndex
+    );
     if (!dayHours) {
       return { slots: [] };
     }
@@ -198,9 +200,11 @@ export class PublicService {
     }
 
     const durationMinutes = service.durationMinutes;
-    const allowedResourceIds = (service.allowedResourceIds || []).map((id) => id.toString());
+    const allowedResourceIds = (service.allowedResourceIds || []).map(
+      (id: Types.ObjectId | string) => id.toString()
+    );
 
-    if (params.resourceId && !Types.ObjectId.isValid(params.resourceId)) {
+    if (params.resourceId && !isValidObjectId(params.resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -264,11 +268,11 @@ export class PublicService {
       throw new NotFoundException("Business not found");
     }
 
-    if (!Types.ObjectId.isValid(payload.serviceId)) {
+    if (!isValidObjectId(payload.serviceId)) {
       throw new BadRequestException("Invalid serviceId.");
     }
 
-    if (payload.resourceId && !Types.ObjectId.isValid(payload.resourceId)) {
+    if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 

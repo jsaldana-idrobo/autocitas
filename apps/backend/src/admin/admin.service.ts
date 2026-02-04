@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { Model, Types, isValidObjectId } from "mongoose";
 import { hash } from "bcryptjs";
 import { Block } from "../schemas/block.schema";
 import { Business } from "../schemas/business.schema";
@@ -36,7 +36,7 @@ export class AdminService {
   ) {}
 
   async getBusinessContext(businessId: string) {
-    if (!Types.ObjectId.isValid(businessId)) {
+    if (!isValidObjectId(businessId)) {
       throw new BadRequestException("Invalid businessId.");
     }
 
@@ -84,7 +84,7 @@ export class AdminService {
     await this.getBusinessContext(businessId);
 
     const allowedResourceIds = (payload.allowedResourceIds || []).filter((id) =>
-      Types.ObjectId.isValid(id)
+      isValidObjectId(id)
     );
 
     return this.serviceModel.create({
@@ -100,7 +100,7 @@ export class AdminService {
   async updateService(businessId: string, serviceId: string, payload: UpdateServiceDto) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(serviceId)) {
+    if (!isValidObjectId(serviceId)) {
       throw new BadRequestException("Invalid serviceId.");
     }
 
@@ -110,7 +110,7 @@ export class AdminService {
 
     const update: Record<string, unknown> = { ...payload };
     if (payload.allowedResourceIds) {
-      update.allowedResourceIds = payload.allowedResourceIds.filter((id) => Types.ObjectId.isValid(id));
+      update.allowedResourceIds = payload.allowedResourceIds.filter((id) => isValidObjectId(id));
     }
 
     const service = await this.serviceModel
@@ -149,7 +149,7 @@ export class AdminService {
   async createStaff(businessId: string, payload: CreateStaffDto) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(payload.resourceId)) {
+    if (!isValidObjectId(payload.resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -186,7 +186,7 @@ export class AdminService {
   }
 
   async createOwner(payload: CreateOwnerDto) {
-    if (!Types.ObjectId.isValid(payload.businessId)) {
+    if (!isValidObjectId(payload.businessId)) {
       throw new BadRequestException("Invalid businessId.");
     }
 
@@ -208,13 +208,13 @@ export class AdminService {
   async updateStaff(businessId: string, staffId: string, payload: UpdateStaffDto) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(staffId)) {
+    if (!isValidObjectId(staffId)) {
       throw new BadRequestException("Invalid staffId.");
     }
 
     const update: Record<string, unknown> = {};
     if (payload.resourceId) {
-      if (!Types.ObjectId.isValid(payload.resourceId)) {
+      if (!isValidObjectId(payload.resourceId)) {
         throw new BadRequestException("Invalid resourceId.");
       }
       update.resourceId = payload.resourceId;
@@ -255,7 +255,7 @@ export class AdminService {
   async updateResource(businessId: string, resourceId: string, payload: UpdateResourceDto) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(resourceId)) {
+    if (!isValidObjectId(resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -277,7 +277,7 @@ export class AdminService {
   async createBlock(businessId: string, payload: CreateBlockDto) {
     await this.getBusinessContext(businessId);
 
-    if (payload.resourceId && !Types.ObjectId.isValid(payload.resourceId)) {
+    if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -303,11 +303,11 @@ export class AdminService {
   async updateBlock(businessId: string, blockId: string, payload: UpdateBlockDto, resourceId?: string) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(blockId)) {
+    if (!isValidObjectId(blockId)) {
       throw new BadRequestException("Invalid blockId.");
     }
 
-    if (payload.resourceId && !Types.ObjectId.isValid(payload.resourceId)) {
+    if (payload.resourceId && !isValidObjectId(payload.resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -350,7 +350,7 @@ export class AdminService {
   async deleteBlock(businessId: string, blockId: string, resourceId?: string) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(blockId)) {
+    if (!isValidObjectId(blockId)) {
       throw new BadRequestException("Invalid blockId.");
     }
 
@@ -370,7 +370,7 @@ export class AdminService {
   async deleteResource(businessId: string, resourceId: string) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(resourceId)) {
+    if (!isValidObjectId(resourceId)) {
       throw new BadRequestException("Invalid resourceId.");
     }
 
@@ -488,7 +488,7 @@ export class AdminService {
   ) {
     await this.getBusinessContext(businessId);
 
-    if (!Types.ObjectId.isValid(appointmentId)) {
+    if (!isValidObjectId(appointmentId)) {
       throw new BadRequestException("Invalid appointmentId.");
     }
 
