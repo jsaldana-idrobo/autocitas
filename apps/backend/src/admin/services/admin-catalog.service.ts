@@ -67,6 +67,22 @@ export class AdminCatalogService {
     return service;
   }
 
+  async deleteService(businessId: string, serviceId: string) {
+    await this.businessContext.getBusinessContext(businessId);
+
+    if (!isValidObjectId(serviceId)) {
+      throw new BadRequestException("Invalid serviceId.");
+    }
+
+    const service = await this.serviceModel.findOneAndDelete({ _id: serviceId, businessId }).lean();
+
+    if (!service) {
+      throw new NotFoundException("Service not found");
+    }
+
+    return service;
+  }
+
   async listResources(businessId: string) {
     await this.businessContext.getBusinessContext(businessId);
     return this.resourceModel.find({ businessId }).lean();

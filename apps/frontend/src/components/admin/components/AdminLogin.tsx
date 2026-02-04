@@ -18,7 +18,6 @@ export function AdminLogin({
       <form className="mt-6 space-y-4" onSubmit={onLogin}>
         <InputField name="email" label="Email" type="email" />
         <InputField name="password" label="Password" type="password" />
-        <InputField name="businessId" label="Business ID (opcional)" />
         <button
           type="submit"
           className="w-full rounded-xl bg-primary-600 px-4 py-2 text-white"

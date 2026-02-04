@@ -1,20 +1,20 @@
 import React, { useMemo, useState } from "react";
 import { AdminHeader } from "./components/AdminHeader";
 import { AdminLogin } from "./components/AdminLogin";
-import { AdminNav } from "./components/AdminNav";
-import { AppointmentsSection } from "./sections/AppointmentsSection";
-import { BlocksSection } from "./sections/BlocksSection";
-import { BusinessSection } from "./sections/BusinessSection";
-import { HoursSection } from "./sections/HoursSection";
-import { PlatformSection } from "./sections/PlatformSection";
-import { PoliciesSection } from "./sections/PoliciesSection";
-import { ResourcesSection } from "./sections/ResourcesSection";
-import { ServicesSection } from "./sections/ServicesSection";
-import { StaffSection } from "./sections/StaffSection";
+import { AdminSidebar } from "./components/AdminSidebar";
+import { AppointmentsSection } from "./sections/appointments/AppointmentsSection";
+import { BlocksSection } from "./sections/blocks/BlocksSection";
+import { BusinessSection } from "./sections/business/BusinessSection";
+import { HoursSection } from "./sections/hours/HoursSection";
+import { PlatformSection } from "./sections/platform/PlatformSection";
+import { PoliciesSection } from "./sections/policies/PoliciesSection";
+import { ResourcesSection } from "./sections/resources/ResourcesSection";
+import { ServicesSection } from "./sections/services/ServicesSection";
+import { StaffSection } from "./sections/staff/StaffSection";
 import { CalendarSection } from "./sections/CalendarSection";
 import { getTodayValue, addDays } from "./utils";
 import { useAdminSession } from "./useAdminSession";
-import { ownerTabs, staffTabs, TabKey } from "./types";
+import { ownerTabs, platformTabs, staffTabs, TabKey } from "./types";
 import { useAdminPlatform } from "./hooks/useAdminPlatform";
 import { useAdminCatalog } from "./hooks/useAdminCatalog";
 import { useAdminBusinessSettings } from "./hooks/useAdminBusinessSettings";
@@ -23,7 +23,7 @@ import { useAdminAppointments } from "./hooks/useAdminAppointments";
 import { useAdminCalendar } from "./hooks/useAdminCalendar";
 
 export function AdminApp() {
-  const { token, businessId, role, resourceId, login, logout, selectBusiness } = useAdminSession();
+  const { token, businessId, role, resourceId, login, logout } = useAdminSession();
   const [activeTab, setActiveTab] = useState<TabKey>("services");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,18 +53,31 @@ export function AdminApp() {
       setActiveTab("appointments");
     }
     if (role === "platform_admin") {
-      setActiveTab("platform");
+      setActiveTab("platform_businesses");
     }
   }, [role]);
+
+  React.useEffect(() => {
+    if (!businessId) return;
+    catalog.resetLoaded();
+    blocks.resetLoaded();
+    appointments.resetLoaded();
+    businessSettings.resetLoaded();
+    calendar.resetLoaded();
+  }, [businessId]);
+
+  React.useEffect(() => {
+    if (role === "platform_admin" && activeTab === "platform_businesses") {
+      if (!platform.businessesLoaded) {
+        void platform.loadBusinesses();
+      }
+    }
+  }, [activeTab, platform, role]);
 
   const isAuthed = token.length > 0 && (role === "platform_admin" || businessId.length > 0);
 
   const availableTabs =
-    role === "staff"
-      ? staffTabs
-      : role === "platform_admin"
-        ? ["platform", ...ownerTabs]
-        : ownerTabs;
+    role === "staff" ? staffTabs : role === "platform_admin" ? platformTabs : ownerTabs;
   const canUseBusinessTabs = role !== "platform_admin" || businessId.length > 0;
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
@@ -73,7 +86,6 @@ export function AdminApp() {
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") || "").trim();
     const password = String(form.get("password") || "").trim();
-    const business = String(form.get("businessId") || "").trim();
 
     if (!email || !password) {
       setError("Completa email y password.");
@@ -82,11 +94,11 @@ export function AdminApp() {
 
     try {
       setLoading(true);
-      const payload = await login(email, password, business);
+      const payload = await login(email, password);
       if (payload.role === "staff") {
         setActiveTab("appointments");
       } else if (payload.role === "platform_admin") {
-        setActiveTab("platform");
+        setActiveTab("platform_businesses");
       } else {
         setActiveTab("services");
       }
@@ -101,21 +113,34 @@ export function AdminApp() {
     logout();
   }
 
-  async function onPlatformTab() {
-    await Promise.all([
-      platform.loadBusinesses(),
-      platform.loadPlatformOwners(),
-      platform.loadPlatformStaff()
-    ]);
+  async function onPlatformBusinesses() {
+    await platform.loadBusinesses();
+  }
+
+  async function onPlatformOwners() {
+    if (!platform.platformOwnersLoaded) {
+      await platform.loadPlatformOwners();
+    }
+  }
+
+  async function onPlatformStaff() {
+    if (!platform.platformStaffLoaded) {
+      await platform.loadPlatformStaff();
+    }
+  }
+
+  async function onPlatformAppointments() {
     const nextDate = platform.platformAppointmentsDate || getTodayValue();
     if (!platform.platformAppointmentsDate) {
       platform.setPlatformAppointmentsDate(nextDate);
     }
-    await platform.loadPlatformAppointments(
-      nextDate,
-      platform.platformAppointmentsStatus,
-      platform.platformAppointmentsSearch
-    );
+    if (!platform.platformAppointmentsLoaded) {
+      await platform.loadPlatformAppointments(
+        nextDate,
+        platform.platformAppointmentsStatus,
+        platform.platformAppointmentsSearch
+      );
+    }
   }
 
   async function onBlocksTab() {
@@ -152,37 +177,65 @@ export function AdminApp() {
 
   function handleTabSelect(tab: TabKey) {
     setActiveTab(tab);
-    if (tab === "platform") {
-      void onPlatformTab();
+    if (tab === "platform_businesses") {
+      if (!platform.businessesLoaded) {
+        void onPlatformBusinesses();
+      }
+      return;
+    }
+    if (tab === "platform_owners") {
+      void onPlatformOwners();
+      return;
+    }
+    if (tab === "platform_staff") {
+      void onPlatformStaff();
+      return;
+    }
+    if (tab === "platform_appointments") {
+      void onPlatformAppointments();
       return;
     }
     if (tab === "services") {
-      void catalog.loadServices();
+      if (!catalog.servicesLoaded) {
+        void catalog.loadServices();
+      }
       return;
     }
     if (tab === "resources") {
-      void catalog.loadResources();
+      if (!catalog.resourcesLoaded) {
+        void catalog.loadResources();
+      }
       return;
     }
     if (tab === "staff") {
-      void Promise.all([catalog.loadStaff(), catalog.ensureResourcesLoaded()]);
+      if (!catalog.staffLoaded) {
+        void Promise.all([catalog.loadStaff(), catalog.ensureResourcesLoaded()]);
+      }
       return;
     }
     if (tab === "blocks") {
-      void onBlocksTab();
+      if (!blocks.blocksLoaded) {
+        void onBlocksTab();
+      }
       return;
     }
     if (tab === "calendar") {
-      void Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()]);
-      void calendar.loadCalendarData();
+      if (!calendar.calendarLoaded) {
+        void Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()]);
+        void calendar.loadCalendarData();
+      }
       return;
     }
     if (tab === "business" || tab === "hours" || tab === "policies") {
-      void businessSettings.loadBusinessSettings();
+      if (!businessSettings.businessLoaded) {
+        void businessSettings.loadBusinessSettings();
+      }
       return;
     }
     if (tab === "appointments") {
-      void onAppointmentsTab();
+      if (!appointments.appointmentsLoaded) {
+        void onAppointmentsTab();
+      }
     }
   }
 
@@ -194,159 +247,163 @@ export function AdminApp() {
     <div className="space-y-6">
       <AdminHeader businessId={businessId} role={role} onLogout={handleLogout} />
 
-      <AdminNav
-        activeTab={activeTab}
-        availableTabs={availableTabs}
-        canUseBusinessTabs={canUseBusinessTabs}
-        onSelectTab={handleTabSelect}
-      />
-
-      {error && <p className="rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</p>}
-
-      {activeTab === "platform" && role === "platform_admin" && (
-        <PlatformSection
-          businesses={platform.businesses}
-          ownerBusinessId={platform.ownerBusinessId}
-          setOwnerBusinessId={platform.setOwnerBusinessId}
-          loadBusinesses={platform.loadBusinesses}
-          createBusiness={platform.createBusiness}
-          createOwner={platform.createOwner}
-          onSelectBusiness={(id) => {
-            selectBusiness(id);
-            platform.setOwnerBusinessId(id);
-          }}
-          owners={platform.platformOwners}
-          staff={platform.platformStaff}
-          appointments={platform.platformAppointments}
-          appointmentsDate={platform.platformAppointmentsDate}
-          setAppointmentsDate={platform.setPlatformAppointmentsDate}
-          appointmentsStatus={platform.platformAppointmentsStatus}
-          setAppointmentsStatus={platform.setPlatformAppointmentsStatus}
-          appointmentsSearch={platform.platformAppointmentsSearch}
-          setAppointmentsSearch={platform.setPlatformAppointmentsSearch}
-          loadOwners={platform.loadPlatformOwners}
-          loadStaff={platform.loadPlatformStaff}
-          loadAppointments={() => platform.loadPlatformAppointments()}
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <AdminSidebar
+          activeTab={activeTab}
+          availableTabs={availableTabs}
+          canUseBusinessTabs={canUseBusinessTabs}
+          onSelectTab={handleTabSelect}
         />
-      )}
 
-      {activeTab === "business" && role !== "staff" && (
-        <BusinessSection
-          businessProfile={businessSettings.businessProfile}
-          loadBusinessSettings={businessSettings.loadBusinessSettings}
-          saveBusinessProfile={businessSettings.saveBusinessProfile}
-        />
-      )}
+        <div className="space-y-6">
+          {error && <p className="rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</p>}
 
-      {activeTab === "services" && role !== "staff" && (
-        <ServicesSection
-          services={catalog.services}
-          resources={catalog.resources}
-          editingServiceId={catalog.editingServiceId}
-          setEditingServiceId={catalog.setEditingServiceId}
-          createService={catalog.createService}
-          updateService={catalog.updateService}
-          loadServices={catalog.loadServices}
-          ensureResourcesLoaded={catalog.ensureResourcesLoaded}
-        />
-      )}
+          {role === "platform_admin" && activeTab.startsWith("platform_") && (
+            <PlatformSection
+              activeTab={activeTab}
+              businesses={platform.businesses}
+              ownerBusinessId={platform.ownerBusinessId}
+              setOwnerBusinessId={platform.setOwnerBusinessId}
+              loadBusinesses={platform.loadBusinesses}
+              createBusiness={platform.createBusiness}
+              updateBusiness={platform.updateBusiness}
+              deleteBusiness={platform.deleteBusiness}
+              createOwner={platform.createOwner}
+              onSelectBusiness={(id) => {
+                platform.setOwnerBusinessId(id);
+              }}
+              owners={platform.platformOwners}
+              staff={platform.platformStaff}
+              appointments={platform.platformAppointments}
+              appointmentsDate={platform.platformAppointmentsDate}
+              setAppointmentsDate={platform.setPlatformAppointmentsDate}
+              appointmentsStatus={platform.platformAppointmentsStatus}
+              setAppointmentsStatus={platform.setPlatformAppointmentsStatus}
+              appointmentsSearch={platform.platformAppointmentsSearch}
+              setAppointmentsSearch={platform.setPlatformAppointmentsSearch}
+              loadOwners={platform.loadPlatformOwners}
+              loadStaff={platform.loadPlatformStaff}
+              loadAppointments={() => platform.loadPlatformAppointments()}
+              updatePlatformUser={platform.updatePlatformUser}
+              deletePlatformUser={platform.deletePlatformUser}
+            />
+          )}
 
-      {activeTab === "resources" && role !== "staff" && (
-        <ResourcesSection
-          resources={catalog.resources}
-          editingResourceId={catalog.editingResourceId}
-          setEditingResourceId={catalog.setEditingResourceId}
-          createResource={catalog.createResource}
-          updateResource={catalog.updateResource}
-          deleteResource={catalog.deleteResource}
-          loadResources={catalog.loadResources}
-        />
-      )}
+          {activeTab === "business" && role !== "staff" && (
+            <BusinessSection
+              businessProfile={businessSettings.businessProfile}
+              loadBusinessSettings={businessSettings.loadBusinessSettings}
+              saveBusinessProfile={businessSettings.saveBusinessProfile}
+            />
+          )}
 
-      {activeTab === "staff" && role !== "staff" && (
-        <StaffSection
-          staff={catalog.staff}
-          resources={catalog.resources}
-          editingStaffId={catalog.editingStaffId}
-          setEditingStaffId={catalog.setEditingStaffId}
-          createStaff={catalog.createStaff}
-          updateStaff={catalog.updateStaff}
-          loadStaff={catalog.loadStaff}
-          loadResources={catalog.loadResources}
-        />
-      )}
+          {activeTab === "services" && role !== "staff" && (
+            <ServicesSection
+              services={catalog.services}
+              resources={catalog.resources}
+              createService={catalog.createService}
+              updateService={catalog.updateService}
+              deleteService={catalog.deleteService}
+              loadServices={catalog.loadServices}
+              ensureResourcesLoaded={catalog.ensureResourcesLoaded}
+            />
+          )}
 
-      {activeTab === "blocks" && (
-        <BlocksSection
-          blocks={blocks.blocks}
-          resources={catalog.resources}
-          editingBlockId={blocks.editingBlockId}
-          setEditingBlockId={blocks.setEditingBlockId}
-          createBlock={blocks.createBlock}
-          updateBlock={blocks.updateBlock}
-          deleteBlock={blocks.deleteBlock}
-          loadBlocks={blocks.loadBlocks}
-        />
-      )}
+          {activeTab === "resources" && role !== "staff" && (
+            <ResourcesSection
+              resources={catalog.resources}
+              createResource={catalog.createResource}
+              updateResource={catalog.updateResource}
+              deleteResource={catalog.deleteResource}
+              loadResources={catalog.loadResources}
+            />
+          )}
 
-      {activeTab === "hours" && role !== "staff" && (
-        <HoursSection hours={businessSettings.hours} saveHours={businessSettings.saveHours} />
-      )}
+          {activeTab === "staff" && role !== "staff" && (
+            <StaffSection
+              staff={catalog.staff}
+              resources={catalog.resources}
+              createStaff={catalog.createStaff}
+              updateStaff={catalog.updateStaff}
+              deleteStaff={catalog.deleteStaff}
+              loadStaff={catalog.loadStaff}
+              loadResources={catalog.loadResources}
+            />
+          )}
 
-      {activeTab === "policies" && role !== "staff" && (
-        <PoliciesSection
-          policies={businessSettings.policies}
-          savePolicies={businessSettings.savePolicies}
-        />
-      )}
+          {activeTab === "blocks" && (
+            <BlocksSection
+              blocks={blocks.blocks}
+              resources={catalog.resources}
+              createBlock={blocks.createBlock}
+              updateBlock={blocks.updateBlock}
+              deleteBlock={blocks.deleteBlock}
+              loadBlocks={blocks.loadBlocks}
+              role={role}
+              resourceId={resourceId}
+            />
+          )}
 
-      {activeTab === "appointments" && (
-        <AppointmentsSection
-          appointments={appointments.appointments}
-          services={catalog.services}
-          resources={catalog.resources}
-          appointmentsDate={appointments.appointmentsDate}
-          setAppointmentsDate={appointments.setAppointmentsDate}
-          appointmentsStatus={appointments.appointmentsStatus}
-          setAppointmentsStatus={appointments.setAppointmentsStatus}
-          appointmentsSearch={appointments.appointmentsSearch}
-          setAppointmentsSearch={appointments.setAppointmentsSearch}
-          loadAppointments={() => appointments.loadAppointments()}
-          updateAppointmentStatus={appointments.updateAppointmentStatus}
-        />
-      )}
+          {activeTab === "hours" && role !== "staff" && (
+            <HoursSection hours={businessSettings.hours} saveHours={businessSettings.saveHours} />
+          )}
 
-      {activeTab === "calendar" && (
-        <CalendarSection
-          weekStart={calendar.calendarWeekStart}
-          intervalMinutes={calendar.calendarInterval}
-          onPrevWeek={() => {
-            const prev = addDays(calendar.calendarWeekStart, -7);
-            calendar.setCalendarWeekStart(prev);
-            void calendar.loadCalendarData(prev);
-          }}
-          onNextWeek={() => {
-            const next = addDays(calendar.calendarWeekStart, 7);
-            calendar.setCalendarWeekStart(next);
-            void calendar.loadCalendarData(next);
-          }}
-          onIntervalChange={calendar.setCalendarInterval}
-          onSelectResource={calendar.setCalendarResourceId}
-          selectedResourceId={calendar.calendarResourceId}
-          resources={catalog.resources}
-          services={catalog.services}
-          appointments={calendar.calendarAppointments}
-          blocks={calendar.calendarBlocks}
-          onCreateAppointment={calendar.createAppointment}
-          onCreateBlock={calendar.createCalendarBlock}
-          onUpdateAppointment={calendar.updateAppointmentDetails}
-          onCancelAppointment={calendar.cancelAppointment}
-          role={role}
-          resourceId={resourceId}
-        />
-      )}
+          {activeTab === "policies" && role !== "staff" && (
+            <PoliciesSection
+              policies={businessSettings.policies}
+              savePolicies={businessSettings.savePolicies}
+            />
+          )}
 
-      {loading && <p className="text-sm text-slate-500">Cargando...</p>}
+          {activeTab === "appointments" && (
+            <AppointmentsSection
+              appointments={appointments.appointments}
+              services={catalog.services}
+              resources={catalog.resources}
+              appointmentsDate={appointments.appointmentsDate}
+              setAppointmentsDate={appointments.setAppointmentsDate}
+              appointmentsStatus={appointments.appointmentsStatus}
+              setAppointmentsStatus={appointments.setAppointmentsStatus}
+              appointmentsSearch={appointments.appointmentsSearch}
+              setAppointmentsSearch={appointments.setAppointmentsSearch}
+              loadAppointments={() => appointments.loadAppointments()}
+              updateAppointmentStatus={appointments.updateAppointmentStatus}
+            />
+          )}
+
+          {activeTab === "calendar" && (
+            <CalendarSection
+              weekStart={calendar.calendarWeekStart}
+              intervalMinutes={calendar.calendarInterval}
+              onPrevWeek={() => {
+                const prev = addDays(calendar.calendarWeekStart, -7);
+                calendar.setCalendarWeekStart(prev);
+                void calendar.loadCalendarData(prev);
+              }}
+              onNextWeek={() => {
+                const next = addDays(calendar.calendarWeekStart, 7);
+                calendar.setCalendarWeekStart(next);
+                void calendar.loadCalendarData(next);
+              }}
+              onIntervalChange={calendar.setCalendarInterval}
+              onSelectResource={calendar.setCalendarResourceId}
+              selectedResourceId={calendar.calendarResourceId}
+              resources={catalog.resources}
+              services={catalog.services}
+              appointments={calendar.calendarAppointments}
+              blocks={calendar.calendarBlocks}
+              onCreateAppointment={calendar.createAppointment}
+              onCreateBlock={calendar.createCalendarBlock}
+              onUpdateAppointment={calendar.updateAppointmentDetails}
+              onCancelAppointment={calendar.cancelAppointment}
+              role={role}
+              resourceId={resourceId}
+            />
+          )}
+
+          {loading && <p className="text-sm text-slate-500">Cargando...</p>}
+        </div>
+      </div>
     </div>
   );
 }

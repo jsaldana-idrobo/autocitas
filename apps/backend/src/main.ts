@@ -1,8 +1,15 @@
 import { RequestMethod, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
+import { config } from "dotenv";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 async function bootstrap() {
+  const envLocal = resolve(process.cwd(), ".env.local");
+  const envDefault = resolve(process.cwd(), ".env");
+  config({ path: existsSync(envLocal) ? envLocal : envDefault });
+
+  const { AppModule } = await import("./app.module");
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({

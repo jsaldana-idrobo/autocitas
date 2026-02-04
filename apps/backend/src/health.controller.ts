@@ -19,8 +19,10 @@ export class HealthController {
     if (state === 1) {
       db = "connected";
       try {
-        await this.connection.db.admin().ping();
-        ping = true;
+        if (this.connection.db) {
+          await this.connection.db.admin().ping();
+          ping = true;
+        }
       } catch {
         ping = false;
       }

@@ -38,7 +38,7 @@ export function useAdminSession() {
     }
   }, []);
 
-  async function login(email: string, password: string, business?: string) {
+  async function login(email: string, password: string) {
     const response = await apiRequest<{ token: string }>("/admin/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password })
@@ -48,10 +48,7 @@ export function useAdminSession() {
     const payload = parseJwt(response.token);
     setRole(payload.role);
     setResourceId(payload.resourceId);
-    if (business) {
-      localStorage.setItem("business_id", business);
-      setBusinessId(business);
-    } else if (payload.role !== "platform_admin" && payload.role !== "unknown") {
+    if (payload.role !== "platform_admin" && payload.role !== "unknown") {
       const inferred = payload.businessId ?? "";
       if (inferred) {
         localStorage.setItem("business_id", inferred);

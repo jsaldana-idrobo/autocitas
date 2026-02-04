@@ -25,4 +25,3 @@ export class AdminUser {
 }
 
 export const AdminUserSchema = SchemaFactory.createForClass(AdminUser);
-AdminUserSchema.index({ email: 1 }, { unique: true });

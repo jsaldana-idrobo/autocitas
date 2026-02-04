@@ -81,4 +81,23 @@ export class AdminStaffService {
 
     return staff;
   }
+
+  async deleteStaff(businessId: string, staffId: string) {
+    await this.businessContext.getBusinessContext(businessId);
+
+    if (!isValidObjectId(staffId)) {
+      throw new BadRequestException("Invalid staffId.");
+    }
+
+    const staff = await this.adminUserModel
+      .findOneAndDelete({ _id: staffId, businessId, role: "staff" })
+      .select(SELECT_WITHOUT_PASSWORD)
+      .lean();
+
+    if (!staff) {
+      throw new BadRequestException("Staff not found.");
+    }
+
+    return staff;
+  }
 }

@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 import { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema";
 import { Business } from "../schemas/business.schema";
-import Twilio from "twilio";
+import Twilio = require("twilio");
 
 const REMINDER_WINDOWS_HOURS = [3];
 const WINDOW_MINUTES = 2;

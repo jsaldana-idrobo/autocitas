@@ -199,6 +199,17 @@ export class AdminController {
     return this.catalog.updateService(businessId, serviceId, body);
   }
 
+  @Delete(":businessId/services/:serviceId")
+  deleteService(
+    @Param("businessId") businessId: string,
+    @Param("serviceId") serviceId: string,
+    @Req() req: AuthenticatedRequest
+  ) {
+    this.access.ensureBusinessAccess(req.user, businessId);
+    this.access.ensureOwnerAccess(req.user);
+    return this.catalog.deleteService(businessId, serviceId);
+  }
+
   @Get(":businessId/resources")
   listResources(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
     this.access.ensureBusinessAccess(req.user, businessId);
@@ -374,5 +385,16 @@ export class AdminController {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
     return this.staff.updateStaff(businessId, staffId, body);
+  }
+
+  @Delete(":businessId/staff/:staffId")
+  deleteStaff(
+    @Param("businessId") businessId: string,
+    @Param("staffId") staffId: string,
+    @Req() req: AuthenticatedRequest
+  ) {
+    this.access.ensureBusinessAccess(req.user, businessId);
+    this.access.ensureOwnerAccess(req.user);
+    return this.staff.deleteStaff(businessId, staffId);
   }
 }

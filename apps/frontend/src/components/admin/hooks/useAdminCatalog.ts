@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
 import { ResourceItem, ServiceItem, StaffItem } from "../types";
 import { AdminApiContext } from "./types";
@@ -7,11 +7,23 @@ export function useAdminCatalog(api: AdminApiContext) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [staff, setStaff] = useState<StaffItem[]>([]);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
-  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
+  const [staffLoaded, setStaffLoaded] = useState(false);
+  const isLoadingRef = useRef(false);
+
+  function startLoad() {
+    if (isLoadingRef.current) return false;
+    isLoadingRef.current = true;
+    return true;
+  }
+
+  function endLoad() {
+    isLoadingRef.current = false;
+  }
 
   async function loadServices() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -20,10 +32,12 @@ export function useAdminCatalog(api: AdminApiContext) {
         api.authHeaders
       );
       setServices(data);
+      setServicesLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando servicios");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -31,6 +45,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     if (api.role === "staff") {
       return;
     }
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -39,14 +54,17 @@ export function useAdminCatalog(api: AdminApiContext) {
         api.authHeaders
       );
       setResources(data);
+      setResourcesLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando recursos");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function loadStaff() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -55,10 +73,12 @@ export function useAdminCatalog(api: AdminApiContext) {
         api.authHeaders
       );
       setStaff(data);
+      setStaffLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando staff");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -77,6 +97,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/services`, {
         method: "POST",
@@ -84,29 +105,55 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
+      setServicesLoaded(false);
       await loadServices();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando servicio");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function updateService(serviceId: string, payload: Partial<ServiceItem>) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/services/${serviceId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setEditingServiceId(null);
+      setServicesLoaded(false);
       await loadServices();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando servicio");
     } finally {
       api.setLoading(false);
+      endLoad();
+    }
+  }
+
+  async function deleteService(serviceId: string) {
+    if (!confirm("Deseas eliminar este servicio?")) {
+      return;
+    }
+    api.resetError();
+    try {
+      if (!startLoad()) return;
+      api.setLoading(true);
+      await apiRequest(`/admin/businesses/${api.businessId}/services/${serviceId}`, {
+        method: "DELETE",
+        ...api.authHeaders
+      });
+      setServicesLoaded(false);
+      await loadServices();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error eliminando servicio");
+    } finally {
+      api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -123,6 +170,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/resources`, {
         method: "POST",
@@ -130,29 +178,33 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
+      setResourcesLoaded(false);
       await loadResources();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando recurso");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function updateResource(resourceId: string, payload: Partial<ResourceItem>) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/resources/${resourceId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setEditingResourceId(null);
+      setResourcesLoaded(false);
       await loadResources();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando recurso");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -162,16 +214,19 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/resources/${resourceId}`, {
         method: "DELETE",
         ...api.authHeaders
       });
+      setResourcesLoaded(false);
       await loadResources();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando recurso");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -192,6 +247,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/staff`, {
         method: "POST",
@@ -199,11 +255,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
+      setStaffLoaded(false);
       await loadStaff();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando staff");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -213,16 +271,38 @@ export function useAdminCatalog(api: AdminApiContext) {
   ) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/staff/${staffId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setEditingStaffId(null);
+      setStaffLoaded(false);
       await loadStaff();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando staff");
+    } finally {
+      api.setLoading(false);
+      endLoad();
+    }
+  }
+
+  async function deleteStaff(staffId: string) {
+    if (!confirm("Deseas eliminar este staff?")) {
+      return;
+    }
+    api.resetError();
+    try {
+      api.setLoading(true);
+      await apiRequest(`/admin/businesses/${api.businessId}/staff/${staffId}`, {
+        method: "DELETE",
+        ...api.authHeaders
+      });
+      setStaffLoaded(false);
+      await loadStaff();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error eliminando staff");
     } finally {
       api.setLoading(false);
     }
@@ -243,27 +323,33 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
   }
 
+  function resetLoaded() {
+    setServicesLoaded(false);
+    setResourcesLoaded(false);
+    setStaffLoaded(false);
+  }
+
   return {
     services,
     resources,
     staff,
-    editingServiceId,
-    setEditingServiceId,
-    editingResourceId,
-    setEditingResourceId,
-    editingStaffId,
-    setEditingStaffId,
+    servicesLoaded,
+    resourcesLoaded,
+    staffLoaded,
     loadServices,
     loadResources,
     loadStaff,
     createService,
     updateService,
+    deleteService,
     createResource,
     updateResource,
     deleteResource,
     createStaff,
     updateStaff,
+    deleteStaff,
     ensureResourcesLoaded,
-    ensureServicesLoaded
+    ensureServicesLoaded,
+    resetLoaded
   };
 }

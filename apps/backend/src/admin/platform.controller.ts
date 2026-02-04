@@ -1,7 +1,20 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards
+} from "@nestjs/common";
 import { Request } from "express";
 import { CreateBusinessDto } from "./dto/create-business.dto";
 import { CreateOwnerDto } from "./dto/create-owner.dto";
+import { UpdateBusinessDto } from "./dto/update-business.dto";
+import { UpdatePlatformUserDto } from "./dto/update-platform-user.dto";
 import { JwtPayload } from "./auth/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { AdminAccessService } from "./services/admin-access.service";
@@ -31,6 +44,22 @@ export class PlatformController {
     return this.platform.createBusiness(body);
   }
 
+  @Patch("businesses/:businessId")
+  updateBusiness(
+    @Param("businessId") businessId: string,
+    @Body() body: UpdateBusinessDto,
+    @Req() req: AuthenticatedRequest
+  ) {
+    this.access.ensurePlatformAdmin(req.user);
+    return this.platform.updateBusiness(businessId, body);
+  }
+
+  @Delete("businesses/:businessId")
+  deleteBusiness(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+    this.access.ensurePlatformAdmin(req.user);
+    return this.platform.deleteBusiness(businessId);
+  }
+
   @Post("owners")
   createOwner(@Body() body: CreateOwnerDto, @Req() req: AuthenticatedRequest) {
     this.access.ensurePlatformAdmin(req.user);
@@ -41,6 +70,22 @@ export class PlatformController {
   listUsers(@Query("role") role: "owner" | "staff", @Req() req: AuthenticatedRequest) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listPlatformUsers(role);
+  }
+
+  @Patch("users/:userId")
+  updateUser(
+    @Param("userId") userId: string,
+    @Body() body: UpdatePlatformUserDto,
+    @Req() req: AuthenticatedRequest
+  ) {
+    this.access.ensurePlatformAdmin(req.user);
+    return this.platform.updatePlatformUser(userId, body);
+  }
+
+  @Delete("users/:userId")
+  deleteUser(@Param("userId") userId: string, @Req() req: AuthenticatedRequest) {
+    this.access.ensurePlatformAdmin(req.user);
+    return this.platform.deletePlatformUser(userId);
   }
 
   @Get("appointments")

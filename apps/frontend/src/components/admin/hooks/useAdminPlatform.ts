@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
-import { AppointmentItem, BusinessProfile, StaffItem } from "../types";
+import { AppointmentItem, BusinessProfile, PlatformUserUpdate, StaffItem } from "../types";
 import { AdminApiContext } from "./types";
 
 export function useAdminPlatform(api: AdminApiContext) {
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
+  const [businessesLoaded, setBusinessesLoaded] = useState(false);
   const [ownerBusinessId, setOwnerBusinessId] = useState("");
   const [platformOwners, setPlatformOwners] = useState<StaffItem[]>([]);
   const [platformStaff, setPlatformStaff] = useState<StaffItem[]>([]);
@@ -12,8 +13,23 @@ export function useAdminPlatform(api: AdminApiContext) {
   const [platformAppointmentsDate, setPlatformAppointmentsDate] = useState("");
   const [platformAppointmentsStatus, setPlatformAppointmentsStatus] = useState("");
   const [platformAppointmentsSearch, setPlatformAppointmentsSearch] = useState("");
+  const [platformOwnersLoaded, setPlatformOwnersLoaded] = useState(false);
+  const [platformStaffLoaded, setPlatformStaffLoaded] = useState(false);
+  const [platformAppointmentsLoaded, setPlatformAppointmentsLoaded] = useState(false);
+  const isLoadingRef = useRef(false);
+
+  function startLoad() {
+    if (isLoadingRef.current) return false;
+    isLoadingRef.current = true;
+    return true;
+  }
+
+  function endLoad() {
+    isLoadingRef.current = false;
+  }
 
   async function loadBusinesses() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -22,14 +38,17 @@ export function useAdminPlatform(api: AdminApiContext) {
         api.authHeaders
       );
       setBusinesses(data);
+      setBusinessesLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando negocios");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function loadPlatformOwners() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -38,14 +57,17 @@ export function useAdminPlatform(api: AdminApiContext) {
         api.authHeaders
       );
       setPlatformOwners(data);
+      setPlatformOwnersLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando owners");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function loadPlatformStaff() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -54,10 +76,12 @@ export function useAdminPlatform(api: AdminApiContext) {
         api.authHeaders
       );
       setPlatformStaff(data);
+      setPlatformStaffLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando staff");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -66,6 +90,7 @@ export function useAdminPlatform(api: AdminApiContext) {
     nextStatus?: string,
     nextSearch?: string
   ) {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -82,10 +107,12 @@ export function useAdminPlatform(api: AdminApiContext) {
         api.authHeaders
       );
       setPlatformAppointments(data);
+      setPlatformAppointmentsLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando citas globales");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -103,6 +130,7 @@ export function useAdminPlatform(api: AdminApiContext) {
     };
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest("/admin/platform/businesses", {
         method: "POST",
@@ -115,6 +143,7 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.setError(err instanceof Error ? err.message : "Error creando negocio");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -129,6 +158,7 @@ export function useAdminPlatform(api: AdminApiContext) {
     };
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest("/admin/platform/owners", {
         method: "POST",
@@ -141,11 +171,102 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.setError(err instanceof Error ? err.message : "Error creando owner");
     } finally {
       api.setLoading(false);
+      endLoad();
+    }
+  }
+
+  async function updateBusiness(businessId: string, payload: Partial<BusinessProfile>) {
+    api.resetError();
+    try {
+      if (!startLoad()) return;
+      api.setLoading(true);
+      await apiRequest(`/admin/platform/businesses/${businessId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        ...api.authHeaders
+      });
+      setBusinessesLoaded(false);
+      await loadBusinesses();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error actualizando negocio");
+    } finally {
+      api.setLoading(false);
+      endLoad();
+    }
+  }
+
+  async function deleteBusiness(businessId: string) {
+    if (!confirm("Deseas eliminar este negocio?")) {
+      return;
+    }
+    api.resetError();
+    try {
+      if (!startLoad()) return;
+      api.setLoading(true);
+      await apiRequest(`/admin/platform/businesses/${businessId}`, {
+        method: "DELETE",
+        ...api.authHeaders
+      });
+      setBusinessesLoaded(false);
+      await loadBusinesses();
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error eliminando negocio");
+    } finally {
+      api.setLoading(false);
+      endLoad();
+    }
+  }
+
+  function resetLoaded() {
+    setBusinessesLoaded(false);
+    setPlatformOwnersLoaded(false);
+    setPlatformStaffLoaded(false);
+    setPlatformAppointmentsLoaded(false);
+  }
+
+  async function updatePlatformUser(userId: string, payload: PlatformUserUpdate) {
+    api.resetError();
+    try {
+      api.setLoading(true);
+      await apiRequest(`/admin/platform/users/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        ...api.authHeaders
+      });
+      setPlatformOwnersLoaded(false);
+      setPlatformStaffLoaded(false);
+      await Promise.all([loadPlatformOwners(), loadPlatformStaff()]);
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error actualizando usuario");
+    } finally {
+      api.setLoading(false);
+    }
+  }
+
+  async function deletePlatformUser(userId: string) {
+    if (!confirm("Deseas eliminar este usuario?")) {
+      return;
+    }
+    api.resetError();
+    try {
+      api.setLoading(true);
+      await apiRequest(`/admin/platform/users/${userId}`, {
+        method: "DELETE",
+        ...api.authHeaders
+      });
+      setPlatformOwnersLoaded(false);
+      setPlatformStaffLoaded(false);
+      await Promise.all([loadPlatformOwners(), loadPlatformStaff()]);
+    } catch (err) {
+      api.setError(err instanceof Error ? err.message : "Error eliminando usuario");
+    } finally {
+      api.setLoading(false);
     }
   }
 
   return {
     businesses,
+    businessesLoaded,
     ownerBusinessId,
     setOwnerBusinessId,
     platformOwners,
@@ -157,11 +278,19 @@ export function useAdminPlatform(api: AdminApiContext) {
     setPlatformAppointmentsStatus,
     platformAppointmentsSearch,
     setPlatformAppointmentsSearch,
+    platformOwnersLoaded,
+    platformStaffLoaded,
+    platformAppointmentsLoaded,
     loadBusinesses,
     loadPlatformOwners,
     loadPlatformStaff,
     loadPlatformAppointments,
     createBusiness,
-    createOwner
+    createOwner,
+    updateBusiness,
+    deleteBusiness,
+    updatePlatformUser,
+    deletePlatformUser,
+    resetLoaded
   };
 }

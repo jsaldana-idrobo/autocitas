@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "pnpm -r --parallel --if-present dev",
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "format:check": "pnpm -r format:check"

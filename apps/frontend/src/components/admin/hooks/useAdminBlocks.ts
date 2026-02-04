@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
 import { BlockItem } from "../types";
 import { toIsoIfPossible } from "../utils";
@@ -6,9 +6,21 @@ import { AdminApiContext } from "./types";
 
 export function useAdminBlocks(api: AdminApiContext) {
   const [blocks, setBlocks] = useState<BlockItem[]>([]);
-  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [blocksLoaded, setBlocksLoaded] = useState(false);
+  const isLoadingRef = useRef(false);
+
+  function startLoad() {
+    if (isLoadingRef.current) return false;
+    isLoadingRef.current = true;
+    return true;
+  }
+
+  function endLoad() {
+    isLoadingRef.current = false;
+  }
 
   async function loadBlocks() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -17,10 +29,12 @@ export function useAdminBlocks(api: AdminApiContext) {
         api.authHeaders
       );
       setBlocks(data);
+      setBlocksLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando bloqueos");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -41,6 +55,7 @@ export function useAdminBlocks(api: AdminApiContext) {
     }
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/blocks`, {
         method: "POST",
@@ -48,11 +63,13 @@ export function useAdminBlocks(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
+      setBlocksLoaded(false);
       await loadBlocks();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -64,18 +81,20 @@ export function useAdminBlocks(api: AdminApiContext) {
       endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
     };
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/blocks/${blockId}`, {
         method: "PATCH",
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      setEditingBlockId(null);
+      setBlocksLoaded(false);
       await loadBlocks();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando bloqueo");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -85,26 +104,33 @@ export function useAdminBlocks(api: AdminApiContext) {
     }
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/blocks/${blockId}`, {
         method: "DELETE",
         ...api.authHeaders
       });
+      setBlocksLoaded(false);
       await loadBlocks();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando bloqueo");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
+  }
+
+  function resetLoaded() {
+    setBlocksLoaded(false);
   }
 
   return {
     blocks,
-    editingBlockId,
-    setEditingBlockId,
+    blocksLoaded,
     loadBlocks,
     createBlock,
     updateBlock,
-    deleteBlock
+    deleteBlock,
+    resetLoaded
   };
 }

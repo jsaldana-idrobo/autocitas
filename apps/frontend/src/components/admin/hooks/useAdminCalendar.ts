@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiRequest } from "../../../lib/api";
 import { AppointmentItem, BlockItem } from "../types";
 import { addDays, getWeekStartValue, toIsoIfPossible } from "../utils";
@@ -10,6 +10,18 @@ export function useAdminCalendar(api: AdminApiContext) {
   const [calendarResourceId, setCalendarResourceId] = useState("");
   const [calendarAppointments, setCalendarAppointments] = useState<AppointmentItem[]>([]);
   const [calendarBlocks, setCalendarBlocks] = useState<BlockItem[]>([]);
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
+  const isLoadingRef = useRef(false);
+
+  function startLoad() {
+    if (isLoadingRef.current) return false;
+    isLoadingRef.current = true;
+    return true;
+  }
+
+  function endLoad() {
+    isLoadingRef.current = false;
+  }
 
   async function loadCalendarData(nextWeekStart = calendarWeekStart) {
     if (!api.businessId) {
@@ -17,6 +29,7 @@ export function useAdminCalendar(api: AdminApiContext) {
       setCalendarBlocks([]);
       return;
     }
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -32,10 +45,12 @@ export function useAdminCalendar(api: AdminApiContext) {
       );
       setCalendarAppointments(appointments);
       setCalendarBlocks(blocks);
+      setCalendarLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando calendario");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -48,6 +63,7 @@ export function useAdminCalendar(api: AdminApiContext) {
   }) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       const payloadToSend = {
         ...payload,
@@ -58,11 +74,13 @@ export function useAdminCalendar(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
+      setCalendarLoaded(false);
       await loadCalendarData();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando cita");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -72,6 +90,7 @@ export function useAdminCalendar(api: AdminApiContext) {
   ) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       const payloadToSend = {
         ...payload,
@@ -85,28 +104,33 @@ export function useAdminCalendar(api: AdminApiContext) {
           ...api.authHeaders
         }
       );
+      setCalendarLoaded(false);
       await loadCalendarData();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando cita");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
   async function cancelAppointment(appointmentId: string) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/appointments/${appointmentId}`, {
         method: "PATCH",
         body: JSON.stringify({ status: "cancelled" }),
         ...api.authHeaders
       });
+      setCalendarLoaded(false);
       await loadCalendarData();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando cita");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -118,6 +142,7 @@ export function useAdminCalendar(api: AdminApiContext) {
   }) {
     api.resetError();
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       const payloadToSend = {
         ...payload,
@@ -129,12 +154,18 @@ export function useAdminCalendar(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
+      setCalendarLoaded(false);
       await loadCalendarData();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
+  }
+
+  function resetLoaded() {
+    setCalendarLoaded(false);
   }
 
   return {
@@ -146,10 +177,12 @@ export function useAdminCalendar(api: AdminApiContext) {
     setCalendarResourceId,
     calendarAppointments,
     calendarBlocks,
+    calendarLoaded,
     loadCalendarData,
     createAppointment,
     updateAppointmentDetails,
     cancelAppointment,
-    createCalendarBlock
+    createCalendarBlock,
+    resetLoaded
   };
 }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
 import { BusinessHoursItem, BusinessProfile, Policies, dayLabels } from "../types";
 import { AdminApiContext } from "./types";
@@ -7,8 +7,21 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
   const [hours, setHours] = useState<BusinessHoursItem[]>([]);
   const [policies, setPolicies] = useState<Policies | null>(null);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>({});
+  const [businessLoaded, setBusinessLoaded] = useState(false);
+  const isLoadingRef = useRef(false);
+
+  function startLoad() {
+    if (isLoadingRef.current) return false;
+    isLoadingRef.current = true;
+    return true;
+  }
+
+  function endLoad() {
+    isLoadingRef.current = false;
+  }
 
   async function loadBusinessSettings() {
+    if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
     try {
@@ -23,10 +36,12 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
       setBusinessProfile(businessData);
       setPolicies(policiesData);
       setHours(hoursData);
+      setBusinessLoaded(true);
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error cargando configuracion");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -57,17 +72,20 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     }
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/hours`, {
         method: "PATCH",
         body: JSON.stringify({ hours: payloadHours }),
         ...api.authHeaders
       });
+      setBusinessLoaded(false);
       await loadBusinessSettings();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando horarios");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -82,17 +100,20 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     };
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/policies`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
+      setBusinessLoaded(false);
       await loadBusinessSettings();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando politicas");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
   }
 
@@ -110,27 +131,36 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     };
 
     try {
+      if (!startLoad()) return;
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
+      setBusinessLoaded(false);
       await loadBusinessSettings();
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando negocio");
     } finally {
       api.setLoading(false);
+      endLoad();
     }
+  }
+
+  function resetLoaded() {
+    setBusinessLoaded(false);
   }
 
   return {
     hours,
     policies,
     businessProfile,
+    businessLoaded,
     loadBusinessSettings,
     saveHours,
     savePolicies,
-    saveBusinessProfile
+    saveBusinessProfile,
+    resetLoaded
   };
 }

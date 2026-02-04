@@ -1,5 +1,8 @@
 export type TabKey =
-  | "platform"
+  | "platform_businesses"
+  | "platform_owners"
+  | "platform_staff"
+  | "platform_appointments"
   | "business"
   | "services"
   | "resources"
@@ -32,6 +35,15 @@ export interface StaffItem {
   active: boolean;
   resourceId?: string;
   businessId?: string;
+}
+
+export interface PlatformUserUpdate {
+  email?: string;
+  password?: string;
+  businessId?: string;
+  resourceId?: string;
+  role?: "owner" | "staff" | "platform_admin";
+  active?: boolean;
 }
 
 export interface BlockItem {
@@ -77,7 +89,10 @@ export interface BusinessProfile {
 }
 
 export const tabConfig: { key: TabKey; label: string }[] = [
-  { key: "platform", label: "Plataforma" },
+  { key: "platform_businesses", label: "Negocios (Plataforma)" },
+  { key: "platform_owners", label: "Owners (Plataforma)" },
+  { key: "platform_staff", label: "Staff (Plataforma)" },
+  { key: "platform_appointments", label: "Citas (Plataforma)" },
   { key: "business", label: "Negocio" },
   { key: "services", label: "Servicios" },
   { key: "resources", label: "Recursos" },
@@ -104,3 +119,10 @@ export const ownerTabs: TabKey[] = [
 ];
 
 export const staffTabs: TabKey[] = ["blocks", "calendar", "appointments"];
+
+export const platformTabs: TabKey[] = [
+  "platform_businesses",
+  "platform_owners",
+  "platform_staff",
+  "platform_appointments"
+];
