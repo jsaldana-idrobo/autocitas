@@ -2,7 +2,7 @@
   "name": "@autocitas/backend",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "start": "nest start",
