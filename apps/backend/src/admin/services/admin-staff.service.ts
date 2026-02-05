@@ -10,6 +10,21 @@ import { AdminCatalogService } from "./admin-catalog.service";
 import { ERR_INVALID_RESOURCE_ID } from "./admin.constants";
 
 const SELECT_WITHOUT_PASSWORD = "-passwordHash";
+const TEXT_SCORE = "textScore";
+
+function applyTextSearchSort<T>(
+  query: ReturnType<Model<T>["find"]>,
+  hasSearch: boolean,
+  fallbackSort: Record<string, 1 | -1>
+) {
+  if (hasSearch) {
+    query.select({ score: { $meta: TEXT_SCORE } });
+    query.sort({ score: { $meta: TEXT_SCORE }, ...fallbackSort });
+  } else {
+    query.sort(fallbackSort);
+  }
+  return query;
+}
 
 @Injectable()
 export class AdminStaffService {
@@ -35,13 +50,11 @@ export class AdminStaffService {
 
     if (options?.page && options?.limit) {
       const total = await this.adminUserModel.countDocuments(query);
-      const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
-      if (hasSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
-      } else {
-        baseQuery.sort({ email: 1 });
-      }
+      const baseQuery = applyTextSearchSort(
+        this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD),
+        hasSearch,
+        { email: 1 }
+      );
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -49,14 +62,11 @@ export class AdminStaffService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
-    if (hasSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
-    } else {
-      baseQuery.sort({ email: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(
+      this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD),
+      hasSearch,
+      { email: 1 }
+    ).lean();
   }
 
   async createStaff(businessId: string, payload: CreateStaffDto) {

@@ -100,6 +100,7 @@ function normalizePhone(value: string) {
   return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function BookingApp({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

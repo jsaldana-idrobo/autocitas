@@ -26,6 +26,24 @@ import { AdminBusinessContextService } from "./admin-business-context.service";
 import { AdminCatalogService } from "./admin-catalog.service";
 import { Service } from "../../schemas/service.schema";
 
+const TEXT_SCORE = "textScore";
+const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
+
+function normalizePhone(value: string) {
+  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+}
+
+function buildAppointmentSearchQuery(search?: string) {
+  const trimmed = search?.trim() ?? "";
+  if (!trimmed) {
+    return { query: {}, useTextScore: false };
+  }
+  if (PHONE_SEARCH_REGEX.test(trimmed)) {
+    return { query: { customerPhone: normalizePhone(trimmed) }, useTextScore: false };
+  }
+  return { query: { $text: { $search: trimmed } }, useTextScore: true };
+}
+
 @Injectable()
 export class AdminAppointmentsService {
   constructor(
@@ -36,6 +54,7 @@ export class AdminAppointmentsService {
     private readonly catalogService: AdminCatalogService
   ) {}
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   async listAppointments(
     businessId: string,
     date?: string,
@@ -73,23 +92,15 @@ export class AdminAppointmentsService {
       query.startTime = { $lt: end };
       query.endTime = { $gt: start };
     }
-    const trimmedSearch = search?.trim() ?? "";
-    const isPhoneSearch = /^[\d+()\-\s]+$/.test(trimmedSearch);
-    if (trimmedSearch.length > 0) {
-      if (isPhoneSearch) {
-        const normalized = trimmedSearch.replace(/\s+/g, "").replace(/[^\d+]/g, "");
-        query.customerPhone = normalized;
-      } else {
-        query.$text = { $search: trimmedSearch };
-      }
-    }
+    const searchMeta = buildAppointmentSearchQuery(search);
+    Object.assign(query, searchMeta.query);
 
     if (page && limit) {
       const total = await this.appointmentModel.countDocuments(query);
       const baseQuery = this.appointmentModel.find(query);
-      if (trimmedSearch.length > 0 && !isPhoneSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, startTime: 1 });
+      if (searchMeta.useTextScore) {
+        baseQuery.select({ score: { $meta: TEXT_SCORE } });
+        baseQuery.sort({ score: { $meta: TEXT_SCORE }, startTime: 1 });
       } else {
         baseQuery.sort({ startTime: 1 });
       }
@@ -101,9 +112,9 @@ export class AdminAppointmentsService {
     }
 
     const baseQuery = this.appointmentModel.find(query);
-    if (trimmedSearch.length > 0 && !isPhoneSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, startTime: 1 });
+    if (searchMeta.useTextScore) {
+      baseQuery.select({ score: { $meta: TEXT_SCORE } });
+      baseQuery.sort({ score: { $meta: TEXT_SCORE }, startTime: 1 });
     } else {
       baseQuery.sort({ startTime: 1 });
     }

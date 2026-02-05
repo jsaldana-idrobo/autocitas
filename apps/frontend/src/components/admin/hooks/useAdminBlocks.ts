@@ -144,9 +144,9 @@ export function useAdminBlocks(api: AdminApiContext) {
     }
   }
 
-  function resetLoaded() {
+  const resetLoaded = useCallback(() => {
     setBlocksLoaded(false);
-  }
+  }, []);
 
   return {
     blocks,

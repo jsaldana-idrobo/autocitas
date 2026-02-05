@@ -407,11 +407,11 @@ export function useAdminCatalog(api: AdminApiContext) {
     }
   }
 
-  function resetLoaded() {
+  const resetLoaded = useCallback(() => {
     setServicesLoaded(false);
     setResourcesLoaded(false);
     setStaffLoaded(false);
-  }
+  }, []);
 
   return {
     services,

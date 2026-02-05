@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { apiRequest } from "../../../../lib/api";
 import {
   AppointmentItem,
@@ -42,35 +42,38 @@ export function PlatformCalendarSection({
     return services.filter((service) => service.businessId === selectedBusinessId);
   }, [services, selectedBusinessId]);
 
-  async function loadCalendarData(nextWeekStart = weekStart, businessId = selectedBusinessId) {
-    if (!businessId) {
-      setAppointments([]);
-      setBlocks([]);
-      return;
-    }
-    onLoading(true);
-    onError(null);
-    try {
-      const from = `${nextWeekStart}T00:00:00.000Z`;
-      const to = `${addDays(nextWeekStart, 7)}T00:00:00.000Z`;
-      const [appointmentsData, blocksData] = await Promise.all([
-        apiRequest<AppointmentItem[]>(
-          `/admin/businesses/${businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-          authHeaders
-        ),
-        apiRequest<BlockItem[]>(
-          `/admin/businesses/${businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-          authHeaders
-        )
-      ]);
-      setAppointments(appointmentsData);
-      setBlocks(blocksData);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Error cargando calendario");
-    } finally {
-      onLoading(false);
-    }
-  }
+  const loadCalendarData = useCallback(
+    async (nextWeekStart = weekStart, businessId = selectedBusinessId) => {
+      if (!businessId) {
+        setAppointments([]);
+        setBlocks([]);
+        return;
+      }
+      onLoading(true);
+      onError(null);
+      try {
+        const from = `${nextWeekStart}T00:00:00.000Z`;
+        const to = `${addDays(nextWeekStart, 7)}T00:00:00.000Z`;
+        const [appointmentsData, blocksData] = await Promise.all([
+          apiRequest<AppointmentItem[]>(
+            `/admin/businesses/${businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+            authHeaders
+          ),
+          apiRequest<BlockItem[]>(
+            `/admin/businesses/${businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+            authHeaders
+          )
+        ]);
+        setAppointments(appointmentsData);
+        setBlocks(blocksData);
+      } catch (err) {
+        onError(err instanceof Error ? err.message : "Error cargando calendario");
+      } finally {
+        onLoading(false);
+      }
+    },
+    [authHeaders, onError, onLoading, selectedBusinessId, weekStart]
+  );
 
   async function createAppointment(payload: {
     serviceId: string;
@@ -188,7 +191,7 @@ export function PlatformCalendarSection({
     if (selectedBusinessId) {
       void loadCalendarData(weekStart, selectedBusinessId);
     }
-  }, [selectedBusinessId]);
+  }, [loadCalendarData, selectedBusinessId, weekStart]);
 
   return (
     <div className="space-y-4">

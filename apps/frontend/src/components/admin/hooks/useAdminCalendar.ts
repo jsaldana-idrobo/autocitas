@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { apiRequest } from "../../../lib/api";
 import { AppointmentItem, BlockItem } from "../types";
 import { addDays, getWeekStartValue, toIsoIfPossible } from "../utils";
@@ -225,9 +225,9 @@ export function useAdminCalendar(api: AdminApiContext) {
     }
   }
 
-  function resetLoaded() {
+  const resetLoaded = useCallback(() => {
     setCalendarLoaded(false);
-  }
+  }, []);
 
   return {
     calendarWeekStart,

@@ -85,9 +85,9 @@ export function useAdminAppointments(api: AdminApiContext) {
     }
   }
 
-  function resetLoaded() {
+  const resetLoaded = useCallback(() => {
     setAppointmentsLoaded(false);
-  }
+  }, []);
 
   return {
     appointments,

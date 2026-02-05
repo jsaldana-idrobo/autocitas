@@ -10,6 +10,24 @@ import { UpdateServiceDto } from "../dto/update-service.dto";
 import { ERR_INVALID_RESOURCE_ID, ERR_RESOURCE_NOT_FOUND, ERR_NO_UPDATES } from "./admin.constants";
 import { AdminBusinessContextService } from "./admin-business-context.service";
 
+const TEXT_SCORE = "textScore";
+const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
+const ERR_SERVICE_NOT_FOUND = "Service not found";
+
+function applyTextSearchSort<T>(
+  query: ReturnType<Model<T>["find"]>,
+  hasSearch: boolean,
+  fallbackSort: Record<string, 1 | -1>
+) {
+  if (hasSearch) {
+    query.select({ score: { $meta: TEXT_SCORE } });
+    query.sort({ score: { $meta: TEXT_SCORE }, ...fallbackSort });
+  } else {
+    query.sort(fallbackSort);
+  }
+  return query;
+}
+
 @Injectable()
 export class AdminCatalogService {
   constructor(
@@ -34,13 +52,7 @@ export class AdminCatalogService {
 
     if (options?.page && options?.limit) {
       const total = await this.serviceModel.countDocuments(query);
-      const baseQuery = this.serviceModel.find(query);
-      if (hasSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-      } else {
-        baseQuery.sort({ name: 1 });
-      }
+      const baseQuery = applyTextSearchSort(this.serviceModel.find(query), hasSearch, { name: 1 });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -48,14 +60,7 @@ export class AdminCatalogService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    const baseQuery = this.serviceModel.find(query);
-    if (hasSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-    } else {
-      baseQuery.sort({ name: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(this.serviceModel.find(query), hasSearch, { name: 1 }).lean();
   }
 
   async createService(businessId: string, payload: CreateServiceDto) {
@@ -79,7 +84,7 @@ export class AdminCatalogService {
     await this.businessContext.getBusinessContext(businessId);
 
     if (!isValidObjectId(serviceId)) {
-      throw new BadRequestException("Invalid serviceId.");
+      throw new BadRequestException(ERR_INVALID_SERVICE_ID);
     }
 
     if (Object.keys(payload).length === 0) {
@@ -96,7 +101,7 @@ export class AdminCatalogService {
       .lean();
 
     if (!service) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException(ERR_SERVICE_NOT_FOUND);
     }
 
     return service;
@@ -106,13 +111,13 @@ export class AdminCatalogService {
     await this.businessContext.getBusinessContext(businessId);
 
     if (!isValidObjectId(serviceId)) {
-      throw new BadRequestException("Invalid serviceId.");
+      throw new BadRequestException(ERR_INVALID_SERVICE_ID);
     }
 
     const service = await this.serviceModel.findOneAndDelete({ _id: serviceId, businessId }).lean();
 
     if (!service) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException(ERR_SERVICE_NOT_FOUND);
     }
 
     return service;
@@ -134,13 +139,7 @@ export class AdminCatalogService {
 
     if (options?.page && options?.limit) {
       const total = await this.resourceModel.countDocuments(query);
-      const baseQuery = this.resourceModel.find(query);
-      if (hasSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-      } else {
-        baseQuery.sort({ name: 1 });
-      }
+      const baseQuery = applyTextSearchSort(this.resourceModel.find(query), hasSearch, { name: 1 });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -148,14 +147,7 @@ export class AdminCatalogService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    const baseQuery = this.resourceModel.find(query);
-    if (hasSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-    } else {
-      baseQuery.sort({ name: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(this.resourceModel.find(query), hasSearch, { name: 1 }).lean();
   }
 
   async createResource(businessId: string, payload: CreateResourceDto) {
@@ -214,7 +206,7 @@ export class AdminCatalogService {
 
   async assertService(businessId: string, serviceId: string) {
     if (!isValidObjectId(serviceId)) {
-      throw new BadRequestException("Invalid serviceId.");
+      throw new BadRequestException(ERR_INVALID_SERVICE_ID);
     }
     const service = await this.serviceModel
       .findOne({ _id: serviceId, businessId, active: true })

@@ -15,6 +15,42 @@ import { hash } from "bcryptjs";
 import { ERR_INVALID_DATE_FORMAT } from "./admin.constants";
 
 const SELECT_WITHOUT_PASSWORD = "-passwordHash";
+const TEXT_SCORE = "textScore";
+const ERR_INVALID_BUSINESS_ID = "Invalid businessId.";
+const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
+const ERR_NO_UPDATES = "No updates provided.";
+const ERR_BUSINESS_NOT_FOUND = "Business not found.";
+const ERR_USER_NOT_FOUND = "User not found.";
+const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
+
+function normalizePhone(value: string) {
+  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+}
+
+function applyTextSearchSort<T>(
+  query: ReturnType<Model<T>["find"]>,
+  hasSearch: boolean,
+  fallbackSort: Record<string, 1 | -1>
+) {
+  if (hasSearch) {
+    query.select({ score: { $meta: TEXT_SCORE } });
+    query.sort({ score: { $meta: TEXT_SCORE }, ...fallbackSort });
+  } else {
+    query.sort(fallbackSort);
+  }
+  return query;
+}
+
+function buildAppointmentSearchQuery(search?: string) {
+  const trimmed = search?.trim() ?? "";
+  if (!trimmed) {
+    return { query: {}, useTextScore: false };
+  }
+  if (PHONE_SEARCH_REGEX.test(trimmed)) {
+    return { query: { customerPhone: normalizePhone(trimmed) }, useTextScore: false };
+  }
+  return { query: { $text: { $search: trimmed } }, useTextScore: true };
+}
 
 @Injectable()
 export class AdminPlatformService {
@@ -44,27 +80,14 @@ export class AdminPlatformService {
     }
     if (options?.page && options?.limit) {
       const total = await this.businessModel.countDocuments(query);
-      const baseQuery = this.businessModel.find(query);
-      if (hasSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-      } else {
-        baseQuery.sort({ name: 1 });
-      }
+      const baseQuery = applyTextSearchSort(this.businessModel.find(query), hasSearch, { name: 1 });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
         .lean();
       return { items, total, page: options.page, limit: options.limit };
     }
-    const baseQuery = this.businessModel.find(query);
-    if (hasSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-    } else {
-      baseQuery.sort({ name: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(this.businessModel.find(query), hasSearch, { name: 1 }).lean();
   }
 
   async createBusiness(payload: CreateBusinessDto) {
@@ -104,32 +127,27 @@ export class AdminPlatformService {
     if (options?.active === "false") query.active = false;
     if (options?.page && options?.limit) {
       const total = await this.adminUserModel.countDocuments(query);
-      const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
-      if (hasSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
-      } else {
-        baseQuery.sort({ email: 1 });
-      }
+      const baseQuery = applyTextSearchSort(
+        this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD),
+        hasSearch,
+        { email: 1 }
+      );
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
         .lean();
       return { items, total, page: options.page, limit: options.limit };
     }
-    const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
-    if (hasSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
-    } else {
-      baseQuery.sort({ email: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(
+      this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD),
+      hasSearch,
+      { email: 1 }
+    ).lean();
   }
 
   async updateBusiness(businessId: string, payload: UpdateBusinessDto) {
     if (!isValidObjectId(businessId)) {
-      throw new BadRequestException("Invalid businessId.");
+      throw new BadRequestException(ERR_INVALID_BUSINESS_ID);
     }
     const update: Record<string, unknown> = {};
     if (payload.name) update.name = payload.name;
@@ -139,25 +157,25 @@ export class AdminPlatformService {
     if (payload.address !== undefined) update.address = payload.address;
     if (payload.status) update.status = payload.status;
     if (Object.keys(update).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const business = await this.businessModel
       .findOneAndUpdate({ _id: businessId }, { $set: update }, { new: true })
       .lean();
     if (!business) {
-      throw new BadRequestException("Business not found.");
+      throw new BadRequestException(ERR_BUSINESS_NOT_FOUND);
     }
     return business;
   }
 
   async deleteBusiness(businessId: string) {
     if (!isValidObjectId(businessId)) {
-      throw new BadRequestException("Invalid businessId.");
+      throw new BadRequestException(ERR_INVALID_BUSINESS_ID);
     }
     const business = await this.businessModel.findOneAndDelete({ _id: businessId }).lean();
     if (!business) {
-      throw new BadRequestException("Business not found.");
+      throw new BadRequestException(ERR_BUSINESS_NOT_FOUND);
     }
     return business;
   }
@@ -177,7 +195,7 @@ export class AdminPlatformService {
       update.passwordHash = await hash(payload.password, 10);
     }
     if (Object.keys(update).length === 0) {
-      throw new BadRequestException("No updates provided.");
+      throw new BadRequestException(ERR_NO_UPDATES);
     }
 
     const user = await this.adminUserModel
@@ -185,7 +203,7 @@ export class AdminPlatformService {
       .select(SELECT_WITHOUT_PASSWORD)
       .lean();
     if (!user) {
-      throw new BadRequestException("User not found.");
+      throw new BadRequestException(ERR_USER_NOT_FOUND);
     }
     return user;
   }
@@ -199,11 +217,12 @@ export class AdminPlatformService {
       .select(SELECT_WITHOUT_PASSWORD)
       .lean();
     if (!user) {
-      throw new BadRequestException("User not found.");
+      throw new BadRequestException(ERR_USER_NOT_FOUND);
     }
     return user;
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   async listPlatformAppointmentsWithSearch(
     date?: string,
     status?: "booked" | "cancelled" | "completed",
@@ -223,23 +242,15 @@ export class AdminPlatformService {
       }
       query.startTime = { $gte: start, $lte: end };
     }
-    const trimmedSearch = search?.trim() ?? "";
-    const isPhoneSearch = /^[\d+()\-\s]+$/.test(trimmedSearch);
-    if (trimmedSearch.length > 0) {
-      if (isPhoneSearch) {
-        const normalized = trimmedSearch.replace(/\s+/g, "").replace(/[^\d+]/g, "");
-        query.customerPhone = normalized;
-      } else {
-        query.$text = { $search: trimmedSearch };
-      }
-    }
+    const searchMeta = buildAppointmentSearchQuery(search);
+    Object.assign(query, searchMeta.query);
 
     if (page && limit) {
       const total = await this.appointmentModel.countDocuments(query);
       const baseQuery = this.appointmentModel.find(query);
-      if (trimmedSearch.length > 0 && !isPhoneSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, startTime: -1 });
+      if (searchMeta.useTextScore) {
+        baseQuery.select({ score: { $meta: TEXT_SCORE } });
+        baseQuery.sort({ score: { $meta: TEXT_SCORE }, startTime: -1 });
       } else {
         baseQuery.sort({ startTime: -1 });
       }
@@ -251,15 +262,10 @@ export class AdminPlatformService {
     }
 
     const baseQuery = this.appointmentModel.find(query);
-    if (trimmedSearch.length > 0 && !isPhoneSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, startTime: -1 });
-    } else {
-      baseQuery.sort({ startTime: -1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(baseQuery, searchMeta.useTextScore, { startTime: -1 }).lean();
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   async listPlatformServices(options?: {
     businessId?: string;
     active?: "true" | "false";
@@ -274,7 +280,7 @@ export class AdminPlatformService {
     const query: Record<string, unknown> = {};
     if (options?.businessId) {
       if (!isValidObjectId(options.businessId)) {
-        throw new BadRequestException("Invalid businessId.");
+        throw new BadRequestException(ERR_INVALID_BUSINESS_ID);
       }
       query.businessId = options.businessId;
     }
@@ -304,13 +310,9 @@ export class AdminPlatformService {
 
     if (options?.page && options?.limit) {
       const total = await this.serviceModel.countDocuments(query);
-      const baseQuery = this.serviceModel.find(query);
-      if (hasServiceSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-      } else {
-        baseQuery.sort({ name: 1 });
-      }
+      const baseQuery = applyTextSearchSort(this.serviceModel.find(query), hasServiceSearch, {
+        name: 1
+      });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -318,14 +320,7 @@ export class AdminPlatformService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    const baseQuery = this.serviceModel.find(query);
-    if (hasServiceSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-    } else {
-      baseQuery.sort({ name: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(this.serviceModel.find(query), hasServiceSearch, { name: 1 }).lean();
   }
 
   async listPlatformResources(options?: {
@@ -338,7 +333,7 @@ export class AdminPlatformService {
     const query: Record<string, unknown> = {};
     if (options?.businessId) {
       if (!isValidObjectId(options.businessId)) {
-        throw new BadRequestException("Invalid businessId.");
+        throw new BadRequestException(ERR_INVALID_BUSINESS_ID);
       }
       query.businessId = options.businessId;
     }
@@ -356,13 +351,9 @@ export class AdminPlatformService {
 
     if (options?.page && options?.limit) {
       const total = await this.resourceModel.countDocuments(query);
-      const baseQuery = this.resourceModel.find(query);
-      if (hasResourceSearch) {
-        baseQuery.select({ score: { $meta: "textScore" } });
-        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-      } else {
-        baseQuery.sort({ name: 1 });
-      }
+      const baseQuery = applyTextSearchSort(this.resourceModel.find(query), hasResourceSearch, {
+        name: 1
+      });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -370,16 +361,12 @@ export class AdminPlatformService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    const baseQuery = this.resourceModel.find(query);
-    if (hasResourceSearch) {
-      baseQuery.select({ score: { $meta: "textScore" } });
-      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
-    } else {
-      baseQuery.sort({ name: 1 });
-    }
-    return baseQuery.lean();
+    return applyTextSearchSort(this.resourceModel.find(query), hasResourceSearch, {
+      name: 1
+    }).lean();
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   async listPlatformBlocks(options?: {
     businessId?: string;
     resourceId?: string;
@@ -393,13 +380,13 @@ export class AdminPlatformService {
     const query: Record<string, unknown> = {};
     if (options?.businessId) {
       if (!isValidObjectId(options.businessId)) {
-        throw new BadRequestException("Invalid businessId.");
+        throw new BadRequestException(ERR_INVALID_BUSINESS_ID);
       }
       query.businessId = options.businessId;
     }
     if (options?.resourceId) {
       if (!isValidObjectId(options.resourceId)) {
-        throw new BadRequestException("Invalid resourceId.");
+        throw new BadRequestException(ERR_INVALID_RESOURCE_ID);
       }
       query.resourceId = options.resourceId;
     }

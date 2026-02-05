@@ -69,6 +69,11 @@ export function AdminApp() {
   const blocks = useAdminBlocks(apiContext);
   const appointments = useAdminAppointments(apiContext);
   const calendar = useAdminCalendar(apiContext);
+  const resetCatalogLoaded = catalog.resetLoaded;
+  const resetBlocksLoaded = blocks.resetLoaded;
+  const resetAppointmentsLoaded = appointments.resetLoaded;
+  const resetBusinessSettingsLoaded = businessSettings.resetLoaded;
+  const resetCalendarLoaded = calendar.resetLoaded;
 
   React.useEffect(() => {
     if (role === "staff") {
@@ -81,12 +86,19 @@ export function AdminApp() {
 
   React.useEffect(() => {
     if (!businessId) return;
-    catalog.resetLoaded();
-    blocks.resetLoaded();
-    appointments.resetLoaded();
-    businessSettings.resetLoaded();
-    calendar.resetLoaded();
-  }, [businessId]);
+    resetCatalogLoaded();
+    resetBlocksLoaded();
+    resetAppointmentsLoaded();
+    resetBusinessSettingsLoaded();
+    resetCalendarLoaded();
+  }, [
+    businessId,
+    resetCatalogLoaded,
+    resetBlocksLoaded,
+    resetAppointmentsLoaded,
+    resetBusinessSettingsLoaded,
+    resetCalendarLoaded
+  ]);
 
   React.useEffect(() => {
     if (role === "platform_admin" && activeTab === "platform_businesses") {
@@ -203,6 +215,7 @@ export function AdminApp() {
     ]);
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   function handleTabSelect(tab: TabKey) {
     setActiveTab(tab);
     if (tab === "platform_businesses") {

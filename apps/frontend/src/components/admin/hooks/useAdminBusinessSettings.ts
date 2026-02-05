@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
 import { BusinessHoursItem, BusinessProfile, Policies, dayLabels } from "../types";
 import { AdminApiContext } from "./types";
@@ -185,9 +185,9 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     }
   }
 
-  function resetLoaded() {
+  const resetLoaded = useCallback(() => {
     setBusinessLoaded(false);
-  }
+  }, []);
 
   return {
     hours,

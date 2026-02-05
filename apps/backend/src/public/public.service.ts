@@ -16,6 +16,7 @@ import { assertNotInPast, assertSameDayAllowed } from "./policies";
 const DEFAULT_TIMEZONE = "America/Bogota";
 const STATUS_ACTIVE = "active";
 const STATUS_BOOKED = "booked";
+const ERR_INVALID_APPOINTMENT_ID = "Invalid appointmentId.";
 const ERR_BUSINESS_NOT_FOUND = "Business not found";
 const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
 const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
@@ -383,7 +384,7 @@ export class PublicService {
     }
 
     if (!isValidObjectId(appointmentId)) {
-      throw new BadRequestException("Invalid appointmentId.");
+      throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
     }
 
     const phone = payload.customerPhone.trim();
@@ -424,7 +425,7 @@ export class PublicService {
     }
 
     if (!isValidObjectId(appointmentId)) {
-      throw new BadRequestException("Invalid appointmentId.");
+      throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
     }
 
     const phone = payload.customerPhone.trim();
@@ -509,7 +510,7 @@ export class PublicService {
     }
 
     if (!isValidObjectId(appointmentId)) {
-      throw new BadRequestException("Invalid appointmentId.");
+      throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
     }
 
     const phone = payload.customerPhone.trim();
