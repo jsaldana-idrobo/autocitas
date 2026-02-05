@@ -229,7 +229,8 @@ export function PlatformResourcesSection({
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            const name = String(form.get("name") || "").trim();
+            const nameValue = form.get("name");
+            const name = typeof nameValue === "string" ? nameValue.trim() : "";
             if (!createBusinessId || !name) {
               return;
             }

@@ -4,11 +4,11 @@ export function AdminHeader({
   businessId,
   role,
   onLogout
-}: {
+}: Readonly<{
   businessId: string;
   role: string;
   onLogout: () => void;
-}) {
+}>) {
   return (
     <header className="card flex flex-wrap items-center justify-between gap-4 p-6">
       <div>

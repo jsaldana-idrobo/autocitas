@@ -108,17 +108,7 @@ const defaultHours = [
 ];
 
 let business = await Business.findOne({ slug: businessSlug });
-if (!business) {
-  business = await Business.create({
-    name: businessName,
-    slug: businessSlug,
-    timezone,
-    status: "active",
-    policies: { cancellationHours: 24, rescheduleLimit: 1, allowSameDay: true },
-    hours: defaultHours
-  });
-  console.log("Created business", business._id.toString());
-} else {
+if (business) {
   const shouldUpdateHours = !business.hours || business.hours.length === 0;
   if (shouldUpdateHours) {
     business.hours = defaultHours;
@@ -128,31 +118,32 @@ if (!business) {
   }
   await business.save();
   console.log("Business exists", business._id.toString());
+} else {
+  business = await Business.create({
+    name: businessName,
+    slug: businessSlug,
+    timezone,
+    status: "active",
+    policies: { cancellationHours: 24, rescheduleLimit: 1, allowSameDay: true },
+    hours: defaultHours
+  });
+  console.log("Created business", business._id.toString());
 }
 
 let resource = await Resource.findOne({ businessId: business._id, name: resourceName });
-if (!resource) {
+if (resource) {
+  console.log("Resource exists", resource._id.toString());
+} else {
   resource = await Resource.create({
     businessId: business._id,
     name: resourceName,
     active: true
   });
   console.log("Created resource", resource._id.toString());
-} else {
-  console.log("Resource exists", resource._id.toString());
 }
 
 let service = await Service.findOne({ businessId: business._id, name: serviceName });
-if (!service) {
-  service = await Service.create({
-    businessId: business._id,
-    name: serviceName,
-    durationMinutes: serviceDurationMinutes,
-    active: true,
-    allowedResourceIds: [resource._id]
-  });
-  console.log("Created service", service._id.toString());
-} else {
+if (service) {
   const allowed = new Set((service.allowedResourceIds || []).map((id) => id.toString()));
   if (!allowed.has(resource._id.toString())) {
     service.allowedResourceIds = [...(service.allowedResourceIds || []), resource._id];
@@ -162,6 +153,15 @@ if (!service) {
   }
   await service.save();
   console.log("Service exists", service._id.toString());
+} else {
+  service = await Service.create({
+    businessId: business._id,
+    name: serviceName,
+    durationMinutes: serviceDurationMinutes,
+    active: true,
+    allowedResourceIds: [resource._id]
+  });
+  console.log("Created service", service._id.toString());
 }
 
 async function ensureUser({ email, password, role, businessId, resourceId }) {

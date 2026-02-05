@@ -14,7 +14,7 @@ export function BusinessSearchSelect({
   initialOptions,
   selectedLabel,
   className
-}: {
+}: Readonly<{
   value: string;
   onChange: (value: string) => void;
   authHeaders: { token: string };
@@ -25,7 +25,7 @@ export function BusinessSearchSelect({
   initialOptions?: BusinessProfile[];
   selectedLabel?: string;
   className?: string;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState<BusinessProfile[]>(initialOptions ?? []);
   const [loading, setLoading] = useState(false);

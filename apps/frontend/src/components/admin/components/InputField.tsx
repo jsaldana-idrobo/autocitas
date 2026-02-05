@@ -7,14 +7,14 @@ export function InputField({
   placeholder,
   defaultValue,
   className
-}: {
+}: Readonly<{
   name: string;
   label: string;
   type?: string;
   placeholder?: string;
   defaultValue?: string | number;
   className?: string;
-}) {
+}>) {
   return (
     <label className={`block text-sm font-medium ${className ?? ""}`}>
       {label}

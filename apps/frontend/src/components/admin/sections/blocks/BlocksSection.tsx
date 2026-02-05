@@ -25,7 +25,7 @@ export function BlocksSection({
   deleteBlock,
   loadBlocks,
   total
-}: {
+}: Readonly<{
   blocks: BlockItem[];
   resources: ResourceItem[];
   role: "owner" | "staff" | "platform_admin" | "unknown";
@@ -35,7 +35,7 @@ export function BlocksSection({
   deleteBlock: (blockId: string) => void;
   loadBlocks: (page?: number, limit?: number, search?: string) => void;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<BlockItem | null>(null);
@@ -159,12 +159,12 @@ export function BlocksSection({
           <InputField name="endTime" label="Fin" type="datetime-local" />
           {role === "staff" ? (
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-500 md:col-span-2">
-              Bloqueo asignado a tu recurso
+              <span>Bloqueo asignado a tu recurso</span>
               <input type="hidden" name="resourceId" value={resourceId ?? ""} />
             </div>
           ) : (
             <label className="block text-sm font-medium md:col-span-2">
-              Recurso
+              <span>Recurso</span>
               <select
                 name="resourceId"
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"

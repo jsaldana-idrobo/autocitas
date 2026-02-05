@@ -28,9 +28,10 @@ import { Service } from "../../schemas/service.schema";
 
 const TEXT_SCORE = "textScore";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
+type AppointmentStatus = "booked" | "cancelled" | "completed";
 
 function normalizePhone(value: string) {
-  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
 }
 
 function buildAppointmentSearchQuery(search?: string) {
@@ -57,45 +58,47 @@ export class AdminAppointmentsService {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   async listAppointments(
     businessId: string,
-    date?: string,
-    resourceId?: string,
-    status?: "booked" | "cancelled" | "completed",
-    search?: string,
-    from?: string,
-    to?: string,
-    page?: number,
-    limit?: number
+    options?: {
+      date?: string;
+      resourceId?: string;
+      status?: AppointmentStatus;
+      search?: string;
+      from?: string;
+      to?: string;
+      page?: number;
+      limit?: number;
+    }
   ) {
     await this.businessContext.getBusinessContext(businessId);
 
     const query: Record<string, unknown> = { businessId };
-    if (resourceId) {
-      query.resourceId = resourceId;
+    if (options?.resourceId) {
+      query.resourceId = options.resourceId;
     }
-    if (status) {
-      query.status = status;
+    if (options?.status) {
+      query.status = options.status;
     }
-    if (date) {
-      const start = new Date(`${date}T00:00:00.000Z`);
-      const end = new Date(`${date}T23:59:59.999Z`);
+    if (options?.date) {
+      const start = new Date(`${options.date}T00:00:00.000Z`);
+      const end = new Date(`${options.date}T23:59:59.999Z`);
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
         throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
       }
       query.startTime = { $gte: start, $lte: end };
     }
-    if (from && to) {
-      const start = new Date(from);
-      const end = new Date(to);
+    if (options?.from && options?.to) {
+      const start = new Date(options.from);
+      const end = new Date(options.to);
       if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
         throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
       }
       query.startTime = { $lt: end };
       query.endTime = { $gt: start };
     }
-    const searchMeta = buildAppointmentSearchQuery(search);
+    const searchMeta = buildAppointmentSearchQuery(options?.search);
     Object.assign(query, searchMeta.query);
 
-    if (page && limit) {
+    if (options?.page && options?.limit) {
       const total = await this.appointmentModel.countDocuments(query);
       const baseQuery = this.appointmentModel.find(query);
       if (searchMeta.useTextScore) {
@@ -105,10 +108,10 @@ export class AdminAppointmentsService {
         baseQuery.sort({ startTime: 1 });
       }
       const items = await baseQuery
-        .skip((page - 1) * limit)
-        .limit(limit)
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
         .lean();
-      return { items, total, page, limit };
+      return { items, total, page: options.page, limit: options.limit };
     }
 
     const baseQuery = this.appointmentModel.find(query);

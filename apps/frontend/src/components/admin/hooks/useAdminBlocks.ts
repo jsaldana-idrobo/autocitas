@@ -55,13 +55,17 @@ export function useAdminBlocks(api: AdminApiContext) {
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
-    const startRaw = String(form.get("startTime") || "").trim();
-    const endRaw = String(form.get("endTime") || "").trim();
+    const readString = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value.trim() : "";
+    };
+    const startRaw = readString("startTime");
+    const endRaw = readString("endTime");
     const payload = {
       startTime: toIsoIfPossible(startRaw),
       endTime: toIsoIfPossible(endRaw),
-      resourceId: String(form.get("resourceId") || "").trim() || undefined,
-      reason: String(form.get("reason") || "").trim() || undefined
+      resourceId: readString("resourceId") || undefined,
+      reason: readString("reason") || undefined
     };
     if (api.role === "staff" && api.resourceId) {
       payload.resourceId = api.resourceId;

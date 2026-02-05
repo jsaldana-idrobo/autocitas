@@ -9,7 +9,7 @@ export function CalendarModal({
   fixedResourceId,
   onSubmit,
   onClose
-}: {
+}: Readonly<{
   title: string;
   services: ServiceItem[];
   resources: ResourceItem[];
@@ -23,7 +23,7 @@ export function CalendarModal({
     startTime: string;
   }) => void;
   onClose: () => void;
-}) {
+}>) {
   const [serviceId, setServiceId] = useState(services[0]?._id || "");
   const [resourceId, setResourceId] = useState(fixedResourceId || resources[0]?._id || "");
   const [customerName, setCustomerName] = useState("");

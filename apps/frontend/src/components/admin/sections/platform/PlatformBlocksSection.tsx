@@ -31,16 +31,16 @@ export function PlatformBlocksSection({
   blocks: BlockItem[];
   resources: ResourceItem[];
   businesses: BusinessProfile[];
-  onRefresh: (
-    page?: number,
-    limit?: number,
-    businessId?: string,
-    resourceId?: string,
-    search?: string,
-    type?: string,
-    from?: string,
-    to?: string
-  ) => void;
+  onRefresh: (options?: {
+    page?: number;
+    limit?: number;
+    businessId?: string;
+    resourceId?: string;
+    search?: string;
+    type?: string;
+    from?: string;
+    to?: string;
+  }) => void;
   onCreate: (businessId: string, payload: Partial<BlockItem>) => void;
   onUpdate: (businessId: string, blockId: string, payload: Partial<BlockItem>) => void;
   onDelete: (businessId: string, blockId: string) => void;
@@ -110,16 +110,16 @@ export function PlatformBlocksSection({
   }, [debouncedSearch, businessFilter, resourceFilter, typeFilter, fromFilter, toFilter]);
 
   useEffect(() => {
-    onRefresh(
+    onRefresh({
       page,
-      pageSize,
-      businessFilter,
-      resourceFilter,
-      debouncedSearch,
-      typeFilter,
-      fromFilter,
-      toFilter
-    );
+      limit: pageSize,
+      businessId: businessFilter,
+      resourceId: resourceFilter,
+      search: debouncedSearch,
+      type: typeFilter,
+      from: fromFilter,
+      to: toFilter
+    });
   }, [
     page,
     pageSize,
@@ -142,16 +142,16 @@ export function PlatformBlocksSection({
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               onClick={() =>
-                onRefresh(
+                onRefresh({
                   page,
-                  pageSize,
-                  businessFilter,
-                  resourceFilter,
-                  debouncedSearch,
-                  typeFilter,
-                  fromFilter,
-                  toFilter
-                )
+                  limit: pageSize,
+                  businessId: businessFilter,
+                  resourceId: resourceFilter,
+                  search: debouncedSearch,
+                  type: typeFilter,
+                  from: fromFilter,
+                  to: toFilter
+                })
               }
             >
               Refrescar
@@ -302,9 +302,13 @@ export function PlatformBlocksSection({
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            const startTime = String(form.get("startTime") || "").trim();
-            const endTime = String(form.get("endTime") || "").trim();
-            const reason = String(form.get("reason") || "").trim();
+            const readString = (key: string) => {
+              const value = form.get(key);
+              return typeof value === "string" ? value.trim() : "";
+            };
+            const startTime = readString("startTime");
+            const endTime = readString("endTime");
+            const reason = readString("reason");
             if (!createBusinessId || !startTime || !endTime) {
               return;
             }

@@ -31,17 +31,17 @@ export function PlatformServicesSection({
   services: ServiceItem[];
   resources: ResourceItem[];
   businesses: BusinessProfile[];
-  onRefresh: (
-    page?: number,
-    limit?: number,
-    search?: string,
-    status?: string,
-    businessId?: string,
-    minDuration?: string,
-    maxDuration?: string,
-    minPrice?: string,
-    maxPrice?: string
-  ) => void;
+  onRefresh: (options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    active?: string;
+    businessId?: string;
+    minDuration?: string;
+    maxDuration?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  }) => void;
   onCreate: (
     businessId: string,
     payload: { name: string; durationMinutes: number; price?: number }
@@ -76,17 +76,17 @@ export function PlatformServicesSection({
   }, [debouncedSearch, statusFilter, businessFilter, durationMin, durationMax, priceMin, priceMax]);
 
   useEffect(() => {
-    onRefresh(
+    onRefresh({
       page,
-      pageSize,
-      debouncedSearch,
-      statusFilter,
-      businessFilter,
-      durationMin,
-      durationMax,
-      priceMin,
-      priceMax
-    );
+      limit: pageSize,
+      search: debouncedSearch,
+      active: statusFilter,
+      businessId: businessFilter,
+      minDuration: durationMin,
+      maxDuration: durationMax,
+      minPrice: priceMin,
+      maxPrice: priceMax
+    });
   }, [
     page,
     pageSize,
@@ -115,17 +115,17 @@ export function PlatformServicesSection({
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               onClick={() =>
-                onRefresh(
+                onRefresh({
                   page,
-                  pageSize,
+                  limit: pageSize,
                   search,
-                  statusFilter,
-                  businessFilter,
-                  durationMin,
-                  durationMax,
-                  priceMin,
-                  priceMax
-                )
+                  active: statusFilter,
+                  businessId: businessFilter,
+                  minDuration: durationMin,
+                  maxDuration: durationMax,
+                  minPrice: priceMin,
+                  maxPrice: priceMax
+                })
               }
             >
               Refrescar
@@ -289,10 +289,14 @@ export function PlatformServicesSection({
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            const name = String(form.get("name") || "").trim();
-            const durationMinutes = Number(form.get("durationMinutes"));
-            const priceValue = form.get("price");
-            const price = priceValue ? Number(priceValue) : undefined;
+            const readString = (key: string) => {
+              const value = form.get(key);
+              return typeof value === "string" ? value.trim() : "";
+            };
+            const name = readString("name");
+            const durationMinutes = Number(readString("durationMinutes"));
+            const priceRaw = readString("price");
+            const price = priceRaw ? Number(priceRaw) : undefined;
             if (!createBusinessId || !name || !durationMinutes) {
               return;
             }

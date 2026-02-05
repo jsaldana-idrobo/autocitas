@@ -6,12 +6,12 @@ export function StaffEditor({
   resources,
   onCancel,
   onSave
-}: {
+}: Readonly<{
   item: StaffItem;
   resources: ResourceItem[];
   onCancel: () => void;
   onSave: (payload: { resourceId?: string; password?: string; active?: boolean }) => void;
-}) {
+}>) {
   const [staffResource, setStaffResource] = useState(item.resourceId ?? "");
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(item.active);
@@ -42,7 +42,7 @@ export function StaffEditor({
           checked={active}
           onChange={(event) => setActive(event.target.checked)}
         />
-        Activo
+        <span>Activo</span>
       </label>
       <div className="flex items-center gap-2">
         <button

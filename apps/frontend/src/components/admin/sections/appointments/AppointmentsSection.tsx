@@ -27,7 +27,7 @@ export function AppointmentsSection({
   loadAppointments,
   updateAppointmentStatus,
   total
-}: {
+}: Readonly<{
   appointments: AppointmentItem[];
   services: ServiceItem[];
   resources: ResourceItem[];
@@ -46,7 +46,7 @@ export function AppointmentsSection({
   ) => void;
   updateAppointmentStatus: (appointmentId: string, status: string) => void;
   total: number;
-}) {
+}>) {
   const [viewingAppointment, setViewingAppointment] = useState<AppointmentItem | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -125,6 +125,11 @@ export function AppointmentsSection({
               const resourceName = resources.find(
                 (resource) => resource._id === item.resourceId
               )?.name;
+              const statusTone = (() => {
+                if (item.status === "booked") return "warning";
+                if (item.status === "completed") return "success";
+                return "danger";
+              })();
               return (
                 <TableRow key={item._id}>
                   <TableCell>
@@ -142,17 +147,7 @@ export function AppointmentsSection({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      tone={
-                        item.status === "booked"
-                          ? "warning"
-                          : item.status === "completed"
-                            ? "success"
-                            : "danger"
-                      }
-                    >
-                      {item.status}
-                    </Badge>
+                    <Badge tone={statusTone}>{item.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

@@ -5,11 +5,11 @@ export function ResourceEditor({
   item,
   onCancel,
   onSave
-}: {
+}: Readonly<{
   item: ResourceItem;
   onCancel: () => void;
   onSave: (payload: Partial<ResourceItem>) => void;
-}) {
+}>) {
   const [name, setName] = useState(item.name);
   const [active, setActive] = useState(item.active);
 
@@ -26,7 +26,7 @@ export function ResourceEditor({
           checked={active}
           onChange={(event) => setActive(event.target.checked)}
         />
-        Activo
+        <span>Activo</span>
       </label>
       <div className="flex items-center gap-2">
         <button

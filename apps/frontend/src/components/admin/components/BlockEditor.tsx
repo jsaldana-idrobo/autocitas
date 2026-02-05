@@ -8,13 +8,13 @@ export function BlockEditor({
   canEditResource,
   onCancel,
   onSave
-}: {
+}: Readonly<{
   item: BlockItem;
   resources: ResourceItem[];
   canEditResource: boolean;
   onCancel: () => void;
   onSave: (payload: Partial<BlockItem>) => void;
-}) {
+}>) {
   const [startTime, setStartTime] = useState(item.startTime);
   const [endTime, setEndTime] = useState(item.endTime);
   const [reason, setReason] = useState(item.reason ?? "");

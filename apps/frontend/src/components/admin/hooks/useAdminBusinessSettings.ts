@@ -3,6 +3,8 @@ import { apiRequest } from "../../../lib/api";
 import { BusinessHoursItem, BusinessProfile, Policies, dayLabels } from "../types";
 import { AdminApiContext } from "./types";
 
+type BusinessStatus = "active" | "inactive";
+
 export function useAdminBusinessSettings(api: AdminApiContext) {
   const [hours, setHours] = useState<BusinessHoursItem[]>([]);
   const [policies, setPolicies] = useState<Policies | null>(null);
@@ -51,12 +53,16 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
+    const readString = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value.trim() : "";
+    };
     let payloadHours: { dayOfWeek: number; openTime: string; closeTime: string }[] = [];
     try {
       payloadHours = dayLabels
         .map((_, index) => {
-          const openTime = String(form.get(`open-${index}`) || "").trim();
-          const closeTime = String(form.get(`close-${index}`) || "").trim();
+          const openTime = readString(`open-${index}`);
+          const closeTime = readString(`close-${index}`);
           if (!openTime && !closeTime) {
             return null;
           }
@@ -107,10 +113,14 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
+    const readString = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value.trim() : "";
+    };
     const payload = {
-      cancellationHours: Number(form.get("cancellationHours")),
-      rescheduleLimit: Number(form.get("rescheduleLimit")),
-      allowSameDay: String(form.get("allowSameDay")) === "true"
+      cancellationHours: Number(readString("cancellationHours")),
+      rescheduleLimit: Number(readString("rescheduleLimit")),
+      allowSameDay: readString("allowSameDay") === "true"
     };
 
     try {
@@ -147,13 +157,17 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
+    const readString = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value.trim() : "";
+    };
     const payload = {
-      name: String(form.get("name") || "").trim() || undefined,
-      slug: String(form.get("slug") || "").trim() || undefined,
-      timezone: String(form.get("timezone") || "").trim() || undefined,
-      contactPhone: String(form.get("contactPhone") || "").trim() || undefined,
-      address: String(form.get("address") || "").trim() || undefined,
-      status: (String(form.get("status") || "").trim() as "active" | "inactive") || undefined
+      name: readString("name") || undefined,
+      slug: readString("slug") || undefined,
+      timezone: readString("timezone") || undefined,
+      contactPhone: readString("contactPhone") || undefined,
+      address: readString("address") || undefined,
+      status: (readString("status") as BusinessStatus) || undefined
     };
 
     try {

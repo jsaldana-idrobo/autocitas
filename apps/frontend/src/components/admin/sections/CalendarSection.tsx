@@ -27,7 +27,7 @@ export function CalendarSection({
   onCancelAppointment,
   userRole,
   resourceId
-}: {
+}: Readonly<{
   weekStart: string;
   intervalMinutes: number;
   onPrevWeek: () => void;
@@ -59,7 +59,7 @@ export function CalendarSection({
   onCancelAppointment: (appointmentId: string) => void;
   userRole: "owner" | "staff" | "platform_admin" | "unknown";
   resourceId?: string;
-}) {
+}>) {
   const [showCreate, setShowCreate] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<AppointmentItem | null>(null);

@@ -7,7 +7,7 @@ export function BlockModal({
   fixedResourceId,
   onSubmit,
   onClose
-}: {
+}: Readonly<{
   resources: ResourceItem[];
   canSelectResource: boolean;
   fixedResourceId?: string;
@@ -18,7 +18,7 @@ export function BlockModal({
     reason?: string;
   }) => void;
   onClose: () => void;
-}) {
+}>) {
   const [resourceId, setResourceId] = useState(fixedResourceId || resources[0]?._id || "");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");

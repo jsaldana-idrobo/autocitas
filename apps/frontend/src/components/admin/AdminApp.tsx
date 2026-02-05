@@ -42,6 +42,9 @@ export function AdminApp() {
       return next.slice(-3);
     });
   }, []);
+  const fireAndForget = React.useCallback((promise: Promise<unknown>) => {
+    promise.catch(() => {});
+  }, []);
 
   const apiContext = useMemo(
     () => ({
@@ -103,23 +106,29 @@ export function AdminApp() {
   React.useEffect(() => {
     if (role === "platform_admin" && activeTab === "platform_businesses") {
       if (!platform.businessesLoaded) {
-        void platform.loadBusinesses(1, 25, "", "");
+        fireAndForget(platform.loadBusinesses(1, 25, "", ""));
       }
     }
-  }, [activeTab, platform, role]);
+  }, [activeTab, fireAndForget, platform, role]);
 
   const isAuthed = token.length > 0 && (role === "platform_admin" || businessId.length > 0);
 
-  const availableTabs =
-    role === "staff" ? staffTabs : role === "platform_admin" ? platformTabs : ownerTabs;
+  let availableTabs = ownerTabs;
+  if (role === "staff") {
+    availableTabs = staffTabs;
+  } else if (role === "platform_admin") {
+    availableTabs = platformTabs;
+  }
   const canUseBusinessTabs = role !== "platform_admin" || businessId.length > 0;
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     resetError();
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") || "").trim();
-    const password = String(form.get("password") || "").trim();
+    const emailValue = form.get("email");
+    const passwordValue = form.get("password");
+    const email = typeof emailValue === "string" ? emailValue.trim() : "";
+    const password = typeof passwordValue === "string" ? passwordValue.trim() : "";
 
     if (!email || !password) {
       setError("Completa email y password.");
@@ -220,117 +229,129 @@ export function AdminApp() {
     setActiveTab(tab);
     if (tab === "platform_businesses") {
       if (!platform.businessesLoaded) {
-        void onPlatformBusinesses();
+        fireAndForget(onPlatformBusinesses());
       }
       return;
     }
     if (tab === "platform_owners") {
-      void onPlatformOwners();
+      fireAndForget(onPlatformOwners());
       return;
     }
     if (tab === "platform_staff") {
-      void onPlatformStaff();
+      fireAndForget(onPlatformStaff());
       return;
     }
     if (tab === "platform_appointments") {
-      void onPlatformAppointments();
+      fireAndForget(onPlatformAppointments());
       return;
     }
     if (tab === "platform_services") {
-      void (async () => {
-        if (!platform.businessesLoaded) {
-          await platform.loadBusinesses(1, 25, "", "");
-        }
-        if (!platform.platformResourcesLoaded) {
-          await platform.loadPlatformResources(1, 25, "", "", "");
-        }
-        if (!platform.platformServicesLoaded) {
-          await platform.loadPlatformServices(1, 25, "", "", "");
-        }
-      })();
-      return;
-    }
-    if (tab === "platform_resources") {
-      void (async () => {
-        if (!platform.businessesLoaded) {
-          await platform.loadBusinesses(1, 25, "", "");
-        }
-        if (!platform.platformResourcesLoaded) {
-          await platform.loadPlatformResources(1, 25, "", "", "");
-        }
-      })();
-      return;
-    }
-    if (tab === "platform_blocks") {
-      void (async () => {
-        if (!platform.businessesLoaded) {
-          await platform.loadBusinesses(1, 25, "", "");
-        }
-        if (!platform.platformResourcesLoaded) {
-          await platform.loadPlatformResources(1, 25, "", "", "");
-        }
-        if (!platform.platformBlocksLoaded) {
-          await platform.loadPlatformBlocks(1, 25, "", "");
-        }
-      })();
-      return;
-    }
-    if (tab === "platform_hours" || tab === "platform_policies" || tab === "platform_calendar") {
-      void (async () => {
-        if (!platform.businessesLoaded) {
-          await platform.loadBusinesses(1, 25, "", "");
-        }
-        if (tab === "platform_calendar") {
+      fireAndForget(
+        (async () => {
+          if (!platform.businessesLoaded) {
+            await platform.loadBusinesses(1, 25, "", "");
+          }
           if (!platform.platformResourcesLoaded) {
             await platform.loadPlatformResources(1, 25, "", "", "");
           }
           if (!platform.platformServicesLoaded) {
-            await platform.loadPlatformServices(1, 25, "", "", "");
+            await platform.loadPlatformServices({ page: 1, limit: 25 });
           }
-        }
-      })();
+        })()
+      );
+      return;
+    }
+    if (tab === "platform_resources") {
+      fireAndForget(
+        (async () => {
+          if (!platform.businessesLoaded) {
+            await platform.loadBusinesses(1, 25, "", "");
+          }
+          if (!platform.platformResourcesLoaded) {
+            await platform.loadPlatformResources(1, 25, "", "", "");
+          }
+        })()
+      );
+      return;
+    }
+    if (tab === "platform_blocks") {
+      fireAndForget(
+        (async () => {
+          if (!platform.businessesLoaded) {
+            await platform.loadBusinesses(1, 25, "", "");
+          }
+          if (!platform.platformResourcesLoaded) {
+            await platform.loadPlatformResources(1, 25, "", "", "");
+          }
+          if (!platform.platformBlocksLoaded) {
+            await platform.loadPlatformBlocks({ page: 1, limit: 25 });
+          }
+        })()
+      );
+      return;
+    }
+    if (tab === "platform_hours" || tab === "platform_policies" || tab === "platform_calendar") {
+      fireAndForget(
+        (async () => {
+          if (!platform.businessesLoaded) {
+            await platform.loadBusinesses(1, 25, "", "");
+          }
+          if (tab === "platform_calendar") {
+            if (!platform.platformResourcesLoaded) {
+              await platform.loadPlatformResources(1, 25, "", "", "");
+            }
+            if (!platform.platformServicesLoaded) {
+              await platform.loadPlatformServices({ page: 1, limit: 25 });
+            }
+          }
+        })()
+      );
       return;
     }
     if (tab === "services") {
       if (!catalog.servicesLoaded) {
-        void catalog.loadServices(1, 25, "", "");
+        fireAndForget(catalog.loadServices(1, 25, "", ""));
       }
       return;
     }
     if (tab === "resources") {
       if (!catalog.resourcesLoaded) {
-        void catalog.loadResources(1, 25, "", "");
+        fireAndForget(catalog.loadResources(1, 25, "", ""));
       }
       return;
     }
     if (tab === "staff") {
       if (!catalog.staffLoaded) {
-        void Promise.all([catalog.loadStaff(1, 25, "", ""), catalog.ensureResourcesLoaded()]);
+        fireAndForget(
+          Promise.all([catalog.loadStaff(1, 25, "", ""), catalog.ensureResourcesLoaded()])
+        );
       }
       return;
     }
     if (tab === "blocks") {
       if (!blocks.blocksLoaded) {
-        void onBlocksTab();
+        fireAndForget(onBlocksTab());
       }
       return;
     }
     if (tab === "calendar") {
       if (!calendar.calendarLoaded) {
-        void Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()]);
-        void calendar.loadCalendarData();
+        fireAndForget(
+          Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()])
+        );
+        fireAndForget(calendar.loadCalendarData());
       }
       return;
     }
     if (tab === "business" || tab === "hours" || tab === "policies") {
       if (!businessSettings.businessLoaded) {
-        void businessSettings.loadBusinessSettings();
+        fireAndForget(businessSettings.loadBusinessSettings());
       }
       return;
     }
     if (tab === "appointments") {
       if (!appointments.appointmentsLoaded) {
-        void onAppointmentsTab();
+        fireAndForget(onAppointmentsTab());
       }
     }
   }
@@ -518,12 +539,12 @@ export function AdminApp() {
                 onPrevWeek={() => {
                   const prev = addDays(calendar.calendarWeekStart, -7);
                   calendar.setCalendarWeekStart(prev);
-                  void calendar.loadCalendarData(prev);
+                  fireAndForget(calendar.loadCalendarData(prev));
                 }}
                 onNextWeek={() => {
                   const next = addDays(calendar.calendarWeekStart, 7);
                   calendar.setCalendarWeekStart(next);
-                  void calendar.loadCalendarData(next);
+                  fireAndForget(calendar.loadCalendarData(next));
                 }}
                 onIntervalChange={calendar.setCalendarInterval}
                 onSelectResource={calendar.setCalendarResourceId}

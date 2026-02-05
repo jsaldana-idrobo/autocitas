@@ -33,6 +33,9 @@ export function PlatformCalendarSection({
   const [selectedResourceId, setSelectedResourceId] = useState("");
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [blocks, setBlocks] = useState<BlockItem[]>([]);
+  const fireAndForget = useCallback((promise: Promise<unknown>) => {
+    promise.catch(() => {});
+  }, []);
 
   const filteredResources = useMemo(() => {
     return resources.filter((resource) => resource.businessId === selectedBusinessId);
@@ -189,9 +192,9 @@ export function PlatformCalendarSection({
 
   React.useEffect(() => {
     if (selectedBusinessId) {
-      void loadCalendarData(weekStart, selectedBusinessId);
+      fireAndForget(loadCalendarData(weekStart, selectedBusinessId));
     }
-  }, [loadCalendarData, selectedBusinessId, weekStart]);
+  }, [fireAndForget, loadCalendarData, selectedBusinessId, weekStart]);
 
   return (
     <div className="space-y-4">
@@ -223,12 +226,12 @@ export function PlatformCalendarSection({
           onPrevWeek={() => {
             const prev = addDays(weekStart, -7);
             setWeekStart(prev);
-            void loadCalendarData(prev);
+            fireAndForget(loadCalendarData(prev));
           }}
           onNextWeek={() => {
             const next = addDays(weekStart, 7);
             setWeekStart(next);
-            void loadCalendarData(next);
+            fireAndForget(loadCalendarData(next));
           }}
           onIntervalChange={setIntervalMinutes}
           onSelectResource={setSelectedResourceId}

@@ -123,10 +123,14 @@ export function PlatformPoliciesSection({
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
+              const readString = (key: string) => {
+                const value = form.get(key);
+                return typeof value === "string" ? value.trim() : "";
+              };
               const payload: Policies = {
-                cancellationHours: Number(form.get("cancellationHours")),
-                rescheduleLimit: Number(form.get("rescheduleLimit")),
-                allowSameDay: String(form.get("allowSameDay")) === "true"
+                cancellationHours: Number(readString("cancellationHours")),
+                rescheduleLimit: Number(readString("rescheduleLimit")),
+                allowSameDay: readString("allowSameDay") === "true"
               };
               if (!editingBusiness._id) return;
               onSavePolicies(editingBusiness._id, payload);

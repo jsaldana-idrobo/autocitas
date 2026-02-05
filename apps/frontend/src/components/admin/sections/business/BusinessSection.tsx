@@ -8,11 +8,11 @@ export function BusinessSection({
   businessProfile,
   loadBusinessSettings,
   saveBusinessProfile
-}: {
+}: Readonly<{
   businessProfile: BusinessProfile;
   loadBusinessSettings: () => void;
   saveBusinessProfile: (event: React.FormEvent<HTMLFormElement>) => void;
-}) {
+}>) {
   const [editOpen, setEditOpen] = useState(false);
 
   return (
@@ -70,7 +70,7 @@ export function BusinessSection({
           />
           <InputField name="address" label="Direccion" defaultValue={businessProfile.address} />
           <label className="block text-sm font-medium">
-            Estado
+            <span>Estado</span>
             <select
               name="status"
               defaultValue={businessProfile.status || "active"}

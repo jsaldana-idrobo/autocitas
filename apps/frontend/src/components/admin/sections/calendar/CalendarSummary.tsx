@@ -4,11 +4,11 @@ export function CalendarSummary({
   todayAppointments,
   weekAppointments,
   blockedCount
-}: {
+}: Readonly<{
   todayAppointments: number;
   weekAppointments: number;
   blockedCount: number;
-}) {
+}>) {
   return (
     <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">

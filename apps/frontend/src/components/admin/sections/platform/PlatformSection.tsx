@@ -108,17 +108,17 @@ export function PlatformSection({
   resourcesTotal: number;
   blocks: BlockItem[];
   blocksTotal: number;
-  onRefreshServices: (
-    page?: number,
-    limit?: number,
-    search?: string,
-    status?: string,
-    businessId?: string,
-    minDuration?: string,
-    maxDuration?: string,
-    minPrice?: string,
-    maxPrice?: string
-  ) => void;
+  onRefreshServices: (options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    active?: string;
+    businessId?: string;
+    minDuration?: string;
+    maxDuration?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  }) => void;
   onRefreshResources: (
     page?: number,
     limit?: number,
@@ -126,16 +126,16 @@ export function PlatformSection({
     status?: string,
     businessId?: string
   ) => void;
-  onRefreshBlocks: (
-    page?: number,
-    limit?: number,
-    businessId?: string,
-    resourceId?: string,
-    search?: string,
-    type?: string,
-    from?: string,
-    to?: string
-  ) => void;
+  onRefreshBlocks: (options?: {
+    page?: number;
+    limit?: number;
+    businessId?: string;
+    resourceId?: string;
+    search?: string;
+    type?: string;
+    from?: string;
+    to?: string;
+  }) => void;
   onCreateService: (
     businessId: string,
     payload: { name: string; durationMinutes: number; price?: number }

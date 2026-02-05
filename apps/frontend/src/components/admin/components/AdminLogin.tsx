@@ -5,11 +5,11 @@ export function AdminLogin({
   error,
   loading,
   onLogin
-}: {
+}: Readonly<{
   error: string | null;
   loading: boolean;
   onLogin: (event: React.FormEvent<HTMLFormElement>) => void;
-}) {
+}>) {
   return (
     <div className="card mx-auto max-w-lg p-8">
       <h2 className="text-2xl font-semibold">Admin</h2>

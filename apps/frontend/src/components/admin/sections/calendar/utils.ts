@@ -17,6 +17,8 @@ export function isSameDay(iso: string, day: string) {
 }
 
 export function getServiceColor(serviceId: string) {
-  const index = Math.abs(serviceId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0));
+  const index = Math.abs(
+    serviceId.split("").reduce((acc, char) => acc + (char.codePointAt(0) ?? 0), 0)
+  );
   return servicePalette[index % servicePalette.length];
 }

@@ -6,12 +6,12 @@ export function AdminSidebar({
   availableTabs,
   canUseBusinessTabs,
   onSelectTab
-}: {
+}: Readonly<{
   activeTab: TabKey;
   availableTabs: TabKey[];
   canUseBusinessTabs: boolean;
   onSelectTab: (tab: TabKey) => void;
-}) {
+}>) {
   const isPlatformTab = (key: TabKey) => key.startsWith("platform_");
 
   return (

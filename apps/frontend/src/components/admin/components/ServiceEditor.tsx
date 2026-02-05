@@ -6,15 +6,15 @@ export function ServiceEditor({
   resources,
   onCancel,
   onSave
-}: {
+}: Readonly<{
   item: ServiceItem;
   resources: ResourceItem[];
   onCancel: () => void;
   onSave: (payload: Partial<ServiceItem>) => void;
-}) {
+}>) {
   const [name, setName] = useState(item.name);
   const [durationMinutes, setDurationMinutes] = useState(String(item.durationMinutes));
-  const [price, setPrice] = useState(item.price !== undefined ? String(item.price) : "");
+  const [price, setPrice] = useState(item.price == null ? "" : String(item.price));
   const [allowedResources, setAllowedResources] = useState<string[]>(item.allowedResourceIds ?? []);
 
   function toggleResource(resourceId: string) {
@@ -49,12 +49,12 @@ export function ServiceEditor({
             onClick={() => {
               const durationValue =
                 durationMinutes.trim() === "" ? item.durationMinutes : Number(durationMinutes);
-              const priceValue =
-                price.trim() === ""
-                  ? undefined
-                  : Number.isNaN(Number(price))
-                    ? undefined
-                    : Number(price);
+              const priceValue = (() => {
+                const trimmed = price.trim();
+                if (trimmed === "") return undefined;
+                const numeric = Number(price);
+                return Number.isNaN(numeric) ? undefined : numeric;
+              })();
               onSave({
                 name,
                 durationMinutes: durationValue,

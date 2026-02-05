@@ -3,6 +3,8 @@ import { apiRequest } from "../../../lib/api";
 import { PaginatedResponse, ResourceItem, ServiceItem, StaffItem } from "../types";
 import { AdminApiContext } from "./types";
 
+type ActiveFilter = "" | "active" | "inactive";
+
 export function useAdminCatalog(api: AdminApiContext) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
@@ -29,7 +31,7 @@ export function useAdminCatalog(api: AdminApiContext) {
   }, []);
 
   const loadServices = useCallback(
-    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -59,7 +61,7 @@ export function useAdminCatalog(api: AdminApiContext) {
   );
 
   const loadResources = useCallback(
-    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
       if (api.role === "staff") {
         return;
       }
@@ -92,7 +94,7 @@ export function useAdminCatalog(api: AdminApiContext) {
   );
 
   const loadStaff = useCallback(
-    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -121,15 +123,23 @@ export function useAdminCatalog(api: AdminApiContext) {
     [api, endLoad, startLoad]
   );
 
+  const readFormString = (form: FormData, key: string) => {
+    const value = form.get(key);
+    return typeof value === "string" ? value.trim() : "";
+  };
+
   async function createService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
+    const durationValue = Number(readFormString(form, "durationMinutes"));
+    const priceRaw = readFormString(form, "price");
+    const priceValue = priceRaw ? Number(priceRaw) : undefined;
     const payload = {
-      name: String(form.get("name") || "").trim(),
-      durationMinutes: Number(form.get("durationMinutes")),
-      price: form.get("price") ? Number(form.get("price")) : undefined
+      name: readFormString(form, "name"),
+      durationMinutes: durationValue,
+      price: priceValue
     };
     if (!payload.name || !payload.durationMinutes || payload.durationMinutes <= 0) {
       api.setError("Nombre y duracion son obligatorios.");
@@ -149,7 +159,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         servicesQueryRef.current.page,
         servicesQueryRef.current.limit,
         servicesQueryRef.current.search,
-        servicesQueryRef.current.active as "" | "active" | "inactive"
+        servicesQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Servicio creado.");
     } catch (err) {
@@ -217,7 +227,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
-      name: String(form.get("name") || "").trim()
+      name: readFormString(form, "name")
     };
     if (!payload.name) {
       api.setError("Nombre es obligatorio.");
@@ -237,7 +247,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive"
+        resourcesQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Recurso creado.");
     } catch (err) {
@@ -263,7 +273,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive"
+        resourcesQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Recurso actualizado.");
     } catch (err) {
@@ -288,7 +298,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive"
+        resourcesQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Recurso eliminado.");
     } catch (err) {
@@ -305,10 +315,10 @@ export function useAdminCatalog(api: AdminApiContext) {
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
-      email: String(form.get("email") || "").trim(),
-      password: String(form.get("password") || "").trim(),
-      resourceId: String(form.get("resourceId") || "").trim(),
-      role: String(form.get("role") || "").trim()
+      email: readFormString(form, "email"),
+      password: readFormString(form, "password"),
+      resourceId: readFormString(form, "resourceId"),
+      role: readFormString(form, "role")
     };
 
     if (!payload.email || !payload.password || !payload.resourceId) {
@@ -329,7 +339,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         staffQueryRef.current.page,
         staffQueryRef.current.limit,
         staffQueryRef.current.search,
-        staffQueryRef.current.active as "" | "active" | "inactive"
+        staffQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Staff creado.");
     } catch (err) {
@@ -358,7 +368,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         staffQueryRef.current.page,
         staffQueryRef.current.limit,
         staffQueryRef.current.search,
-        staffQueryRef.current.active as "" | "active" | "inactive"
+        staffQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Staff actualizado.");
     } catch (err) {
@@ -382,7 +392,7 @@ export function useAdminCatalog(api: AdminApiContext) {
         staffQueryRef.current.page,
         staffQueryRef.current.limit,
         staffQueryRef.current.search,
-        staffQueryRef.current.active as "" | "active" | "inactive"
+        staffQueryRef.current.active as ActiveFilter
       );
       api.setSuccess("Staff eliminado.");
     } catch (err) {

@@ -40,6 +40,9 @@ interface AuthenticatedRequest extends Request {
   user: JwtPayload;
 }
 
+type AppointmentStatus = "booked" | "cancelled" | "completed";
+type ActiveFilter = "true" | "false";
+
 const ERR_STAFF_RESOURCE_NOT_LINKED = "Staff resource not linked";
 
 @Controller("admin/businesses")
@@ -80,43 +83,38 @@ export class AdminController {
   @Get(":businessId/appointments")
   listAppointments(
     @Param("businessId") businessId: string,
-    @Query("date") date: string | undefined,
-    @Query("from") from: string | undefined,
-    @Query("to") to: string | undefined,
-    @Query("status") status: "booked" | "cancelled" | "completed" | undefined,
-    @Query("search") search: string | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      date?: string;
+      from?: string;
+      to?: string;
+      status?: AppointmentStatus;
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
+    const options = {
+      date: query.date,
+      from: query.from,
+      to: query.to,
+      status: query.status,
+      search: query.search,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    };
     if (req.user.role === "staff") {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.appointments.listAppointments(
-        businessId,
-        date,
-        req.user.resourceId,
-        status,
-        search,
-        from,
-        to,
-        page ? Number(page) : undefined,
-        limit ? Number(limit) : undefined
-      );
+      return this.appointments.listAppointments(businessId, {
+        ...options,
+        resourceId: req.user.resourceId
+      });
     }
-    return this.appointments.listAppointments(
-      businessId,
-      date,
-      undefined,
-      status,
-      search,
-      from,
-      to,
-      page ? Number(page) : undefined,
-      limit ? Number(limit) : undefined
-    );
+    return this.appointments.listAppointments(businessId, options);
   }
 
   @Post(":businessId/appointments")
@@ -258,10 +256,13 @@ export class AdminController {
   @Get(":businessId/services")
   listServices(
     @Param("businessId") businessId: string,
-    @Query("search") search: string | undefined,
-    @Query("active") active: "true" | "false" | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      search?: string;
+      active?: ActiveFilter;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
@@ -269,10 +270,10 @@ export class AdminController {
       this.access.ensureOwnerAccess(req.user);
     }
     return this.catalog.listServices(businessId, {
-      search,
-      active,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+      search: query.search,
+      active: query.active,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 

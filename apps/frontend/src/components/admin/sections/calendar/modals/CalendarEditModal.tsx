@@ -12,7 +12,7 @@ export function CalendarEditModal({
   onSubmit,
   onCancel,
   onClose
-}: {
+}: Readonly<{
   appointment: AppointmentItem;
   services: ServiceItem[];
   resources: ResourceItem[];
@@ -21,7 +21,7 @@ export function CalendarEditModal({
   onSubmit: (payload: { serviceId?: string; resourceId?: string; startTime?: string }) => void;
   onCancel: () => void;
   onClose: () => void;
-}) {
+}>) {
   const [serviceId, setServiceId] = useState(appointment.serviceId);
   const [resourceId, setResourceId] = useState(fixedResourceId ?? appointment.resourceId ?? "");
   const [startTime, setStartTime] = useState(toLocalInputValue(appointment.startTime));

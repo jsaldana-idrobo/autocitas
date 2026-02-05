@@ -11,7 +11,7 @@ export function CalendarGrid({
   services,
   resources,
   onSelectAppointment
-}: {
+}: Readonly<{
   days: string[];
   intervalMinutes: number;
   appointments: AppointmentItem[];
@@ -19,7 +19,7 @@ export function CalendarGrid({
   services: ServiceItem[];
   resources: ResourceItem[];
   onSelectAppointment: (appointment: AppointmentItem) => void;
-}) {
+}>) {
   const timeLabels = useMemo(() => {
     const labels: string[] = [];
     for (let hour = START_HOUR; hour <= END_HOUR; hour += 1) {
@@ -60,13 +60,16 @@ export function CalendarGrid({
             className="absolute inset-0"
             style={{ height: minutesInDay * (SLOT_HEIGHT / intervalMinutes) }}
           >
-            {Array.from({ length: minutesInDay / intervalMinutes }).map((_, index) => (
-              <div
-                key={index}
-                className="border-b border-dashed border-slate-100"
-                style={{ height: SLOT_HEIGHT }}
-              />
-            ))}
+            {Array.from({ length: minutesInDay / intervalMinutes }).map((_, index) => {
+              const minuteOffset = index * intervalMinutes;
+              return (
+                <div
+                  key={`${day}-${minuteOffset}`}
+                  className="border-b border-dashed border-slate-100"
+                  style={{ height: SLOT_HEIGHT }}
+                />
+              );
+            })}
           </div>
           {blocks
             .filter((block) => isSameDay(block.startTime, day))

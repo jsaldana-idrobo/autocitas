@@ -164,7 +164,7 @@ export class PublicService {
 
   async getPublicBusiness(slug: string) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -187,7 +187,7 @@ export class PublicService {
     resourceId?: string;
   }) {
     const business = await this.businessModel.findOne({ slug: params.slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -290,7 +290,7 @@ export class PublicService {
 
   async createAppointment(slug: string, payload: CreateAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -362,7 +362,7 @@ export class PublicService {
 
   async listAppointmentsByPhone(slug: string, phone?: string) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
     const normalized = (phone || "").trim();
@@ -379,7 +379,7 @@ export class PublicService {
 
   async cancelAppointment(slug: string, appointmentId: string, payload: CancelAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -420,7 +420,7 @@ export class PublicService {
     payload: RescheduleAppointmentDto
   ) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -505,7 +505,7 @@ export class PublicService {
     payload: UpdatePublicAppointmentDto
   ) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (!business || business.status !== STATUS_ACTIVE) {
+    if (business?.status !== STATUS_ACTIVE) {
       throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
     }
 
@@ -523,10 +523,10 @@ export class PublicService {
     }
 
     const update: Record<string, unknown> = {};
-    if (payload.customerName && payload.customerName.trim()) {
+    if (payload.customerName?.trim()) {
       update.customerName = payload.customerName.trim();
     }
-    if (payload.newCustomerPhone && payload.newCustomerPhone.trim()) {
+    if (payload.newCustomerPhone?.trim()) {
       update.customerPhone = payload.newCustomerPhone.trim();
     }
 

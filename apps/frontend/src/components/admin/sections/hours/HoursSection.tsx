@@ -15,10 +15,10 @@ import { SectionHeader } from "../../ui/SectionHeader";
 export function HoursSection({
   hours,
   saveHours
-}: {
+}: Readonly<{
   hours: BusinessHoursItem[];
   saveHours: (event: React.FormEvent<HTMLFormElement>) => void;
-}) {
+}>) {
   const [editOpen, setEditOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);

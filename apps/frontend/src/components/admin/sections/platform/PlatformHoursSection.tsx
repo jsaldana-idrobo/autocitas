@@ -117,10 +117,14 @@ export function PlatformHoursSection({
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
+              const readString = (key: string) => {
+                const value = form.get(key);
+                return typeof value === "string" ? value.trim() : "";
+              };
               const payloadHours = dayLabels
                 .map((_, index) => {
-                  const openTime = String(form.get(`open-${index}`) || "").trim();
-                  const closeTime = String(form.get(`close-${index}`) || "").trim();
+                  const openTime = readString(`open-${index}`);
+                  const closeTime = readString(`close-${index}`);
                   if (!openTime && !closeTime) {
                     return null;
                   }

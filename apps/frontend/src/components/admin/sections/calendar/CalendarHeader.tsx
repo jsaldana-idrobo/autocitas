@@ -14,7 +14,7 @@ export function CalendarHeader({
   resources,
   onCreateAppointment,
   onCreateBlock
-}: {
+}: Readonly<{
   weekStart: string;
   intervalMinutes: number;
   onPrevWeek: () => void;
@@ -26,7 +26,7 @@ export function CalendarHeader({
   resources: ResourceItem[];
   onCreateAppointment: () => void;
   onCreateBlock: () => void;
-}) {
+}>) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>

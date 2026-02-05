@@ -15,6 +15,10 @@ import {
 import { toIsoIfPossible } from "../utils";
 import { AdminApiContext } from "./types";
 
+type StatusFilter = "" | "active" | "inactive";
+type ActiveFilter = "" | "active" | "inactive";
+type BlockTypeFilter = "" | "resource" | "global";
+
 export function useAdminPlatform(api: AdminApiContext) {
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]);
   const [businessesTotal, setBusinessesTotal] = useState(0);
@@ -79,8 +83,13 @@ export function useAdminPlatform(api: AdminApiContext) {
     isLoadingRef.current = false;
   }, []);
 
+  const readFormString = (form: FormData, key: string) => {
+    const value = form.get(key);
+    return typeof value === "string" ? value.trim() : "";
+  };
+
   const loadBusinesses = useCallback(
-    async (page = 1, limit = 25, search = "", status: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", status: StatusFilter = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -110,7 +119,7 @@ export function useAdminPlatform(api: AdminApiContext) {
   );
 
   const loadPlatformOwners = useCallback(
-    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -141,7 +150,7 @@ export function useAdminPlatform(api: AdminApiContext) {
   );
 
   const loadPlatformStaff = useCallback(
-    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -215,16 +224,29 @@ export function useAdminPlatform(api: AdminApiContext) {
 
   const loadPlatformServices = useCallback(
     async (
-      page = 1,
-      limit = 25,
-      search = "",
-      active: "" | "active" | "inactive" = "",
-      businessId = "",
-      minDuration = "",
-      maxDuration = "",
-      minPrice = "",
-      maxPrice = ""
+      options: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        active?: ActiveFilter;
+        businessId?: string;
+        minDuration?: string;
+        maxDuration?: string;
+        minPrice?: string;
+        maxPrice?: string;
+      } = {}
     ) => {
+      const {
+        page = 1,
+        limit = 25,
+        search = "",
+        active = "",
+        businessId = "",
+        minDuration = "",
+        maxDuration = "",
+        minPrice = "",
+        maxPrice = ""
+      } = options;
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -269,13 +291,7 @@ export function useAdminPlatform(api: AdminApiContext) {
   );
 
   const loadPlatformResources = useCallback(
-    async (
-      page = 1,
-      limit = 25,
-      search = "",
-      active: "" | "active" | "inactive" = "",
-      businessId = ""
-    ) => {
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "", businessId = "") => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -307,15 +323,27 @@ export function useAdminPlatform(api: AdminApiContext) {
 
   const loadPlatformBlocks = useCallback(
     async (
-      page = 1,
-      limit = 25,
-      businessId = "",
-      resourceId = "",
-      search = "",
-      type = "",
-      from = "",
-      to = ""
+      options: {
+        page?: number;
+        limit?: number;
+        businessId?: string;
+        resourceId?: string;
+        search?: string;
+        type?: BlockTypeFilter;
+        from?: string;
+        to?: string;
+      } = {}
     ) => {
+      const {
+        page = 1,
+        limit = 25,
+        businessId = "",
+        resourceId = "",
+        search = "",
+        type = "",
+        from = "",
+        to = ""
+      } = options;
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -354,12 +382,12 @@ export function useAdminPlatform(api: AdminApiContext) {
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
-      name: String(form.get("name") || "").trim(),
-      slug: String(form.get("slug") || "").trim(),
-      timezone: String(form.get("timezone") || "").trim() || undefined,
-      contactPhone: String(form.get("contactPhone") || "").trim() || undefined,
-      address: String(form.get("address") || "").trim() || undefined,
-      status: (String(form.get("status") || "").trim() as "active" | "inactive") || undefined
+      name: readFormString(form, "name"),
+      slug: readFormString(form, "slug"),
+      timezone: readFormString(form, "timezone") || undefined,
+      contactPhone: readFormString(form, "contactPhone") || undefined,
+      address: readFormString(form, "address") || undefined,
+      status: (readFormString(form, "status") as StatusFilter) || undefined
     };
 
     try {
@@ -375,7 +403,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         businessesQueryRef.current.page,
         businessesQueryRef.current.limit,
         businessesQueryRef.current.search,
-        businessesQueryRef.current.status as "" | "active" | "inactive"
+        businessesQueryRef.current.status as StatusFilter
       );
       api.setSuccess("Negocio creado.");
     } catch (err) {
@@ -392,9 +420,9 @@ export function useAdminPlatform(api: AdminApiContext) {
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
-      businessId: String(form.get("businessId") || "").trim(),
-      email: String(form.get("email") || "").trim(),
-      password: String(form.get("password") || "").trim()
+      businessId: readFormString(form, "businessId"),
+      email: readFormString(form, "email"),
+      password: readFormString(form, "password")
     };
 
     try {
@@ -431,7 +459,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         businessesQueryRef.current.page,
         businessesQueryRef.current.limit,
         businessesQueryRef.current.search,
-        businessesQueryRef.current.status as "" | "active" | "inactive"
+        businessesQueryRef.current.status as StatusFilter
       );
       api.setSuccess("Negocio actualizado.");
     } catch (err) {
@@ -456,7 +484,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         businessesQueryRef.current.page,
         businessesQueryRef.current.limit,
         businessesQueryRef.current.search,
-        businessesQueryRef.current.status as "" | "active" | "inactive"
+        businessesQueryRef.current.status as StatusFilter
       );
       api.setSuccess("Negocio eliminado.");
     } catch (err) {
@@ -492,13 +520,13 @@ export function useAdminPlatform(api: AdminApiContext) {
           ownersQueryRef.current.page,
           ownersQueryRef.current.limit,
           ownersQueryRef.current.search,
-          ownersQueryRef.current.active as "" | "active" | "inactive"
+          ownersQueryRef.current.active as ActiveFilter
         ),
         loadPlatformStaff(
           staffQueryRef.current.page,
           staffQueryRef.current.limit,
           staffQueryRef.current.search,
-          staffQueryRef.current.active as "" | "active" | "inactive"
+          staffQueryRef.current.active as ActiveFilter
         )
       ]);
       api.setSuccess("Usuario actualizado.");
@@ -523,13 +551,13 @@ export function useAdminPlatform(api: AdminApiContext) {
           ownersQueryRef.current.page,
           ownersQueryRef.current.limit,
           ownersQueryRef.current.search,
-          ownersQueryRef.current.active as "" | "active" | "inactive"
+          ownersQueryRef.current.active as ActiveFilter
         ),
         loadPlatformStaff(
           staffQueryRef.current.page,
           staffQueryRef.current.limit,
           staffQueryRef.current.search,
-          staffQueryRef.current.active as "" | "active" | "inactive"
+          staffQueryRef.current.active as ActiveFilter
         )
       ]);
       api.setSuccess("Usuario eliminado.");
@@ -554,17 +582,17 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformServices(
-        servicesQueryRef.current.page,
-        servicesQueryRef.current.limit,
-        servicesQueryRef.current.search,
-        servicesQueryRef.current.active as "" | "active" | "inactive",
-        servicesQueryRef.current.businessId,
-        servicesQueryRef.current.minDuration,
-        servicesQueryRef.current.maxDuration,
-        servicesQueryRef.current.minPrice,
-        servicesQueryRef.current.maxPrice
-      );
+      await loadPlatformServices({
+        page: servicesQueryRef.current.page,
+        limit: servicesQueryRef.current.limit,
+        search: servicesQueryRef.current.search,
+        active: servicesQueryRef.current.active as ActiveFilter,
+        businessId: servicesQueryRef.current.businessId,
+        minDuration: servicesQueryRef.current.minDuration,
+        maxDuration: servicesQueryRef.current.maxDuration,
+        minPrice: servicesQueryRef.current.minPrice,
+        maxPrice: servicesQueryRef.current.maxPrice
+      });
       api.setSuccess("Servicio creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando servicio");
@@ -589,17 +617,17 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformServices(
-        servicesQueryRef.current.page,
-        servicesQueryRef.current.limit,
-        servicesQueryRef.current.search,
-        servicesQueryRef.current.active as "" | "active" | "inactive",
-        servicesQueryRef.current.businessId,
-        servicesQueryRef.current.minDuration,
-        servicesQueryRef.current.maxDuration,
-        servicesQueryRef.current.minPrice,
-        servicesQueryRef.current.maxPrice
-      );
+      await loadPlatformServices({
+        page: servicesQueryRef.current.page,
+        limit: servicesQueryRef.current.limit,
+        search: servicesQueryRef.current.search,
+        active: servicesQueryRef.current.active as ActiveFilter,
+        businessId: servicesQueryRef.current.businessId,
+        minDuration: servicesQueryRef.current.minDuration,
+        maxDuration: servicesQueryRef.current.maxDuration,
+        minPrice: servicesQueryRef.current.minPrice,
+        maxPrice: servicesQueryRef.current.maxPrice
+      });
       api.setSuccess("Servicio actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando servicio");
@@ -619,17 +647,17 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadPlatformServices(
-        servicesQueryRef.current.page,
-        servicesQueryRef.current.limit,
-        servicesQueryRef.current.search,
-        servicesQueryRef.current.active as "" | "active" | "inactive",
-        servicesQueryRef.current.businessId,
-        servicesQueryRef.current.minDuration,
-        servicesQueryRef.current.maxDuration,
-        servicesQueryRef.current.minPrice,
-        servicesQueryRef.current.maxPrice
-      );
+      await loadPlatformServices({
+        page: servicesQueryRef.current.page,
+        limit: servicesQueryRef.current.limit,
+        search: servicesQueryRef.current.search,
+        active: servicesQueryRef.current.active as ActiveFilter,
+        businessId: servicesQueryRef.current.businessId,
+        minDuration: servicesQueryRef.current.minDuration,
+        maxDuration: servicesQueryRef.current.maxDuration,
+        minPrice: servicesQueryRef.current.minPrice,
+        maxPrice: servicesQueryRef.current.maxPrice
+      });
       api.setSuccess("Servicio eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando servicio");
@@ -654,7 +682,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive",
+        resourcesQueryRef.current.active as ActiveFilter,
         resourcesQueryRef.current.businessId
       );
       api.setSuccess("Recurso creado.");
@@ -685,7 +713,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive",
+        resourcesQueryRef.current.active as ActiveFilter,
         resourcesQueryRef.current.businessId
       );
       api.setSuccess("Recurso actualizado.");
@@ -711,7 +739,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         resourcesQueryRef.current.page,
         resourcesQueryRef.current.limit,
         resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as "" | "active" | "inactive",
+        resourcesQueryRef.current.active as ActiveFilter,
         resourcesQueryRef.current.businessId
       );
       api.setSuccess("Recurso eliminado.");
@@ -739,16 +767,16 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      await loadPlatformBlocks(
-        blocksQueryRef.current.page,
-        blocksQueryRef.current.limit,
-        blocksQueryRef.current.businessId,
-        blocksQueryRef.current.resourceId,
-        blocksQueryRef.current.search,
-        blocksQueryRef.current.type,
-        blocksQueryRef.current.from,
-        blocksQueryRef.current.to
-      );
+      await loadPlatformBlocks({
+        page: blocksQueryRef.current.page,
+        limit: blocksQueryRef.current.limit,
+        businessId: blocksQueryRef.current.businessId,
+        resourceId: blocksQueryRef.current.resourceId,
+        search: blocksQueryRef.current.search,
+        type: blocksQueryRef.current.type as BlockTypeFilter,
+        from: blocksQueryRef.current.from,
+        to: blocksQueryRef.current.to
+      });
       api.setSuccess("Bloqueo creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
@@ -778,16 +806,16 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      await loadPlatformBlocks(
-        blocksQueryRef.current.page,
-        blocksQueryRef.current.limit,
-        blocksQueryRef.current.businessId,
-        blocksQueryRef.current.resourceId,
-        blocksQueryRef.current.search,
-        blocksQueryRef.current.type,
-        blocksQueryRef.current.from,
-        blocksQueryRef.current.to
-      );
+      await loadPlatformBlocks({
+        page: blocksQueryRef.current.page,
+        limit: blocksQueryRef.current.limit,
+        businessId: blocksQueryRef.current.businessId,
+        resourceId: blocksQueryRef.current.resourceId,
+        search: blocksQueryRef.current.search,
+        type: blocksQueryRef.current.type as BlockTypeFilter,
+        from: blocksQueryRef.current.from,
+        to: blocksQueryRef.current.to
+      });
       api.setSuccess("Bloqueo actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando bloqueo");
@@ -807,16 +835,16 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadPlatformBlocks(
-        blocksQueryRef.current.page,
-        blocksQueryRef.current.limit,
-        blocksQueryRef.current.businessId,
-        blocksQueryRef.current.resourceId,
-        blocksQueryRef.current.search,
-        blocksQueryRef.current.type,
-        blocksQueryRef.current.from,
-        blocksQueryRef.current.to
-      );
+      await loadPlatformBlocks({
+        page: blocksQueryRef.current.page,
+        limit: blocksQueryRef.current.limit,
+        businessId: blocksQueryRef.current.businessId,
+        resourceId: blocksQueryRef.current.resourceId,
+        search: blocksQueryRef.current.search,
+        type: blocksQueryRef.current.type as BlockTypeFilter,
+        from: blocksQueryRef.current.from,
+        to: blocksQueryRef.current.to
+      });
       api.setSuccess("Bloqueo eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando bloqueo");
@@ -841,7 +869,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         businessesQueryRef.current.page,
         businessesQueryRef.current.limit,
         businessesQueryRef.current.search,
-        businessesQueryRef.current.status as "" | "active" | "inactive"
+        businessesQueryRef.current.status as StatusFilter
       );
       api.setSuccess("Horarios actualizados.");
     } catch (err) {
@@ -867,7 +895,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         businessesQueryRef.current.page,
         businessesQueryRef.current.limit,
         businessesQueryRef.current.search,
-        businessesQueryRef.current.status as "" | "active" | "inactive"
+        businessesQueryRef.current.status as StatusFilter
       );
       api.setSuccess("Politicas actualizadas.");
     } catch (err) {

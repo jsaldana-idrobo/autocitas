@@ -25,6 +25,12 @@ interface AuthenticatedRequest extends Request {
   user: JwtPayload;
 }
 
+type ActiveFilter = "true" | "false";
+type BusinessStatus = "active" | "inactive";
+type UserRole = "owner" | "staff";
+type AppointmentStatus = "booked" | "cancelled" | "completed";
+type BlockType = "resource" | "global";
+
 @Controller("admin/platform")
 @UseGuards(JwtAuthGuard)
 export class PlatformController {
@@ -58,18 +64,21 @@ export class PlatformController {
 
   @Get("businesses")
   listBusinesses(
-    @Query("search") search: string | undefined,
-    @Query("status") status: "active" | "inactive" | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      search?: string;
+      status?: BusinessStatus;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listBusinesses({
-      search,
-      status,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+      search: query.search,
+      status: query.status,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 
@@ -127,19 +136,22 @@ export class PlatformController {
 
   @Get("users")
   listUsers(
-    @Query("role") role: "owner" | "staff",
-    @Query("search") search: string | undefined,
-    @Query("active") active: "true" | "false" | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      role: UserRole;
+      search?: string;
+      active?: ActiveFilter;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
-    return this.platform.listPlatformUsers(role, {
-      search,
-      active,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+    return this.platform.listPlatformUsers(query.role, {
+      search: query.search,
+      active: query.active,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 
@@ -171,91 +183,103 @@ export class PlatformController {
 
   @Get("appointments")
   listAppointments(
-    @Query("date") date: string | undefined,
-    @Query("status") status: "booked" | "cancelled" | "completed" | undefined,
-    @Query("search") search: string | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      date?: string;
+      status?: AppointmentStatus;
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listPlatformAppointmentsWithSearch(
-      date,
-      status,
-      search,
-      page ? Number(page) : undefined,
-      limit ? Number(limit) : undefined
+      query.date,
+      query.status,
+      query.search,
+      query.page ? Number(query.page) : undefined,
+      query.limit ? Number(query.limit) : undefined
     );
   }
 
   @Get("services")
   listServices(
-    @Query("businessId") businessId: string | undefined,
-    @Query("active") active: "true" | "false" | undefined,
-    @Query("search") search: string | undefined,
-    @Query("minDuration") minDuration: string | undefined,
-    @Query("maxDuration") maxDuration: string | undefined,
-    @Query("minPrice") minPrice: string | undefined,
-    @Query("maxPrice") maxPrice: string | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      businessId?: string;
+      active?: ActiveFilter;
+      search?: string;
+      minDuration?: string;
+      maxDuration?: string;
+      minPrice?: string;
+      maxPrice?: string;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listPlatformServices({
-      businessId,
-      active,
-      search,
-      minDuration: minDuration ? Number(minDuration) : undefined,
-      maxDuration: maxDuration ? Number(maxDuration) : undefined,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+      businessId: query.businessId,
+      active: query.active,
+      search: query.search,
+      minDuration: query.minDuration ? Number(query.minDuration) : undefined,
+      maxDuration: query.maxDuration ? Number(query.maxDuration) : undefined,
+      minPrice: query.minPrice ? Number(query.minPrice) : undefined,
+      maxPrice: query.maxPrice ? Number(query.maxPrice) : undefined,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 
   @Get("resources")
   listResources(
-    @Query("businessId") businessId: string | undefined,
-    @Query("active") active: "true" | "false" | undefined,
-    @Query("search") search: string | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      businessId?: string;
+      active?: ActiveFilter;
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listPlatformResources({
-      businessId,
-      active,
-      search,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+      businessId: query.businessId,
+      active: query.active,
+      search: query.search,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 
   @Get("blocks")
   listBlocks(
-    @Query("businessId") businessId: string | undefined,
-    @Query("resourceId") resourceId: string | undefined,
-    @Query("search") search: string | undefined,
-    @Query("type") type: "resource" | "global" | undefined,
-    @Query("from") from: string | undefined,
-    @Query("to") to: string | undefined,
-    @Query("page") page: string | undefined,
-    @Query("limit") limit: string | undefined,
+    @Query()
+    query: {
+      businessId?: string;
+      resourceId?: string;
+      search?: string;
+      type?: BlockType;
+      from?: string;
+      to?: string;
+      page?: string;
+      limit?: string;
+    },
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensurePlatformAdmin(req.user);
     return this.platform.listPlatformBlocks({
-      businessId,
-      resourceId,
-      search,
-      type,
-      from,
-      to,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined
+      businessId: query.businessId,
+      resourceId: query.resourceId,
+      search: query.search,
+      type: query.type,
+      from: query.from,
+      to: query.to,
+      page: query.page ? Number(query.page) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
     });
   }
 }

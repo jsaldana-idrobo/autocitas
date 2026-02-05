@@ -24,7 +24,7 @@ const ERR_USER_NOT_FOUND = "User not found.";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
 
 function normalizePhone(value: string) {
-  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
 }
 
 function applyTextSearchSort<T>(
@@ -290,17 +290,29 @@ export class AdminPlatformService {
     if (options?.active === "false") {
       query.active = false;
     }
-    if (options?.minDuration !== undefined || options?.maxDuration !== undefined) {
-      query.durationMinutes = {
-        ...(options?.minDuration !== undefined ? { $gte: options.minDuration } : {}),
-        ...(options?.maxDuration !== undefined ? { $lte: options.maxDuration } : {})
-      };
+    const hasMinDuration = options?.minDuration !== undefined;
+    const hasMaxDuration = options?.maxDuration !== undefined;
+    if (hasMinDuration || hasMaxDuration) {
+      const durationQuery: Record<string, number> = {};
+      if (hasMinDuration) {
+        durationQuery.$gte = options.minDuration!;
+      }
+      if (hasMaxDuration) {
+        durationQuery.$lte = options.maxDuration!;
+      }
+      query.durationMinutes = durationQuery;
     }
-    if (options?.minPrice !== undefined || options?.maxPrice !== undefined) {
-      query.price = {
-        ...(options?.minPrice !== undefined ? { $gte: options.minPrice } : {}),
-        ...(options?.maxPrice !== undefined ? { $lte: options.maxPrice } : {})
-      };
+    const hasMinPrice = options?.minPrice !== undefined;
+    const hasMaxPrice = options?.maxPrice !== undefined;
+    if (hasMinPrice || hasMaxPrice) {
+      const priceQuery: Record<string, number> = {};
+      if (hasMinPrice) {
+        priceQuery.$gte = options.minPrice!;
+      }
+      if (hasMaxPrice) {
+        priceQuery.$lte = options.maxPrice!;
+      }
+      query.price = priceQuery;
     }
     const serviceSearch = options?.search?.trim() ?? "";
     const hasServiceSearch = serviceSearch.length > 0;
