@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AppointmentItem, ResourceItem, ServiceItem } from "../../types";
 import { Badge } from "../../ui/Badge";
 import {
@@ -11,6 +11,8 @@ import {
 } from "../../ui/DataTable";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 export function AppointmentsSection({
   appointments,
@@ -23,7 +25,8 @@ export function AppointmentsSection({
   appointmentsSearch,
   setAppointmentsSearch,
   loadAppointments,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  total
 }: {
   appointments: AppointmentItem[];
   services: ServiceItem[];
@@ -34,10 +37,28 @@ export function AppointmentsSection({
   setAppointmentsStatus: (value: string) => void;
   appointmentsSearch: string;
   setAppointmentsSearch: (value: string) => void;
-  loadAppointments: () => void;
+  loadAppointments: (
+    date?: string,
+    status?: string,
+    search?: string,
+    page?: number,
+    limit?: number
+  ) => void;
   updateAppointmentStatus: (appointmentId: string, status: string) => void;
+  total: number;
 }) {
   const [viewingAppointment, setViewingAppointment] = useState<AppointmentItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const debouncedSearch = useDebouncedValue(appointmentsSearch, 400);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [appointments, appointmentsDate, appointmentsStatus, debouncedSearch]);
+
+  useEffect(() => {
+    loadAppointments(appointmentsDate, appointmentsStatus, debouncedSearch, page, pageSize);
+  }, [appointmentsDate, appointmentsStatus, debouncedSearch, page, pageSize, loadAppointments]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -79,7 +100,9 @@ export function AppointmentsSection({
         />
         <button
           className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
-          onClick={loadAppointments}
+          onClick={() =>
+            loadAppointments(appointmentsDate, appointmentsStatus, appointmentsSearch, 1, pageSize)
+          }
         >
           Buscar
         </button>
@@ -166,6 +189,17 @@ export function AppointmentsSection({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal
         open={Boolean(viewingAppointment)}

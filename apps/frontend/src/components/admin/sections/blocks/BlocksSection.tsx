@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BlockItem, ResourceItem } from "../../types";
 import { BlockEditor } from "../../components/BlockEditor";
 import { InputField } from "../../components/InputField";
@@ -11,7 +11,9 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 export function BlocksSection({
   blocks,
@@ -21,7 +23,8 @@ export function BlocksSection({
   createBlock,
   updateBlock,
   deleteBlock,
-  loadBlocks
+  loadBlocks,
+  total
 }: {
   blocks: BlockItem[];
   resources: ResourceItem[];
@@ -30,21 +33,25 @@ export function BlocksSection({
   createBlock: (event: React.FormEvent<HTMLFormElement>) => void;
   updateBlock: (blockId: string, payload: Partial<BlockItem>) => void;
   deleteBlock: (blockId: string) => void;
-  loadBlocks: () => void;
+  loadBlocks: (page?: number, limit?: number, search?: string) => void;
+  total: number;
 }) {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<BlockItem | null>(null);
   const [deletingBlock, setDeletingBlock] = useState<BlockItem | null>(null);
   const [viewingBlock, setViewingBlock] = useState<BlockItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return blocks.filter((block) => {
-      if (!term) return true;
-      return (block.reason || "").toLowerCase().includes(term);
-    });
-  }, [blocks, search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    loadBlocks(page, pageSize, debouncedSearch);
+  }, [page, pageSize, debouncedSearch, loadBlocks]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -55,7 +62,7 @@ export function BlocksSection({
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={loadBlocks}
+              onClick={() => loadBlocks(page, pageSize, search)}
             >
               Refrescar
             </button>
@@ -89,7 +96,7 @@ export function BlocksSection({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((block) => (
+            {blocks.map((block) => (
               <TableRow key={block._id}>
                 <TableCell>{block.reason || "Bloqueo"}</TableCell>
                 <TableCell>{new Date(block.startTime).toLocaleString()}</TableCell>
@@ -118,7 +125,7 @@ export function BlocksSection({
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {blocks.length === 0 && (
               <TableRow>
                 <TableCell className="text-slate-500" colSpan={4}>
                   No hay bloqueos para los filtros actuales.
@@ -128,6 +135,17 @@ export function BlocksSection({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal open={createOpen} title="Nuevo bloqueo" onClose={() => setCreateOpen(false)}>
         <form

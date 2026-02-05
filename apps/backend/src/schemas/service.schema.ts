@@ -25,3 +25,7 @@ export class Service {
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);
+ServiceSchema.index({ businessId: 1, active: 1, name: 1 });
+ServiceSchema.index({ businessId: 1, durationMinutes: 1 });
+ServiceSchema.index({ businessId: 1, price: 1 });
+ServiceSchema.index({ name: "text" });

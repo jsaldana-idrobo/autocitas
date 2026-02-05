@@ -4,6 +4,9 @@ import { Model, isValidObjectId } from "mongoose";
 import { Appointment } from "../../schemas/appointment.schema";
 import { AdminUser } from "../../schemas/admin-user.schema";
 import { Business } from "../../schemas/business.schema";
+import { Resource } from "../../schemas/resource.schema";
+import { Service } from "../../schemas/service.schema";
+import { Block } from "../../schemas/block.schema";
 import { CreateBusinessDto } from "../dto/create-business.dto";
 import { UpdateBusinessDto } from "../dto/update-business.dto";
 import { CreateOwnerDto } from "../dto/create-owner.dto";
@@ -18,11 +21,50 @@ export class AdminPlatformService {
   constructor(
     @InjectModel(Business.name) private readonly businessModel: Model<Business>,
     @InjectModel(AdminUser.name) private readonly adminUserModel: Model<AdminUser>,
-    @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>
+    @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>,
+    @InjectModel(Service.name) private readonly serviceModel: Model<Service>,
+    @InjectModel(Resource.name) private readonly resourceModel: Model<Resource>,
+    @InjectModel(Block.name) private readonly blockModel: Model<Block>
   ) {}
 
-  async listBusinesses() {
-    return this.businessModel.find().lean();
+  async listBusinesses(options?: {
+    search?: string;
+    status?: "active" | "inactive";
+    page?: number;
+    limit?: number;
+  }) {
+    const query: Record<string, unknown> = {};
+    const searchTerm = options?.search?.trim() ?? "";
+    const hasSearch = searchTerm.length > 0;
+    if (hasSearch) {
+      query.$text = { $search: searchTerm };
+    }
+    if (options?.status) {
+      query.status = options.status;
+    }
+    if (options?.page && options?.limit) {
+      const total = await this.businessModel.countDocuments(query);
+      const baseQuery = this.businessModel.find(query);
+      if (hasSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+      } else {
+        baseQuery.sort({ name: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+    const baseQuery = this.businessModel.find(query);
+    if (hasSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+    } else {
+      baseQuery.sort({ name: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async createBusiness(payload: CreateBusinessDto) {
@@ -48,8 +90,41 @@ export class AdminPlatformService {
     });
   }
 
-  async listPlatformUsers(role: "owner" | "staff") {
-    return this.adminUserModel.find({ role }).select(SELECT_WITHOUT_PASSWORD).lean();
+  async listPlatformUsers(
+    role: "owner" | "staff",
+    options?: { search?: string; active?: "true" | "false"; page?: number; limit?: number }
+  ) {
+    const query: Record<string, unknown> = { role };
+    const searchTerm = options?.search?.trim() ?? "";
+    const hasSearch = searchTerm.length > 0;
+    if (hasSearch) {
+      query.$text = { $search: searchTerm };
+    }
+    if (options?.active === "true") query.active = true;
+    if (options?.active === "false") query.active = false;
+    if (options?.page && options?.limit) {
+      const total = await this.adminUserModel.countDocuments(query);
+      const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
+      if (hasSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
+      } else {
+        baseQuery.sort({ email: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+    const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
+    if (hasSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
+    } else {
+      baseQuery.sort({ email: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async updateBusiness(businessId: string, payload: UpdateBusinessDto) {
@@ -132,7 +207,9 @@ export class AdminPlatformService {
   async listPlatformAppointmentsWithSearch(
     date?: string,
     status?: "booked" | "cancelled" | "completed",
-    search?: string
+    search?: string,
+    page?: number,
+    limit?: number
   ) {
     const query: Record<string, unknown> = {};
     if (status) {
@@ -146,16 +223,221 @@ export class AdminPlatformService {
       }
       query.startTime = { $gte: start, $lte: end };
     }
-    if (search) {
-      const trimmed = search.trim();
-      if (trimmed.length > 0) {
-        query.$or = [
-          { customerName: { $regex: trimmed, $options: "i" } },
-          { customerPhone: { $regex: trimmed, $options: "i" } }
-        ];
+    const trimmedSearch = search?.trim() ?? "";
+    const isPhoneSearch = /^[\d+()\-\s]+$/.test(trimmedSearch);
+    if (trimmedSearch.length > 0) {
+      if (isPhoneSearch) {
+        const normalized = trimmedSearch.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+        query.customerPhone = normalized;
+      } else {
+        query.$text = { $search: trimmedSearch };
       }
     }
 
-    return this.appointmentModel.find(query).lean();
+    if (page && limit) {
+      const total = await this.appointmentModel.countDocuments(query);
+      const baseQuery = this.appointmentModel.find(query);
+      if (trimmedSearch.length > 0 && !isPhoneSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, startTime: -1 });
+      } else {
+        baseQuery.sort({ startTime: -1 });
+      }
+      const items = await baseQuery
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+      return { items, total, page, limit };
+    }
+
+    const baseQuery = this.appointmentModel.find(query);
+    if (trimmedSearch.length > 0 && !isPhoneSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, startTime: -1 });
+    } else {
+      baseQuery.sort({ startTime: -1 });
+    }
+    return baseQuery.lean();
+  }
+
+  async listPlatformServices(options?: {
+    businessId?: string;
+    active?: "true" | "false";
+    search?: string;
+    minDuration?: number;
+    maxDuration?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    const query: Record<string, unknown> = {};
+    if (options?.businessId) {
+      if (!isValidObjectId(options.businessId)) {
+        throw new BadRequestException("Invalid businessId.");
+      }
+      query.businessId = options.businessId;
+    }
+    if (options?.active === "true") {
+      query.active = true;
+    }
+    if (options?.active === "false") {
+      query.active = false;
+    }
+    if (options?.minDuration !== undefined || options?.maxDuration !== undefined) {
+      query.durationMinutes = {
+        ...(options?.minDuration !== undefined ? { $gte: options.minDuration } : {}),
+        ...(options?.maxDuration !== undefined ? { $lte: options.maxDuration } : {})
+      };
+    }
+    if (options?.minPrice !== undefined || options?.maxPrice !== undefined) {
+      query.price = {
+        ...(options?.minPrice !== undefined ? { $gte: options.minPrice } : {}),
+        ...(options?.maxPrice !== undefined ? { $lte: options.maxPrice } : {})
+      };
+    }
+    const serviceSearch = options?.search?.trim() ?? "";
+    const hasServiceSearch = serviceSearch.length > 0;
+    if (hasServiceSearch) {
+      query.$text = { $search: serviceSearch };
+    }
+
+    if (options?.page && options?.limit) {
+      const total = await this.serviceModel.countDocuments(query);
+      const baseQuery = this.serviceModel.find(query);
+      if (hasServiceSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+      } else {
+        baseQuery.sort({ name: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    const baseQuery = this.serviceModel.find(query);
+    if (hasServiceSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+    } else {
+      baseQuery.sort({ name: 1 });
+    }
+    return baseQuery.lean();
+  }
+
+  async listPlatformResources(options?: {
+    businessId?: string;
+    active?: "true" | "false";
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const query: Record<string, unknown> = {};
+    if (options?.businessId) {
+      if (!isValidObjectId(options.businessId)) {
+        throw new BadRequestException("Invalid businessId.");
+      }
+      query.businessId = options.businessId;
+    }
+    if (options?.active === "true") {
+      query.active = true;
+    }
+    if (options?.active === "false") {
+      query.active = false;
+    }
+    const resourceSearch = options?.search?.trim() ?? "";
+    const hasResourceSearch = resourceSearch.length > 0;
+    if (hasResourceSearch) {
+      query.$text = { $search: resourceSearch };
+    }
+
+    if (options?.page && options?.limit) {
+      const total = await this.resourceModel.countDocuments(query);
+      const baseQuery = this.resourceModel.find(query);
+      if (hasResourceSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+      } else {
+        baseQuery.sort({ name: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    const baseQuery = this.resourceModel.find(query);
+    if (hasResourceSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+    } else {
+      baseQuery.sort({ name: 1 });
+    }
+    return baseQuery.lean();
+  }
+
+  async listPlatformBlocks(options?: {
+    businessId?: string;
+    resourceId?: string;
+    search?: string;
+    type?: "resource" | "global";
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const query: Record<string, unknown> = {};
+    if (options?.businessId) {
+      if (!isValidObjectId(options.businessId)) {
+        throw new BadRequestException("Invalid businessId.");
+      }
+      query.businessId = options.businessId;
+    }
+    if (options?.resourceId) {
+      if (!isValidObjectId(options.resourceId)) {
+        throw new BadRequestException("Invalid resourceId.");
+      }
+      query.resourceId = options.resourceId;
+    }
+    if (!options?.resourceId && options?.type === "resource") {
+      query.resourceId = { $exists: true };
+    }
+    if (!options?.resourceId && options?.type === "global") {
+      query.$or = [{ resourceId: { $exists: false } }, { resourceId: null }];
+    }
+    if (options?.from || options?.to) {
+      const from = options.from ? new Date(options.from) : undefined;
+      const to = options.to ? new Date(options.to) : undefined;
+      if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
+        throw new BadRequestException(ERR_INVALID_DATE_FORMAT);
+      }
+      query.startTime = {
+        ...(from ? { $gte: from } : {}),
+        ...(to ? { $lte: to } : {})
+      };
+    }
+    if (options?.search) {
+      const term = options.search.trim();
+      if (term.length > 0) {
+        query.reason = { $regex: term, $options: "i" };
+      }
+    }
+
+    if (options?.page && options?.limit) {
+      const total = await this.blockModel.countDocuments(query);
+      const items = await this.blockModel
+        .find(query)
+        .sort({ startTime: -1 })
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    return this.blockModel.find(query).sort({ startTime: -1 }).lean();
   }
 }

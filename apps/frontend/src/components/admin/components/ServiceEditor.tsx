@@ -13,8 +13,8 @@ export function ServiceEditor({
   onSave: (payload: Partial<ServiceItem>) => void;
 }) {
   const [name, setName] = useState(item.name);
-  const [durationMinutes, setDurationMinutes] = useState(item.durationMinutes);
-  const [price, setPrice] = useState(item.price ?? 0);
+  const [durationMinutes, setDurationMinutes] = useState(String(item.durationMinutes));
+  const [price, setPrice] = useState(item.price !== undefined ? String(item.price) : "");
   const [allowedResources, setAllowedResources] = useState<string[]>(item.allowedResourceIds ?? []);
 
   function toggleResource(resourceId: string) {
@@ -35,20 +35,33 @@ export function ServiceEditor({
           className="rounded-xl border border-slate-200 px-3 py-2"
           type="number"
           value={durationMinutes}
-          onChange={(event) => setDurationMinutes(Number(event.target.value))}
+          onChange={(event) => setDurationMinutes(event.target.value)}
         />
         <input
           className="rounded-xl border border-slate-200 px-3 py-2"
           type="number"
           value={price}
-          onChange={(event) => setPrice(Number(event.target.value))}
+          onChange={(event) => setPrice(event.target.value)}
         />
         <div className="flex items-center gap-2">
           <button
             className="rounded-xl bg-primary-600 px-3 py-1 text-xs text-white"
-            onClick={() =>
-              onSave({ name, durationMinutes, price, allowedResourceIds: allowedResources })
-            }
+            onClick={() => {
+              const durationValue =
+                durationMinutes.trim() === "" ? item.durationMinutes : Number(durationMinutes);
+              const priceValue =
+                price.trim() === ""
+                  ? undefined
+                  : Number.isNaN(Number(price))
+                    ? undefined
+                    : Number(price);
+              onSave({
+                name,
+                durationMinutes: durationValue,
+                price: priceValue,
+                allowedResourceIds: allowedResources
+              });
+            }}
           >
             Guardar
           </button>

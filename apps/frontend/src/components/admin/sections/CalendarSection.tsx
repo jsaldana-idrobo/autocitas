@@ -25,7 +25,7 @@ export function CalendarSection({
   onCreateBlock,
   onUpdateAppointment,
   onCancelAppointment,
-  role,
+  userRole,
   resourceId
 }: {
   weekStart: string;
@@ -57,13 +57,13 @@ export function CalendarSection({
     payload: { serviceId?: string; resourceId?: string; startTime?: string }
   ) => void;
   onCancelAppointment: (appointmentId: string) => void;
-  role: "owner" | "staff" | "platform_admin" | "unknown";
+  userRole: "owner" | "staff" | "platform_admin" | "unknown";
   resourceId?: string;
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showBlock, setShowBlock] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<AppointmentItem | null>(null);
-  const canSelectResource = role !== "staff";
+  const canSelectResource = userRole !== "staff";
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)),
@@ -72,24 +72,24 @@ export function CalendarSection({
   const todayValue = getTodayValue();
 
   const filteredAppointments = useMemo(() => {
-    if (role === "staff") {
+    if (userRole === "staff") {
       return appointments;
     }
     if (selectedResourceId) {
       return appointments.filter((appt) => appt.resourceId === selectedResourceId);
     }
     return appointments;
-  }, [appointments, role, selectedResourceId]);
+  }, [appointments, selectedResourceId, userRole]);
 
   const filteredBlocks = useMemo(() => {
-    if (role === "staff") {
+    if (userRole === "staff") {
       return blocks;
     }
     if (selectedResourceId) {
       return blocks.filter((block) => block.resourceId === selectedResourceId || !block.resourceId);
     }
     return blocks;
-  }, [blocks, role, selectedResourceId]);
+  }, [blocks, selectedResourceId, userRole]);
 
   const summary = useMemo(() => {
     const weekAppointments = filteredAppointments.filter((appt) => appt.status !== "cancelled");
@@ -142,7 +142,7 @@ export function CalendarSection({
           services={services}
           resources={resources}
           canSelectResource={canSelectResource}
-          fixedResourceId={role === "staff" ? resourceId : undefined}
+          fixedResourceId={userRole === "staff" ? resourceId : undefined}
           onClose={() => setShowCreate(false)}
           onSubmit={(payload) => {
             onCreateAppointment(payload);
@@ -155,7 +155,7 @@ export function CalendarSection({
         <BlockModal
           resources={resources}
           canSelectResource={canSelectResource}
-          fixedResourceId={role === "staff" ? resourceId : undefined}
+          fixedResourceId={userRole === "staff" ? resourceId : undefined}
           onClose={() => setShowBlock(false)}
           onSubmit={(payload) => {
             onCreateBlock(payload);

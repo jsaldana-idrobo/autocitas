@@ -55,3 +55,5 @@ export class Business {
 }
 
 export const BusinessSchema = SchemaFactory.createForClass(Business);
+BusinessSchema.index({ status: 1, name: 1 });
+BusinessSchema.index({ name: "text", slug: "text" });

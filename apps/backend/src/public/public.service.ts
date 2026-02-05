@@ -10,6 +10,7 @@ import { Service } from "../schemas/service.schema";
 import { CreateAppointmentDto } from "./dto/create-appointment.dto";
 import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
 import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto";
+import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto";
 import { assertNotInPast, assertSameDayAllowed } from "./policies";
 
 const DEFAULT_TIMEZONE = "America/Bogota";
@@ -358,6 +359,23 @@ export class PublicService {
     };
   }
 
+  async listAppointmentsByPhone(slug: string, phone?: string) {
+    const business = await this.businessModel.findOne({ slug }).lean();
+    if (!business || business.status !== STATUS_ACTIVE) {
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+    }
+    const normalized = (phone || "").trim();
+    if (!normalized) {
+      return { appointments: [] };
+    }
+    const appointments = await this.appointmentModel
+      .find({ businessId: business._id, customerPhone: normalized })
+      .sort({ startTime: -1 })
+      .limit(50)
+      .lean();
+    return { appointments };
+  }
+
   async cancelAppointment(slug: string, appointmentId: string, payload: CancelAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
     if (!business || business.status !== STATUS_ACTIVE) {
@@ -477,6 +495,67 @@ export class PublicService {
       startTime: updated?.startTime ?? startUtc.toJSDate(),
       endTime: updated?.endTime ?? endUtc.toJSDate(),
       resourceId: updated?.resourceId ?? resourceId
+    };
+  }
+
+  async updatePublicAppointment(
+    slug: string,
+    appointmentId: string,
+    payload: UpdatePublicAppointmentDto
+  ) {
+    const business = await this.businessModel.findOne({ slug }).lean();
+    if (!business || business.status !== STATUS_ACTIVE) {
+      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+    }
+
+    if (!isValidObjectId(appointmentId)) {
+      throw new BadRequestException("Invalid appointmentId.");
+    }
+
+    const phone = payload.customerPhone.trim();
+    const appointment = await this.appointmentModel
+      .findOne({ _id: appointmentId, businessId: business._id, customerPhone: phone })
+      .lean();
+
+    if (!appointment) {
+      throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
+    }
+
+    const update: Record<string, unknown> = {};
+    if (payload.customerName && payload.customerName.trim()) {
+      update.customerName = payload.customerName.trim();
+    }
+    if (payload.newCustomerPhone && payload.newCustomerPhone.trim()) {
+      update.customerPhone = payload.newCustomerPhone.trim();
+    }
+
+    if (payload.startTime) {
+      const rescheduled = await this.rescheduleAppointment(slug, appointmentId, {
+        customerPhone: payload.customerPhone,
+        startTime: payload.startTime
+      });
+      return {
+        appointmentId: rescheduled.appointmentId,
+        startTime: rescheduled.startTime,
+        endTime: rescheduled.endTime,
+        resourceId: rescheduled.resourceId,
+        updatedFields: Object.keys(update)
+      };
+    }
+
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException("No updates provided.");
+    }
+
+    const updated = await this.appointmentModel
+      .findOneAndUpdate({ _id: appointment._id }, { $set: update }, { new: true })
+      .lean();
+
+    return {
+      appointmentId: updated?._id ?? appointment._id,
+      startTime: updated?.startTime ?? appointment.startTime,
+      endTime: updated?.endTime ?? appointment.endTime,
+      resourceId: updated?.resourceId ?? appointment.resourceId
     };
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AppointmentItem } from "../../types";
 import {
   DataTable,
@@ -10,6 +10,7 @@ import {
 } from "../../ui/DataTable";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 
 export function PlatformAppointmentsTable({
   appointments,
@@ -20,7 +21,8 @@ export function PlatformAppointmentsTable({
   setStatus,
   setSearch,
   onSearch,
-  onRefresh
+  onRefresh,
+  total
 }: {
   appointments: AppointmentItem[];
   date: string;
@@ -29,10 +31,21 @@ export function PlatformAppointmentsTable({
   setDate: (value: string) => void;
   setStatus: (value: string) => void;
   setSearch: (value: string) => void;
-  onSearch: () => void;
-  onRefresh: () => void;
+  onSearch: (page?: number, limit?: number) => void;
+  onRefresh: (page?: number, limit?: number) => void;
+  total: number;
 }) {
   const [viewingAppointment, setViewingAppointment] = useState<AppointmentItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [date, status, search]);
+
+  useEffect(() => {
+    onSearch(page, pageSize);
+  }, [page, pageSize, onSearch]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -42,7 +55,7 @@ export function PlatformAppointmentsTable({
         actions={
           <button
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            onClick={onRefresh}
+            onClick={() => onRefresh(page, pageSize)}
           >
             Refrescar
           </button>
@@ -74,7 +87,7 @@ export function PlatformAppointmentsTable({
         />
         <button
           className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
-          onClick={onSearch}
+          onClick={() => onSearch(1, pageSize)}
         >
           Buscar
         </button>
@@ -126,6 +139,17 @@ export function PlatformAppointmentsTable({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal
         open={Boolean(viewingAppointment)}

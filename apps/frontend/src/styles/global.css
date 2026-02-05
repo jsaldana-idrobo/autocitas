@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "./toast.css";
+
 :root {
   color-scheme: light;
   --color-primary: #3b82f6;

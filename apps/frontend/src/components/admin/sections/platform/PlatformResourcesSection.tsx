@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ResourceItem } from "../../types";
+import React, { useEffect, useMemo, useState } from "react";
+import { BusinessProfile, ResourceItem } from "../../types";
 import { ResourceEditor } from "../../components/ResourceEditor";
 import { InputField } from "../../components/InputField";
 import { Badge } from "../../ui/Badge";
@@ -15,50 +15,81 @@ import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
 
-export function ResourcesSection({
+export function PlatformResourcesSection({
   resources,
-  createResource,
-  updateResource,
-  deleteResource,
-  loadResources,
-  total
+  businesses,
+  onRefresh,
+  onCreate,
+  onUpdate,
+  onDelete,
+  total,
+  authHeaders
 }: {
   resources: ResourceItem[];
-  createResource: (event: React.FormEvent<HTMLFormElement>) => void;
-  updateResource: (resourceId: string, payload: Partial<ResourceItem>) => void;
-  deleteResource: (resourceId: string) => void;
-  loadResources: (page?: number, limit?: number, search?: string, status?: string) => void;
+  businesses: BusinessProfile[];
+  onRefresh: (
+    page?: number,
+    limit?: number,
+    search?: string,
+    status?: string,
+    businessId?: string
+  ) => void;
+  onCreate: (businessId: string, payload: { name: string }) => void;
+  onUpdate: (businessId: string, resourceId: string, payload: Partial<ResourceItem>) => void;
+  onDelete: (businessId: string, resourceId: string) => void;
   total: number;
+  authHeaders: { token: string };
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [businessFilter, setBusinessFilter] = useState("");
+  const [sortBy, setSortBy] = useState("name_asc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<ResourceItem | null>(null);
   const [deletingResource, setDeletingResource] = useState<ResourceItem | null>(null);
   const [viewingResource, setViewingResource] = useState<ResourceItem | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [createBusinessId, setCreateBusinessId] = useState("");
   const debouncedSearch = useDebouncedValue(search, 400);
+
+  const businessLookup = useMemo(() => {
+    return new Map(businesses.map((business) => [business._id ?? "", business.name ?? ""]));
+  }, [businesses]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, businessFilter]);
 
   useEffect(() => {
-    loadResources(page, pageSize, debouncedSearch, statusFilter);
-  }, [page, pageSize, debouncedSearch, statusFilter, loadResources]);
+    onRefresh(page, pageSize, debouncedSearch, statusFilter, businessFilter);
+  }, [page, pageSize, debouncedSearch, statusFilter, businessFilter, onRefresh]);
+
+  const sorted = useMemo(() => {
+    const base = [...resources];
+    return base.sort((a, b) => {
+      if (sortBy === "name_desc") {
+        return b.name.localeCompare(a.name);
+      }
+      if (sortBy === "status") {
+        return Number(b.active) - Number(a.active);
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [resources, sortBy]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <SectionHeader
         title="Recursos"
-        subtitle="Gestiona los recursos disponibles."
+        subtitle="Gestiona los recursos de todos los negocios."
         actions={
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={() => loadResources(page, pageSize, search, statusFilter)}
+              onClick={() => onRefresh(page, pageSize, search, statusFilter, businessFilter)}
             >
               Refrescar
             </button>
@@ -75,7 +106,7 @@ export function ResourcesSection({
       <div className="mt-4 flex flex-wrap gap-3">
         <input
           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          placeholder="Buscar por nombre"
+          placeholder="Buscar por nombre o ID"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -88,20 +119,47 @@ export function ResourcesSection({
           <option value="active">Activos</option>
           <option value="inactive">Inactivos</option>
         </select>
+        <select
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          value={businessFilter}
+          onChange={(event) => setBusinessFilter(event.target.value)}
+        >
+          <option value="">Todos los negocios</option>
+          {businesses.map((business) => (
+            <option key={business._id} value={business._id}>
+              {business.name ?? business._id}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value)}
+        >
+          <option value="name_asc">Nombre A-Z</option>
+          <option value="name_desc">Nombre Z-A</option>
+          <option value="status">Estado</option>
+        </select>
       </div>
 
       <div className="mt-4">
         <DataTable>
           <TableHead>
             <TableRow>
+              <TableHeaderCell>Negocio</TableHeaderCell>
               <TableHeaderCell>Recurso</TableHeaderCell>
               <TableHeaderCell>Estado</TableHeaderCell>
               <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {resources.map((resource) => (
+            {sorted.map((resource) => (
               <TableRow key={resource._id}>
+                <TableCell>
+                  {resource.businessId
+                    ? businessLookup.get(resource.businessId) || resource.businessId
+                    : "-"}
+                </TableCell>
                 <TableCell>
                   <div className="font-medium">{resource.name}</div>
                 </TableCell>
@@ -126,7 +184,10 @@ export function ResourcesSection({
                     </button>
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => updateResource(resource._id, { active: !resource.active })}
+                      onClick={() => {
+                        if (!resource.businessId) return;
+                        onUpdate(resource.businessId, resource._id, { active: !resource.active });
+                      }}
                     >
                       {resource.active ? "Desactivar" : "Activar"}
                     </button>
@@ -142,7 +203,7 @@ export function ResourcesSection({
             ))}
             {resources.length === 0 && (
               <TableRow>
-                <TableCell className="text-slate-500" colSpan={3}>
+                <TableCell className="text-slate-500" colSpan={4}>
                   No hay recursos para los filtros actuales.
                 </TableCell>
               </TableRow>
@@ -166,10 +227,27 @@ export function ResourcesSection({
         <form
           className="grid gap-3 md:grid-cols-2"
           onSubmit={(event) => {
-            createResource(event);
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            const name = String(form.get("name") || "").trim();
+            if (!createBusinessId || !name) {
+              return;
+            }
+            onCreate(createBusinessId, { name });
+            event.currentTarget.reset();
+            setCreateBusinessId("");
             setCreateOpen(false);
           }}
         >
+          <BusinessSearchSelect
+            className="md:col-span-2"
+            value={createBusinessId}
+            onChange={setCreateBusinessId}
+            authHeaders={authHeaders}
+            initialOptions={businesses}
+            selectedLabel={businessLookup.get(createBusinessId)}
+            required
+          />
           <InputField name="name" label="Nombre" />
           <div className="md:col-span-2 flex justify-end gap-2">
             <button
@@ -182,6 +260,7 @@ export function ResourcesSection({
             <button
               className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
               type="submit"
+              disabled={!createBusinessId}
             >
               Crear
             </button>
@@ -199,7 +278,8 @@ export function ResourcesSection({
             item={editingResource}
             onCancel={() => setEditingResource(null)}
             onSave={(payload) => {
-              updateResource(editingResource._id, payload);
+              if (!editingResource.businessId) return;
+              onUpdate(editingResource.businessId, editingResource._id, payload);
               setEditingResource(null);
             }}
           />
@@ -213,6 +293,14 @@ export function ResourcesSection({
       >
         {viewingResource && (
           <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Negocio</div>
+              <div className="font-medium">
+                {viewingResource.businessId
+                  ? businessLookup.get(viewingResource.businessId) || viewingResource.businessId
+                  : "-"}
+              </div>
+            </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
               <div className="font-medium">{viewingResource.name}</div>
@@ -257,7 +345,8 @@ export function ResourcesSection({
                 className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
                 type="button"
                 onClick={() => {
-                  deleteResource(deletingResource._id);
+                  if (!deletingResource.businessId) return;
+                  onDelete(deletingResource.businessId, deletingResource._id);
                   setDeletingResource(null);
                 }}
               >

@@ -18,9 +18,44 @@ export class AdminCatalogService {
     private readonly businessContext: AdminBusinessContextService
   ) {}
 
-  async listServices(businessId: string) {
+  async listServices(
+    businessId: string,
+    options?: { search?: string; active?: "true" | "false"; page?: number; limit?: number }
+  ) {
     await this.businessContext.getBusinessContext(businessId);
-    return this.serviceModel.find({ businessId }).lean();
+    const query: Record<string, unknown> = { businessId };
+    const searchTerm = options?.search?.trim() ?? "";
+    const hasSearch = searchTerm.length > 0;
+    if (hasSearch) {
+      query.$text = { $search: searchTerm };
+    }
+    if (options?.active === "true") query.active = true;
+    if (options?.active === "false") query.active = false;
+
+    if (options?.page && options?.limit) {
+      const total = await this.serviceModel.countDocuments(query);
+      const baseQuery = this.serviceModel.find(query);
+      if (hasSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+      } else {
+        baseQuery.sort({ name: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    const baseQuery = this.serviceModel.find(query);
+    if (hasSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+    } else {
+      baseQuery.sort({ name: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async createService(businessId: string, payload: CreateServiceDto) {
@@ -83,9 +118,44 @@ export class AdminCatalogService {
     return service;
   }
 
-  async listResources(businessId: string) {
+  async listResources(
+    businessId: string,
+    options?: { search?: string; active?: "true" | "false"; page?: number; limit?: number }
+  ) {
     await this.businessContext.getBusinessContext(businessId);
-    return this.resourceModel.find({ businessId }).lean();
+    const query: Record<string, unknown> = { businessId };
+    const searchTerm = options?.search?.trim() ?? "";
+    const hasSearch = searchTerm.length > 0;
+    if (hasSearch) {
+      query.$text = { $search: searchTerm };
+    }
+    if (options?.active === "true") query.active = true;
+    if (options?.active === "false") query.active = false;
+
+    if (options?.page && options?.limit) {
+      const total = await this.resourceModel.countDocuments(query);
+      const baseQuery = this.resourceModel.find(query);
+      if (hasSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+      } else {
+        baseQuery.sort({ name: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    const baseQuery = this.resourceModel.find(query);
+    if (hasSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, name: 1 });
+    } else {
+      baseQuery.sort({ name: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async createResource(businessId: string, payload: CreateResourceDto) {

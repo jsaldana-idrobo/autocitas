@@ -16,3 +16,5 @@ export class Resource {
 }
 
 export const ResourceSchema = SchemaFactory.createForClass(Resource);
+ResourceSchema.index({ businessId: 1, active: 1, name: 1 });
+ResourceSchema.index({ name: "text" });

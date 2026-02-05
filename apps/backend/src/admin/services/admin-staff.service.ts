@@ -19,12 +19,44 @@ export class AdminStaffService {
     private readonly catalogService: AdminCatalogService
   ) {}
 
-  async listStaff(businessId: string) {
+  async listStaff(
+    businessId: string,
+    options?: { search?: string; active?: "true" | "false"; page?: number; limit?: number }
+  ) {
     await this.businessContext.getBusinessContext(businessId);
-    return this.adminUserModel
-      .find({ businessId, role: { $in: ["owner", "staff"] } })
-      .select(SELECT_WITHOUT_PASSWORD)
-      .lean();
+    const query: Record<string, unknown> = { businessId, role: { $in: ["owner", "staff"] } };
+    const searchTerm = options?.search?.trim() ?? "";
+    const hasSearch = searchTerm.length > 0;
+    if (hasSearch) {
+      query.$text = { $search: searchTerm };
+    }
+    if (options?.active === "true") query.active = true;
+    if (options?.active === "false") query.active = false;
+
+    if (options?.page && options?.limit) {
+      const total = await this.adminUserModel.countDocuments(query);
+      const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
+      if (hasSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
+      } else {
+        baseQuery.sort({ email: 1 });
+      }
+      const items = await baseQuery
+        .skip((options.page - 1) * options.limit)
+        .limit(options.limit)
+        .lean();
+      return { items, total, page: options.page, limit: options.limit };
+    }
+
+    const baseQuery = this.adminUserModel.find(query).select(SELECT_WITHOUT_PASSWORD);
+    if (hasSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, email: 1 });
+    } else {
+      baseQuery.sort({ email: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async createStaff(businessId: string, payload: CreateStaffDto) {

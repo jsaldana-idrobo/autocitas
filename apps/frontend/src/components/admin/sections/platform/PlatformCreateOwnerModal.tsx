@@ -1,32 +1,41 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Modal } from "../../ui/Modal";
+import { BusinessProfile } from "../../types";
+import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
 
 export function PlatformCreateOwnerModal({
   open,
   onClose,
   ownerBusinessId,
   setOwnerBusinessId,
-  onSubmit
+  onSubmit,
+  authHeaders,
+  businesses
 }: {
   open: boolean;
   onClose: () => void;
   ownerBusinessId: string;
   setOwnerBusinessId: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  authHeaders: { token: string };
+  businesses: BusinessProfile[];
 }) {
+  const businessLookup = useMemo(() => {
+    return new Map(businesses.map((business) => [business._id ?? "", business.name ?? ""]));
+  }, [businesses]);
+
   return (
     <Modal open={open} title="Crear owner" onClose={onClose}>
       <form className="grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
-        <label className="block text-sm font-medium md:col-span-2">
-          Business ID
-          <input
-            name="businessId"
-            value={ownerBusinessId}
-            onChange={(event) => setOwnerBusinessId(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            required
-          />
-        </label>
+        <BusinessSearchSelect
+          className="md:col-span-2"
+          value={ownerBusinessId}
+          onChange={setOwnerBusinessId}
+          authHeaders={authHeaders}
+          initialOptions={businesses}
+          selectedLabel={businessLookup.get(ownerBusinessId)}
+          required
+        />
         <label className="block text-sm font-medium">
           Email
           <input

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ResourceItem, StaffItem } from "../../types";
 import { StaffEditor } from "../../components/StaffEditor";
 import { Badge } from "../../ui/Badge";
@@ -11,7 +11,9 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 export function StaffSection({
   staff,
@@ -20,7 +22,8 @@ export function StaffSection({
   updateStaff,
   deleteStaff,
   loadStaff,
-  loadResources
+  loadResources,
+  total
 }: {
   staff: StaffItem[];
   resources: ResourceItem[];
@@ -30,8 +33,9 @@ export function StaffSection({
     payload: { resourceId?: string; password?: string; active?: boolean }
   ) => void;
   deleteStaff: (staffId: string) => void;
-  loadStaff: () => void;
+  loadStaff: (page?: number, limit?: number, search?: string, status?: string) => void;
   loadResources: () => void;
+  total: number;
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -39,16 +43,17 @@ export function StaffSection({
   const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<StaffItem | null>(null);
   const [viewingStaff, setViewingStaff] = useState<StaffItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return staff.filter((member) => {
-      const matchesSearch = !term || member.email.toLowerCase().includes(term);
-      const matchesStatus =
-        !statusFilter || (statusFilter === "active" ? member.active : !member.active);
-      return matchesSearch && matchesStatus;
-    });
-  }, [staff, search, statusFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  useEffect(() => {
+    loadStaff(page, pageSize, debouncedSearch, statusFilter);
+  }, [page, pageSize, debouncedSearch, statusFilter, loadStaff]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -59,7 +64,7 @@ export function StaffSection({
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={loadStaff}
+              onClick={() => loadStaff(page, pageSize, search, statusFilter)}
             >
               Refrescar
             </button>
@@ -105,12 +110,16 @@ export function StaffSection({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((member) => (
+            {staff.map((member) => (
               <TableRow key={member._id}>
                 <TableCell>
                   <div className="font-medium">{member.email}</div>
                 </TableCell>
-                <TableCell>{member.resourceId ?? "-"}</TableCell>
+                <TableCell>
+                  {resources.find((resource) => resource._id === member.resourceId)?.name ||
+                    member.resourceId ||
+                    "-"}
+                </TableCell>
                 <TableCell>
                   <Badge tone={member.active ? "success" : "warning"}>
                     {member.active ? "Activo" : "Inactivo"}
@@ -143,7 +152,7 @@ export function StaffSection({
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {staff.length === 0 && (
               <TableRow>
                 <TableCell className="text-slate-500" colSpan={4}>
                   No hay staff para los filtros actuales.
@@ -153,6 +162,17 @@ export function StaffSection({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal open={createOpen} title="Nuevo staff" onClose={() => setCreateOpen(false)}>
         <form

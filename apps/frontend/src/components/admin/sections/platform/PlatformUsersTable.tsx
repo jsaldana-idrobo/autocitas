@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PlatformUserUpdate, StaffItem } from "../../types";
 import { Badge } from "../../ui/Badge";
 import {
@@ -10,8 +10,10 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { PlatformEditUserForm } from "./PlatformEditUserForm";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 export function PlatformUsersTable({
   title,
@@ -19,30 +21,33 @@ export function PlatformUsersTable({
   onRefresh,
   onUpdate,
   onDelete,
-  actions
+  actions,
+  total
 }: {
   title: string;
   users: StaffItem[];
-  onRefresh: () => void;
+  onRefresh: (page?: number, limit?: number, search?: string, status?: string) => void;
   onUpdate: (userId: string, payload: PlatformUserUpdate) => void;
   onDelete: (userId: string) => void;
   actions?: React.ReactNode;
+  total: number;
 }) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [editingUser, setEditingUser] = useState<StaffItem | null>(null);
   const [deletingUser, setDeletingUser] = useState<StaffItem | null>(null);
   const [viewingUser, setViewingUser] = useState<StaffItem | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return users.filter((user) => {
-      const matchesSearch = !term || user.email.toLowerCase().includes(term);
-      const matchesActive =
-        !activeFilter || (activeFilter === "active" ? user.active : !user.active);
-      return matchesSearch && matchesActive;
-    });
-  }, [users, search, activeFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeFilter]);
+
+  useEffect(() => {
+    onRefresh(page, pageSize, debouncedSearch, activeFilter);
+  }, [page, pageSize, debouncedSearch, activeFilter, onRefresh]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -53,7 +58,7 @@ export function PlatformUsersTable({
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={onRefresh}
+              onClick={() => onRefresh(page, pageSize, search, activeFilter)}
             >
               Refrescar
             </button>
@@ -91,7 +96,7 @@ export function PlatformUsersTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((user) => (
+            {users.map((user) => (
               <TableRow key={user._id}>
                 <TableCell>
                   <div className="font-medium">{user.email}</div>
@@ -127,7 +132,7 @@ export function PlatformUsersTable({
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {users.length === 0 && (
               <TableRow>
                 <TableCell className="text-slate-500" colSpan={4}>
                   No hay usuarios para los filtros actuales.
@@ -137,6 +142,17 @@ export function PlatformUsersTable({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal
         open={Boolean(editingUser)}

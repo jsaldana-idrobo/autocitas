@@ -32,6 +32,7 @@ export function useAdminCalendar(api: AdminApiContext) {
     if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
+    api.resetSuccess();
     try {
       const from = `${nextWeekStart}T00:00:00.000Z`;
       const to = `${addDays(nextWeekStart, 7)}T00:00:00.000Z`;
@@ -62,6 +63,7 @@ export function useAdminCalendar(api: AdminApiContext) {
     startTime: string;
   }) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -74,8 +76,22 @@ export function useAdminCalendar(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      setCalendarLoaded(false);
-      await loadCalendarData();
+      const from = `${calendarWeekStart}T00:00:00.000Z`;
+      const to = `${addDays(calendarWeekStart, 7)}T00:00:00.000Z`;
+      const [appointments, blocks] = await Promise.all([
+        apiRequest<AppointmentItem[]>(
+          `/admin/businesses/${api.businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        ),
+        apiRequest<BlockItem[]>(
+          `/admin/businesses/${api.businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        )
+      ]);
+      setCalendarAppointments(appointments);
+      setCalendarBlocks(blocks);
+      setCalendarLoaded(true);
+      api.setSuccess("Cita creada.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando cita");
     } finally {
@@ -89,6 +105,7 @@ export function useAdminCalendar(api: AdminApiContext) {
     payload: { serviceId?: string; resourceId?: string; startTime?: string }
   ) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -104,8 +121,22 @@ export function useAdminCalendar(api: AdminApiContext) {
           ...api.authHeaders
         }
       );
-      setCalendarLoaded(false);
-      await loadCalendarData();
+      const from = `${calendarWeekStart}T00:00:00.000Z`;
+      const to = `${addDays(calendarWeekStart, 7)}T00:00:00.000Z`;
+      const [appointments, blocks] = await Promise.all([
+        apiRequest<AppointmentItem[]>(
+          `/admin/businesses/${api.businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        ),
+        apiRequest<BlockItem[]>(
+          `/admin/businesses/${api.businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        )
+      ]);
+      setCalendarAppointments(appointments);
+      setCalendarBlocks(blocks);
+      setCalendarLoaded(true);
+      api.setSuccess("Cita actualizada.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando cita");
     } finally {
@@ -116,6 +147,7 @@ export function useAdminCalendar(api: AdminApiContext) {
 
   async function cancelAppointment(appointmentId: string) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -124,8 +156,22 @@ export function useAdminCalendar(api: AdminApiContext) {
         body: JSON.stringify({ status: "cancelled" }),
         ...api.authHeaders
       });
-      setCalendarLoaded(false);
-      await loadCalendarData();
+      const from = `${calendarWeekStart}T00:00:00.000Z`;
+      const to = `${addDays(calendarWeekStart, 7)}T00:00:00.000Z`;
+      const [appointments, blocks] = await Promise.all([
+        apiRequest<AppointmentItem[]>(
+          `/admin/businesses/${api.businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        ),
+        apiRequest<BlockItem[]>(
+          `/admin/businesses/${api.businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        )
+      ]);
+      setCalendarAppointments(appointments);
+      setCalendarBlocks(blocks);
+      setCalendarLoaded(true);
+      api.setSuccess("Cita cancelada.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando cita");
     } finally {
@@ -141,6 +187,7 @@ export function useAdminCalendar(api: AdminApiContext) {
     reason?: string;
   }) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -154,8 +201,22 @@ export function useAdminCalendar(api: AdminApiContext) {
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      setCalendarLoaded(false);
-      await loadCalendarData();
+      const from = `${calendarWeekStart}T00:00:00.000Z`;
+      const to = `${addDays(calendarWeekStart, 7)}T00:00:00.000Z`;
+      const [appointments, blocks] = await Promise.all([
+        apiRequest<AppointmentItem[]>(
+          `/admin/businesses/${api.businessId}/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        ),
+        apiRequest<BlockItem[]>(
+          `/admin/businesses/${api.businessId}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          api.authHeaders
+        )
+      ]);
+      setCalendarAppointments(appointments);
+      setCalendarBlocks(blocks);
+      setCalendarLoaded(true);
+      api.setSuccess("Bloqueo creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
     } finally {

@@ -3,6 +3,12 @@ export type TabKey =
   | "platform_owners"
   | "platform_staff"
   | "platform_appointments"
+  | "platform_services"
+  | "platform_resources"
+  | "platform_blocks"
+  | "platform_hours"
+  | "platform_policies"
+  | "platform_calendar"
   | "business"
   | "services"
   | "resources"
@@ -15,6 +21,7 @@ export type TabKey =
 
 export interface ServiceItem {
   _id: string;
+  businessId?: string;
   name: string;
   durationMinutes: number;
   price?: number;
@@ -24,6 +31,7 @@ export interface ServiceItem {
 
 export interface ResourceItem {
   _id: string;
+  businessId?: string;
   name: string;
   active: boolean;
 }
@@ -86,6 +94,15 @@ export interface BusinessProfile {
   contactPhone?: string;
   address?: string;
   status?: "active" | "inactive";
+  hours?: BusinessHoursItem[];
+  policies?: Policies;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export const tabConfig: { key: TabKey; label: string }[] = [
@@ -93,6 +110,12 @@ export const tabConfig: { key: TabKey; label: string }[] = [
   { key: "platform_owners", label: "Owners" },
   { key: "platform_staff", label: "Staff" },
   { key: "platform_appointments", label: "Citas" },
+  { key: "platform_services", label: "Servicios" },
+  { key: "platform_resources", label: "Recursos" },
+  { key: "platform_blocks", label: "Bloqueos" },
+  { key: "platform_hours", label: "Horarios" },
+  { key: "platform_policies", label: "Politicas" },
+  { key: "platform_calendar", label: "Calendario" },
   { key: "business", label: "Negocio" },
   { key: "services", label: "Servicios" },
   { key: "resources", label: "Recursos" },
@@ -124,5 +147,11 @@ export const platformTabs: TabKey[] = [
   "platform_businesses",
   "platform_owners",
   "platform_staff",
-  "platform_appointments"
+  "platform_appointments",
+  "platform_services",
+  "platform_resources",
+  "platform_blocks",
+  "platform_hours",
+  "platform_policies",
+  "platform_calendar"
 ];

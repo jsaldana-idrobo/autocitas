@@ -24,6 +24,7 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
     if (!startLoad()) return;
     api.setLoading(true);
     api.resetError();
+    api.resetSuccess();
     try {
       const [businessData, policiesData, hoursData] = await Promise.all([
         apiRequest<BusinessProfile>(`/admin/businesses/${api.businessId}`, api.authHeaders),
@@ -48,6 +49,7 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
   async function saveHours(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     let payloadHours: { dayOfWeek: number; openTime: string; closeTime: string }[] = [];
     try {
@@ -79,8 +81,19 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
         body: JSON.stringify({ hours: payloadHours }),
         ...api.authHeaders
       });
-      setBusinessLoaded(false);
-      await loadBusinessSettings();
+      const [businessData, policiesData, hoursData] = await Promise.all([
+        apiRequest<BusinessProfile>(`/admin/businesses/${api.businessId}`, api.authHeaders),
+        apiRequest<Policies>(`/admin/businesses/${api.businessId}/policies`, api.authHeaders),
+        apiRequest<BusinessHoursItem[]>(
+          `/admin/businesses/${api.businessId}/hours`,
+          api.authHeaders
+        )
+      ]);
+      setBusinessProfile(businessData);
+      setPolicies(policiesData);
+      setHours(hoursData);
+      setBusinessLoaded(true);
+      api.setSuccess("Horarios actualizados.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando horarios");
     } finally {
@@ -92,6 +105,7 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
   async function savePolicies(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
       cancellationHours: Number(form.get("cancellationHours")),
@@ -107,8 +121,19 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setBusinessLoaded(false);
-      await loadBusinessSettings();
+      const [businessData, policiesData, hoursData] = await Promise.all([
+        apiRequest<BusinessProfile>(`/admin/businesses/${api.businessId}`, api.authHeaders),
+        apiRequest<Policies>(`/admin/businesses/${api.businessId}/policies`, api.authHeaders),
+        apiRequest<BusinessHoursItem[]>(
+          `/admin/businesses/${api.businessId}/hours`,
+          api.authHeaders
+        )
+      ]);
+      setBusinessProfile(businessData);
+      setPolicies(policiesData);
+      setHours(hoursData);
+      setBusinessLoaded(true);
+      api.setSuccess("Politicas actualizadas.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando politicas");
     } finally {
@@ -120,6 +145,7 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
   async function saveBusinessProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
       name: String(form.get("name") || "").trim() || undefined,
@@ -138,8 +164,19 @@ export function useAdminBusinessSettings(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setBusinessLoaded(false);
-      await loadBusinessSettings();
+      const [businessData, policiesData, hoursData] = await Promise.all([
+        apiRequest<BusinessProfile>(`/admin/businesses/${api.businessId}`, api.authHeaders),
+        apiRequest<Policies>(`/admin/businesses/${api.businessId}/policies`, api.authHeaders),
+        apiRequest<BusinessHoursItem[]>(
+          `/admin/businesses/${api.businessId}/hours`,
+          api.authHeaders
+        )
+      ]);
+      setBusinessProfile(businessData);
+      setPolicies(policiesData);
+      setHours(hoursData);
+      setBusinessLoaded(true);
+      api.setSuccess("Negocio actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando negocio");
     } finally {

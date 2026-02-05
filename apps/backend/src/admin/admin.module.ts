@@ -21,6 +21,7 @@ import { AdminBusinessService } from "./services/admin-business.service";
 import { AdminCatalogService } from "./services/admin-catalog.service";
 import { AdminPlatformService } from "./services/admin-platform.service";
 import { AdminStaffService } from "./services/admin-staff.service";
+import { AuditModule } from "../audit/audit.module";
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AdminStaffService } from "./services/admin-staff.service";
       secret: process.env.JWT_SECRET || "dev_secret",
       signOptions: { expiresIn: "7d" }
     }),
+    AuditModule,
     MongooseModule.forFeature([
       { name: Appointment.name, schema: AppointmentSchema },
       { name: AdminUser.name, schema: AdminUserSchema },

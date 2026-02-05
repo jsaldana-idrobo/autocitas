@@ -23,7 +23,15 @@ export class AdminBlocksService {
     private readonly catalogService: AdminCatalogService
   ) {}
 
-  async listBlocks(businessId: string, resourceId?: string, from?: string, to?: string) {
+  async listBlocks(
+    businessId: string,
+    resourceId?: string,
+    from?: string,
+    to?: string,
+    search?: string,
+    page?: number,
+    limit?: number
+  ) {
     await this.businessContext.getBusinessContext(businessId);
     const query: Record<string, unknown> = { businessId };
     if (resourceId) {
@@ -38,7 +46,22 @@ export class AdminBlocksService {
       query.startTime = { $lt: end };
       query.endTime = { $gt: start };
     }
-    return this.blockModel.find(query).lean();
+    if (search) {
+      query.reason = { $regex: search.trim(), $options: "i" };
+    }
+
+    if (page && limit) {
+      const total = await this.blockModel.countDocuments(query);
+      const items = await this.blockModel
+        .find(query)
+        .sort({ startTime: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+      return { items, total, page, limit };
+    }
+
+    return this.blockModel.find(query).sort({ startTime: -1 }).lean();
   }
 
   async createBlock(businessId: string, payload: CreateBlockDto) {

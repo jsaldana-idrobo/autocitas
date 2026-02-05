@@ -31,10 +31,19 @@ interface AvailabilitySlot {
   resourceIds: string[];
 }
 
+interface AppointmentItem {
+  _id: string;
+  serviceId: string;
+  resourceId?: string;
+  customerName: string;
+  customerPhone: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
 const DEFAULT_TIMEZONE = "America/Bogota";
 const PHONE_MIN_LEN = 7;
-const RESCHEDULE_HELP =
-  "Para reprogramar, ingresa el ID de la cita, tu telefono y la nueva fecha/hora.";
 const LABEL_PHONE = "Telefono";
 const INPUT_CLASS = "rounded-xl border border-slate-200 px-3 py-2";
 const DISABLED_OPACITY = "opacity-60";
@@ -47,6 +56,24 @@ function getTodayInTimezone(timezone: string) {
     day: "2-digit"
   });
   return formatter.format(new Date());
+}
+
+function toDateTimeLocalValue(iso: string, timezone: string) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+  const parts = formatter.formatToParts(date);
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${lookup.year}-${lookup.month}-${lookup.day}T${lookup.hour}:${lookup.minute}`;
 }
 
 function formatTime(iso: string, timezone: string) {
@@ -85,21 +112,38 @@ export function BookingApp({ slug }: { slug: string }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
-  const [appointmentId, setAppointmentId] = useState("");
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageSearchPhone, setManageSearchPhone] = useState("");
+  const [manageResults, setManageResults] = useState<AppointmentItem[]>([]);
+  const [manageSelected, setManageSelected] = useState<AppointmentItem | null>(null);
+  const [manageName, setManageName] = useState("");
   const [managePhone, setManagePhone] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [manageStartTime, setManageStartTime] = useState("");
   const [manageMessage, setManageMessage] = useState<string | null>(null);
 
   const normalizedPhone = normalizePhone(customerPhone);
-  const normalizedManagePhone = normalizePhone(managePhone);
+  const normalizedManagePhone = normalizePhone(manageSearchPhone);
+  const normalizedManageEditPhone = normalizePhone(managePhone);
   const canSubmit =
     !!serviceId &&
     !!selectedSlot &&
     customerName.trim().length > 0 &&
     normalizedPhone.length >= PHONE_MIN_LEN;
-  const canCancel =
-    appointmentId.trim().length > 0 && normalizedManagePhone.length >= PHONE_MIN_LEN && !loading;
-  const canReschedule = canCancel && rescheduleTime.trim().length > 0;
+  const canSearch = normalizedManagePhone.length >= PHONE_MIN_LEN && !loading;
+  const originalStartLocal = manageSelected
+    ? toDateTimeLocalValue(manageSelected.startTime, timezone)
+    : "";
+  const nameChanged = !!manageSelected && manageName.trim() !== (manageSelected.customerName || "");
+  const phoneChanged =
+    !!manageSelected && normalizedManageEditPhone !== normalizePhone(manageSelected.customerPhone);
+  const phoneValid = normalizedManageEditPhone.length >= PHONE_MIN_LEN;
+  const timeChanged = !!manageSelected && manageStartTime !== originalStartLocal;
+  const canUpdate =
+    Boolean(manageSelected) &&
+    normalizedManagePhone.length >= PHONE_MIN_LEN &&
+    !loading &&
+    (nameChanged || timeChanged || (phoneChanged && phoneValid));
+  const canCancel = Boolean(manageSelected) && normalizedManagePhone.length >= PHONE_MIN_LEN;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
@@ -196,50 +240,87 @@ export function BookingApp({ slug }: { slug: string }) {
     }
   }
 
-  async function handleCancel() {
-    if (!appointmentId.trim() || normalizedManagePhone.length < PHONE_MIN_LEN) {
-      setManageMessage("Ingresa el ID de la cita y tu telefono.");
+  async function handleSearchAppointments() {
+    if (normalizedManagePhone.length < PHONE_MIN_LEN) {
+      setManageMessage("Ingresa un telefono valido.");
       return;
     }
     setLoading(true);
-    setError(null);
     setManageMessage(null);
     try {
-      await apiRequest(`/public/businesses/${slug}/appointments/${appointmentId.trim()}/cancel`, {
-        method: "POST",
-        body: JSON.stringify({ customerPhone: normalizedManagePhone })
-      });
-      setManageMessage("Cita cancelada correctamente.");
+      const data = await apiRequest<{ appointments: AppointmentItem[] }>(
+        `/public/businesses/${slug}/appointments?phone=${encodeURIComponent(normalizedManagePhone)}`
+      );
+      setManageResults(data.appointments);
+      if (manageSelected) {
+        const refreshed = data.appointments.find((item) => item._id === manageSelected._id) ?? null;
+        setManageSelected(refreshed);
+        if (refreshed) {
+          setManageName(refreshed.customerName);
+          setManagePhone(refreshed.customerPhone);
+          setManageStartTime(toDateTimeLocalValue(refreshed.startTime, timezone));
+        }
+      }
+      if (data.appointments.length === 0) {
+        setManageMessage("No encontramos citas con ese telefono.");
+      }
     } catch (err) {
-      setManageMessage(err instanceof Error ? err.message : "No se pudo cancelar la cita");
+      setManageMessage(err instanceof Error ? err.message : "No se pudo buscar la cita");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleReschedule() {
-    if (
-      !appointmentId.trim() ||
-      normalizedManagePhone.length < PHONE_MIN_LEN ||
-      !rescheduleTime.trim()
-    ) {
-      setManageMessage(RESCHEDULE_HELP);
+  async function handleUpdateAppointment() {
+    if (!manageSelected || normalizedManagePhone.length < PHONE_MIN_LEN) {
+      setManageMessage("Selecciona una cita y confirma tu telefono.");
+      return;
+    }
+    if (!nameChanged && !phoneChanged && !timeChanged) {
+      setManageMessage("No hay cambios para guardar.");
+      return;
+    }
+    if (phoneChanged && normalizedManageEditPhone.length < PHONE_MIN_LEN) {
+      setManageMessage("Ingresa un telefono valido para actualizarlo.");
       return;
     }
     setLoading(true);
-    setError(null);
     setManageMessage(null);
     try {
-      await apiRequest(
-        `/public/businesses/${slug}/appointments/${appointmentId.trim()}/reschedule`,
-        {
-          method: "POST",
-          body: JSON.stringify({ customerPhone: normalizedManagePhone, startTime: rescheduleTime })
-        }
-      );
-      setManageMessage("Cita reprogramada correctamente.");
+      await apiRequest(`/public/businesses/${slug}/appointments/${manageSelected._id}/update`, {
+        method: "POST",
+        body: JSON.stringify({
+          customerPhone: normalizedManagePhone,
+          customerName: nameChanged ? manageName : undefined,
+          newCustomerPhone: phoneChanged ? normalizedManageEditPhone : undefined,
+          startTime: timeChanged ? manageStartTime : undefined
+        })
+      });
+      setManageMessage("Cita actualizada correctamente.");
+      await handleSearchAppointments();
     } catch (err) {
-      setManageMessage(err instanceof Error ? err.message : "No se pudo reprogramar la cita");
+      setManageMessage(err instanceof Error ? err.message : "No se pudo actualizar la cita");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCancelAppointment() {
+    if (!manageSelected || normalizedManagePhone.length < PHONE_MIN_LEN) {
+      setManageMessage("Selecciona una cita y confirma tu telefono.");
+      return;
+    }
+    setLoading(true);
+    setManageMessage(null);
+    try {
+      await apiRequest(`/public/businesses/${slug}/appointments/${manageSelected._id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ customerPhone: normalizedManagePhone })
+      });
+      setManageMessage("Cita cancelada correctamente.");
+      await handleSearchAppointments();
+    } catch (err) {
+      setManageMessage(err instanceof Error ? err.message : "No se pudo cancelar la cita");
     } finally {
       setLoading(false);
     }
@@ -378,57 +459,154 @@ export function BookingApp({ slug }: { slug: string }) {
               Servicio: {service?.name ?? "-"} · {service?.durationMinutes ?? "-"} min
               <div>Horario: {selectedSlot ? formatDateTime(selectedSlot, timezone) : "-"}</div>
             </div>
+            <button
+              className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm"
+              onClick={() => {
+                setManageOpen(true);
+                setManageResults([]);
+                setManageSelected(null);
+                setManageMessage(null);
+              }}
+            >
+              Gestionar una cita existente
+            </button>
           </div>
         </aside>
       </div>
-      <section className="card mt-6 p-6">
-        <h3 className="text-lg font-semibold">Gestionar cita</h3>
-        <p className="mt-1 text-sm text-slate-500">Cancela o reprograma una cita existente.</p>
-        {manageMessage && (
-          <p className="mt-4 rounded-md bg-slate-50 p-2 text-sm text-slate-700">{manageMessage}</p>
-        )}
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <input
-            placeholder="ID de la cita"
-            value={appointmentId}
-            onChange={(event) => setAppointmentId(event.target.value)}
-            className={INPUT_CLASS}
-          />
-          <input
-            placeholder={LABEL_PHONE}
-            type="tel"
-            value={managePhone}
-            onChange={(event) => setManagePhone(event.target.value)}
-            className={INPUT_CLASS}
-          />
-          <input
-            type="datetime-local"
-            value={rescheduleTime}
-            onChange={(event) => setRescheduleTime(event.target.value)}
-            className={INPUT_CLASS}
-          />
+
+      {manageOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">Gestionar cita</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Busca por telefono, selecciona tu cita y actualiza los datos.
+                </p>
+              </div>
+              <button
+                className="rounded-xl border border-slate-200 px-3 py-1 text-sm"
+                onClick={() => setManageOpen(false)}
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-[1fr_auto]">
+              <input
+                placeholder={LABEL_PHONE}
+                type="tel"
+                value={manageSearchPhone}
+                onChange={(event) => setManageSearchPhone(event.target.value)}
+                className={INPUT_CLASS}
+              />
+              <button
+                className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
+                  !canSearch ? DISABLED_OPACITY : ""
+                }`}
+                onClick={() => void handleSearchAppointments()}
+                disabled={!canSearch}
+              >
+                Buscar
+              </button>
+            </div>
+
+            {manageMessage && (
+              <p className="mt-4 rounded-md bg-slate-50 p-2 text-sm text-slate-700">
+                {manageMessage}
+              </p>
+            )}
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Tus citas</p>
+                <div className="mt-3 space-y-2">
+                  {manageResults.length === 0 && (
+                    <p className="text-sm text-slate-500">Sin resultados.</p>
+                  )}
+                  {manageResults.map((appt) => {
+                    const serviceName =
+                      business.services.find((item) => item._id === appt.serviceId)?.name ?? "-";
+                    const resourceName =
+                      business.resources.find((item) => item._id === appt.resourceId)?.name ?? "-";
+                    const isSelected = manageSelected?._id === appt._id;
+                    return (
+                      <button
+                        key={appt._id}
+                        className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
+                          isSelected ? "border-primary-600 bg-primary-50" : "border-slate-200"
+                        }`}
+                        onClick={() => {
+                          setManageSelected(appt);
+                          setManageName(appt.customerName);
+                          setManagePhone(appt.customerPhone);
+                          setManageStartTime(toDateTimeLocalValue(appt.startTime, timezone));
+                        }}
+                      >
+                        <div className="font-medium">{serviceName}</div>
+                        <div className="text-xs text-slate-500">
+                          {formatDateTime(appt.startTime, timezone)} · {resourceName}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-400">Actualizar cita</p>
+                {manageSelected ? (
+                  <div className="mt-3 space-y-3">
+                    <input
+                      placeholder="Nombre"
+                      value={manageName}
+                      onChange={(event) => setManageName(event.target.value)}
+                      className={`w-full ${INPUT_CLASS}`}
+                    />
+                    <input
+                      placeholder="Telefono"
+                      value={managePhone}
+                      onChange={(event) => setManagePhone(event.target.value)}
+                      className={`w-full ${INPUT_CLASS}`}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={manageStartTime}
+                      onChange={(event) => setManageStartTime(event.target.value)}
+                      className={`w-full ${INPUT_CLASS}`}
+                    />
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
+                          !canUpdate ? DISABLED_OPACITY : ""
+                        }`}
+                        onClick={() => void handleUpdateAppointment()}
+                        disabled={!canUpdate}
+                      >
+                        Guardar cambios
+                      </button>
+                      <button
+                        className={`rounded-xl border border-rose-200 px-4 py-2 text-sm text-rose-600 ${
+                          !canCancel ? DISABLED_OPACITY : ""
+                        }`}
+                        onClick={() => void handleCancelAppointment()}
+                        disabled={!canCancel}
+                      >
+                        Cancelar cita
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Puedes cambiar nombre, telefono o reprogramar la fecha/hora.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">Selecciona una cita para editarla.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            className={`rounded-xl border border-slate-200 px-4 py-2 text-sm ${
-              !canCancel ? DISABLED_OPACITY : ""
-            }`}
-            onClick={() => void handleCancel()}
-            disabled={!canCancel}
-          >
-            Cancelar cita
-          </button>
-          <button
-            className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
-              !canReschedule ? DISABLED_OPACITY : ""
-            }`}
-            onClick={() => void handleReschedule()}
-            disabled={!canReschedule}
-          >
-            Reprogramar
-          </button>
-        </div>
-      </section>
+      )}
     </>
   );
 }

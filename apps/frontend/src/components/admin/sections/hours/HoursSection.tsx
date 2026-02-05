@@ -9,6 +9,7 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 
 export function HoursSection({
@@ -19,6 +20,22 @@ export function HoursSection({
   saveHours: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const rows = dayLabels.map((label, index) => {
+    const current = hours.find((item) => item.dayOfWeek === index);
+    return {
+      label,
+      openTime: current?.openTime ?? "-",
+      closeTime: current?.closeTime ?? "-"
+    };
+  });
+
+  const pageItems = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, page, pageSize]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -45,19 +62,27 @@ export function HoursSection({
             </TableRow>
           </TableHead>
           <TableBody>
-            {dayLabels.map((label, index) => {
-              const current = hours.find((item) => item.dayOfWeek === index);
-              return (
-                <TableRow key={label}>
-                  <TableCell>{label}</TableCell>
-                  <TableCell>{current?.openTime ?? "-"}</TableCell>
-                  <TableCell>{current?.closeTime ?? "-"}</TableCell>
-                </TableRow>
-              );
-            })}
+            {pageItems.map((row) => (
+              <TableRow key={row.label}>
+                <TableCell>{row.label}</TableCell>
+                <TableCell>{row.openTime}</TableCell>
+                <TableCell>{row.closeTime}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={rows.length}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal open={editOpen} title="Editar horarios" onClose={() => setEditOpen(false)}>
         <form

@@ -25,3 +25,6 @@ export class AdminUser {
 }
 
 export const AdminUserSchema = SchemaFactory.createForClass(AdminUser);
+AdminUserSchema.index({ role: 1, active: 1, email: 1 });
+AdminUserSchema.index({ businessId: 1, role: 1 });
+AdminUserSchema.index({ email: "text" });

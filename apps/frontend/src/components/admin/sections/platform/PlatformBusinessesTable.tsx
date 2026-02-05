@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BusinessProfile } from "../../types";
 import { InputField } from "../../components/InputField";
 import { Badge } from "../../ui/Badge";
@@ -11,21 +11,25 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
+import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { PlatformEditBusinessForm } from "./PlatformEditBusinessForm";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 export function PlatformBusinessesTable({
   businesses,
   onRefresh,
   onCreate,
   onUpdate,
-  onDelete
+  onDelete,
+  total
 }: {
   businesses: BusinessProfile[];
-  onRefresh: () => void;
+  onRefresh: (page?: number, limit?: number, search?: string, status?: string) => void;
   onCreate: (event: React.FormEvent<HTMLFormElement>) => void;
   onUpdate: (businessId: string, payload: Partial<BusinessProfile>) => void;
   onDelete: (businessId: string) => void;
+  total: number;
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -33,18 +37,17 @@ export function PlatformBusinessesTable({
   const [editingBusiness, setEditingBusiness] = useState<BusinessProfile | null>(null);
   const [viewingBusiness, setViewingBusiness] = useState<BusinessProfile | null>(null);
   const [deletingBusiness, setDeletingBusiness] = useState<BusinessProfile | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return businesses.filter((business) => {
-      const matchesSearch =
-        !term ||
-        (business.name || "").toLowerCase().includes(term) ||
-        (business.slug || "").toLowerCase().includes(term);
-      const matchesStatus = !statusFilter || business.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [businesses, search, statusFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  useEffect(() => {
+    onRefresh(page, pageSize, debouncedSearch, statusFilter);
+  }, [page, pageSize, debouncedSearch, statusFilter, onRefresh]);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -55,7 +58,7 @@ export function PlatformBusinessesTable({
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={onRefresh}
+              onClick={() => onRefresh(page, pageSize, search, statusFilter)}
             >
               Refrescar
             </button>
@@ -98,7 +101,7 @@ export function PlatformBusinessesTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filtered.map((business) => (
+            {businesses.map((business) => (
               <TableRow key={business._id}>
                 <TableCell>
                   <div className="font-medium">{business.name}</div>
@@ -136,7 +139,7 @@ export function PlatformBusinessesTable({
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {businesses.length === 0 && (
               <TableRow>
                 <TableCell className="text-slate-500" colSpan={4}>
                   No hay negocios para los filtros actuales.
@@ -146,6 +149,17 @@ export function PlatformBusinessesTable({
           </TableBody>
         </DataTable>
       </div>
+
+      <Pagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+      />
 
       <Modal
         open={createOpen}

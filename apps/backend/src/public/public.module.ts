@@ -5,6 +5,7 @@ import { Block, BlockSchema } from "../schemas/block.schema";
 import { Business, BusinessSchema } from "../schemas/business.schema";
 import { Resource, ResourceSchema } from "../schemas/resource.schema";
 import { Service, ServiceSchema } from "../schemas/service.schema";
+import { AuditModule } from "../audit/audit.module";
 import { PublicController } from "./public.controller";
 import { PublicService } from "./public.service";
 
@@ -16,7 +17,8 @@ import { PublicService } from "./public.service";
       { name: Resource.name, schema: ResourceSchema },
       { name: Appointment.name, schema: AppointmentSchema },
       { name: Block.name, schema: BlockSchema }
-    ])
+    ]),
+    AuditModule
   ],
   controllers: [PublicController],
   providers: [PublicService]

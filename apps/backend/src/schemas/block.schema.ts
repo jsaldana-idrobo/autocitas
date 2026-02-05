@@ -23,3 +23,4 @@ export class Block {
 
 export const BlockSchema = SchemaFactory.createForClass(Block);
 BlockSchema.index({ businessId: 1, startTime: 1, endTime: 1 });
+BlockSchema.index({ businessId: 1, resourceId: 1, startTime: 1 });

@@ -43,7 +43,9 @@ export class AdminAppointmentsService {
     status?: "booked" | "cancelled" | "completed",
     search?: string,
     from?: string,
-    to?: string
+    to?: string,
+    page?: number,
+    limit?: number
   ) {
     await this.businessContext.getBusinessContext(businessId);
 
@@ -71,17 +73,41 @@ export class AdminAppointmentsService {
       query.startTime = { $lt: end };
       query.endTime = { $gt: start };
     }
-    if (search) {
-      const trimmed = search.trim();
-      if (trimmed.length > 0) {
-        query.$or = [
-          { customerName: { $regex: trimmed, $options: "i" } },
-          { customerPhone: { $regex: trimmed, $options: "i" } }
-        ];
+    const trimmedSearch = search?.trim() ?? "";
+    const isPhoneSearch = /^[\d+()\-\s]+$/.test(trimmedSearch);
+    if (trimmedSearch.length > 0) {
+      if (isPhoneSearch) {
+        const normalized = trimmedSearch.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+        query.customerPhone = normalized;
+      } else {
+        query.$text = { $search: trimmedSearch };
       }
     }
 
-    return this.appointmentModel.find(query).lean();
+    if (page && limit) {
+      const total = await this.appointmentModel.countDocuments(query);
+      const baseQuery = this.appointmentModel.find(query);
+      if (trimmedSearch.length > 0 && !isPhoneSearch) {
+        baseQuery.select({ score: { $meta: "textScore" } });
+        baseQuery.sort({ score: { $meta: "textScore" }, startTime: 1 });
+      } else {
+        baseQuery.sort({ startTime: 1 });
+      }
+      const items = await baseQuery
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+      return { items, total, page, limit };
+    }
+
+    const baseQuery = this.appointmentModel.find(query);
+    if (trimmedSearch.length > 0 && !isPhoneSearch) {
+      baseQuery.select({ score: { $meta: "textScore" } });
+      baseQuery.sort({ score: { $meta: "textScore" }, startTime: 1 });
+    } else {
+      baseQuery.sort({ startTime: 1 });
+    }
+    return baseQuery.lean();
   }
 
   async updateAppointmentStatus(

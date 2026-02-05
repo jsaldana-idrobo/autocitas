@@ -44,3 +44,6 @@ export class Appointment {
 export const AppointmentSchema = SchemaFactory.createForClass(Appointment);
 AppointmentSchema.index({ businessId: 1, startTime: 1, endTime: 1 });
 AppointmentSchema.index({ resourceId: 1, startTime: 1, endTime: 1 });
+AppointmentSchema.index({ businessId: 1, status: 1, startTime: 1 });
+AppointmentSchema.index({ businessId: 1, customerPhone: 1, startTime: -1 });
+AppointmentSchema.index({ customerName: "text" });

@@ -34,6 +34,7 @@ import { AdminBlocksService } from "./services/admin-blocks.service";
 import { AdminBusinessService } from "./services/admin-business.service";
 import { AdminCatalogService } from "./services/admin-catalog.service";
 import { AdminStaffService } from "./services/admin-staff.service";
+import { AuditService } from "../audit/audit.service";
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -50,8 +51,31 @@ export class AdminController {
     private readonly blocks: AdminBlocksService,
     private readonly business: AdminBusinessService,
     private readonly catalog: AdminCatalogService,
-    private readonly staff: AdminStaffService
+    private readonly staff: AdminStaffService,
+    private readonly audit: AuditService
   ) {}
+
+  private logAdminAction(
+    req: AuthenticatedRequest,
+    payload: {
+      action: string;
+      entity: string;
+      entityId?: string;
+      businessId?: string;
+      metadata?: Record<string, unknown>;
+    }
+  ) {
+    return this.audit.log({
+      action: payload.action,
+      entity: payload.entity,
+      entityId: payload.entityId,
+      businessId: payload.businessId,
+      actorType: "admin",
+      actorId: req.user.sub,
+      actorRole: req.user.role,
+      metadata: payload.metadata
+    });
+  }
 
   @Get(":businessId/appointments")
   listAppointments(
@@ -61,6 +85,8 @@ export class AdminController {
     @Query("to") to: string | undefined,
     @Query("status") status: "booked" | "cancelled" | "completed" | undefined,
     @Query("search") search: string | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
@@ -75,7 +101,9 @@ export class AdminController {
         status,
         search,
         from,
-        to
+        to,
+        page ? Number(page) : undefined,
+        limit ? Number(limit) : undefined
       );
     }
     return this.appointments.listAppointments(
@@ -85,7 +113,9 @@ export class AdminController {
       status,
       search,
       from,
-      to
+      to,
+      page ? Number(page) : undefined,
+      limit ? Number(limit) : undefined
     );
   }
 
@@ -100,13 +130,27 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.appointments.createAppointment(businessId, {
+      const created = this.appointments.createAppointment(businessId, {
         ...body,
         resourceId: req.user.resourceId
       });
+      void this.logAdminAction(req, {
+        action: "create",
+        entity: "appointment",
+        businessId,
+        metadata: { payload: body }
+      });
+      return created;
     }
     this.access.ensureOwnerAccess(req.user);
-    return this.appointments.createAppointment(businessId, body);
+    const created = this.appointments.createAppointment(businessId, body);
+    void this.logAdminAction(req, {
+      action: "create",
+      entity: "appointment",
+      businessId,
+      metadata: { payload: body }
+    });
+    return created;
   }
 
   @Patch(":businessId/appointments/:appointmentId")
@@ -121,21 +165,37 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.appointments.updateAppointmentStatus(
+      const updated = this.appointments.updateAppointmentStatus(
         businessId,
         appointmentId,
         body.status,
         req.user.resourceId,
         req.user.role
       );
+      void this.logAdminAction(req, {
+        action: "status",
+        entity: "appointment",
+        entityId: appointmentId,
+        businessId,
+        metadata: { status: body.status }
+      });
+      return updated;
     }
-    return this.appointments.updateAppointmentStatus(
+    const updated = this.appointments.updateAppointmentStatus(
       businessId,
       appointmentId,
       body.status,
       undefined,
       req.user.role
     );
+    void this.logAdminAction(req, {
+      action: "status",
+      entity: "appointment",
+      entityId: appointmentId,
+      businessId,
+      metadata: { status: body.status }
+    });
+    return updated;
   }
 
   @Patch(":businessId/appointments/:appointmentId/details")
@@ -150,15 +210,31 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.appointments.updateAppointmentDetails(
+      const updated = this.appointments.updateAppointmentDetails(
         businessId,
         appointmentId,
         { ...body, resourceId: req.user.resourceId },
         req.user.resourceId
       );
+      void this.logAdminAction(req, {
+        action: "update",
+        entity: "appointment",
+        entityId: appointmentId,
+        businessId,
+        metadata: { payload: body }
+      });
+      return updated;
     }
     this.access.ensureOwnerAccess(req.user);
-    return this.appointments.updateAppointmentDetails(businessId, appointmentId, body);
+    const updated = this.appointments.updateAppointmentDetails(businessId, appointmentId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "appointment",
+      entityId: appointmentId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Get(":businessId")
@@ -167,13 +243,37 @@ export class AdminController {
     return this.business.getBusiness(businessId);
   }
 
+  @Get(":businessId/policies")
+  getPolicies(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+    this.access.ensureBusinessAccess(req.user, businessId);
+    return this.business.getPolicies(businessId);
+  }
+
+  @Get(":businessId/hours")
+  getHours(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+    this.access.ensureBusinessAccess(req.user, businessId);
+    return this.business.getHours(businessId);
+  }
+
   @Get(":businessId/services")
-  listServices(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+  listServices(
+    @Param("businessId") businessId: string,
+    @Query("search") search: string | undefined,
+    @Query("active") active: "true" | "false" | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
+    @Req() req: AuthenticatedRequest
+  ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     if (req.user.role !== "staff") {
       this.access.ensureOwnerAccess(req.user);
     }
-    return this.catalog.listServices(businessId);
+    return this.catalog.listServices(businessId, {
+      search,
+      active,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined
+    });
   }
 
   @Post(":businessId/services")
@@ -184,7 +284,14 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.createService(businessId, body);
+    const created = this.catalog.createService(businessId, body);
+    void this.logAdminAction(req, {
+      action: "create",
+      entity: "service",
+      businessId,
+      metadata: { payload: body }
+    });
+    return created;
   }
 
   @Patch(":businessId/services/:serviceId")
@@ -196,7 +303,15 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.updateService(businessId, serviceId, body);
+    const updated = this.catalog.updateService(businessId, serviceId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "service",
+      entityId: serviceId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Delete(":businessId/services/:serviceId")
@@ -207,14 +322,33 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.deleteService(businessId, serviceId);
+    const deleted = this.catalog.deleteService(businessId, serviceId);
+    void this.logAdminAction(req, {
+      action: "delete",
+      entity: "service",
+      entityId: serviceId,
+      businessId
+    });
+    return deleted;
   }
 
   @Get(":businessId/resources")
-  listResources(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+  listResources(
+    @Param("businessId") businessId: string,
+    @Query("search") search: string | undefined,
+    @Query("active") active: "true" | "false" | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
+    @Req() req: AuthenticatedRequest
+  ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.listResources(businessId);
+    return this.catalog.listResources(businessId, {
+      search,
+      active,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined
+    });
   }
 
   @Post(":businessId/resources")
@@ -225,7 +359,14 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.createResource(businessId, body);
+    const created = this.catalog.createResource(businessId, body);
+    void this.logAdminAction(req, {
+      action: "create",
+      entity: "resource",
+      businessId,
+      metadata: { payload: body }
+    });
+    return created;
   }
 
   @Patch(":businessId/resources/:resourceId")
@@ -237,7 +378,15 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.updateResource(businessId, resourceId, body);
+    const updated = this.catalog.updateResource(businessId, resourceId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "resource",
+      entityId: resourceId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Delete(":businessId/resources/:resourceId")
@@ -248,7 +397,14 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.catalog.deleteResource(businessId, resourceId);
+    const deleted = this.catalog.deleteResource(businessId, resourceId);
+    void this.logAdminAction(req, {
+      action: "delete",
+      entity: "resource",
+      entityId: resourceId,
+      businessId
+    });
+    return deleted;
   }
 
   @Post(":businessId/blocks")
@@ -262,12 +418,26 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.blocks.createBlock(businessId, {
+      const created = this.blocks.createBlock(businessId, {
         ...body,
         resourceId: req.user.resourceId
       });
+      void this.logAdminAction(req, {
+        action: "create",
+        entity: "block",
+        businessId,
+        metadata: { payload: body }
+      });
+      return created;
     }
-    return this.blocks.createBlock(businessId, body);
+    const created = this.blocks.createBlock(businessId, body);
+    void this.logAdminAction(req, {
+      action: "create",
+      entity: "block",
+      businessId,
+      metadata: { payload: body }
+    });
+    return created;
   }
 
   @Get(":businessId/blocks")
@@ -275,6 +445,9 @@ export class AdminController {
     @Param("businessId") businessId: string,
     @Query("from") from: string | undefined,
     @Query("to") to: string | undefined,
+    @Query("search") search: string | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
     @Req() req: AuthenticatedRequest
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
@@ -282,9 +455,25 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.blocks.listBlocks(businessId, req.user.resourceId, from, to);
+      return this.blocks.listBlocks(
+        businessId,
+        req.user.resourceId,
+        from,
+        to,
+        search,
+        page ? Number(page) : undefined,
+        limit ? Number(limit) : undefined
+      );
     }
-    return this.blocks.listBlocks(businessId, undefined, from, to);
+    return this.blocks.listBlocks(
+      businessId,
+      undefined,
+      from,
+      to,
+      search,
+      page ? Number(page) : undefined,
+      limit ? Number(limit) : undefined
+    );
   }
 
   @Patch(":businessId/blocks/:blockId")
@@ -301,10 +490,26 @@ export class AdminController {
       }
       const rest = { ...body };
       delete rest.resourceId;
-      return this.blocks.updateBlock(businessId, blockId, rest, req.user.resourceId);
+      const updated = this.blocks.updateBlock(businessId, blockId, rest, req.user.resourceId);
+      void this.logAdminAction(req, {
+        action: "update",
+        entity: "block",
+        entityId: blockId,
+        businessId,
+        metadata: { payload: rest }
+      });
+      return updated;
     }
     this.access.ensureOwnerAccess(req.user);
-    return this.blocks.updateBlock(businessId, blockId, body);
+    const updated = this.blocks.updateBlock(businessId, blockId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "block",
+      entityId: blockId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Delete(":businessId/blocks/:blockId")
@@ -318,10 +523,24 @@ export class AdminController {
       if (!req.user.resourceId) {
         throw new ForbiddenException(ERR_STAFF_RESOURCE_NOT_LINKED);
       }
-      return this.blocks.deleteBlock(businessId, blockId, req.user.resourceId);
+      const deleted = this.blocks.deleteBlock(businessId, blockId, req.user.resourceId);
+      void this.logAdminAction(req, {
+        action: "delete",
+        entity: "block",
+        entityId: blockId,
+        businessId
+      });
+      return deleted;
     }
     this.access.ensureOwnerAccess(req.user);
-    return this.blocks.deleteBlock(businessId, blockId);
+    const deleted = this.blocks.deleteBlock(businessId, blockId);
+    void this.logAdminAction(req, {
+      action: "delete",
+      entity: "block",
+      entityId: blockId,
+      businessId
+    });
+    return deleted;
   }
 
   @Patch(":businessId")
@@ -332,7 +551,15 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.business.updateBusiness(businessId, body);
+    const updated = this.business.updateBusiness(businessId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "business",
+      entityId: businessId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Patch(":businessId/policies")
@@ -343,7 +570,14 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.business.updatePolicies(businessId, body);
+    const updated = this.business.updatePolicies(businessId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "policies",
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Patch(":businessId/hours")
@@ -354,14 +588,33 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.business.updateHours(businessId, body);
+    const updated = this.business.updateHours(businessId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "hours",
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Get(":businessId/staff")
-  listStaff(@Param("businessId") businessId: string, @Req() req: AuthenticatedRequest) {
+  listStaff(
+    @Param("businessId") businessId: string,
+    @Query("search") search: string | undefined,
+    @Query("active") active: "true" | "false" | undefined,
+    @Query("page") page: string | undefined,
+    @Query("limit") limit: string | undefined,
+    @Req() req: AuthenticatedRequest
+  ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.staff.listStaff(businessId);
+    return this.staff.listStaff(businessId, {
+      search,
+      active,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined
+    });
   }
 
   @Post(":businessId/staff")
@@ -372,7 +625,14 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.staff.createStaff(businessId, body);
+    const created = this.staff.createStaff(businessId, body);
+    void this.logAdminAction(req, {
+      action: "create",
+      entity: "staff",
+      businessId,
+      metadata: { payload: body }
+    });
+    return created;
   }
 
   @Patch(":businessId/staff/:staffId")
@@ -384,7 +644,15 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.staff.updateStaff(businessId, staffId, body);
+    const updated = this.staff.updateStaff(businessId, staffId, body);
+    void this.logAdminAction(req, {
+      action: "update",
+      entity: "staff",
+      entityId: staffId,
+      businessId,
+      metadata: { payload: body }
+    });
+    return updated;
   }
 
   @Delete(":businessId/staff/:staffId")
@@ -395,6 +663,13 @@ export class AdminController {
   ) {
     this.access.ensureBusinessAccess(req.user, businessId);
     this.access.ensureOwnerAccess(req.user);
-    return this.staff.deleteStaff(businessId, staffId);
+    const deleted = this.staff.deleteStaff(businessId, staffId);
+    void this.logAdminAction(req, {
+      action: "delete",
+      entity: "staff",
+      entityId: staffId,
+      businessId
+    });
+    return deleted;
   }
 }

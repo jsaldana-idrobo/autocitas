@@ -1,90 +1,130 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../lib/api";
-import { ResourceItem, ServiceItem, StaffItem } from "../types";
+import { PaginatedResponse, ResourceItem, ServiceItem, StaffItem } from "../types";
 import { AdminApiContext } from "./types";
 
 export function useAdminCatalog(api: AdminApiContext) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [staff, setStaff] = useState<StaffItem[]>([]);
+  const [servicesTotal, setServicesTotal] = useState(0);
+  const [resourcesTotal, setResourcesTotal] = useState(0);
+  const [staffTotal, setStaffTotal] = useState(0);
   const [servicesLoaded, setServicesLoaded] = useState(false);
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
   const [staffLoaded, setStaffLoaded] = useState(false);
   const isLoadingRef = useRef(false);
+  const servicesQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
+  const resourcesQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
+  const staffQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
 
-  function startLoad() {
+  const startLoad = useCallback(() => {
     if (isLoadingRef.current) return false;
     isLoadingRef.current = true;
     return true;
-  }
+  }, []);
 
-  function endLoad() {
+  const endLoad = useCallback(() => {
     isLoadingRef.current = false;
-  }
+  }, []);
 
-  async function loadServices() {
-    if (!startLoad()) return;
-    api.setLoading(true);
-    api.resetError();
-    try {
-      const data = await apiRequest<ServiceItem[]>(
-        `/admin/businesses/${api.businessId}/services`,
-        api.authHeaders
-      );
-      setServices(data);
-      setServicesLoaded(true);
-    } catch (err) {
-      api.setError(err instanceof Error ? err.message : "Error cargando servicios");
-    } finally {
-      api.setLoading(false);
-      endLoad();
-    }
-  }
+  const loadServices = useCallback(
+    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+      if (!startLoad()) return;
+      api.setLoading(true);
+      api.resetError();
+      api.resetSuccess();
+      try {
+        servicesQueryRef.current = { page, limit, search, active };
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        if (search) params.set("search", search);
+        if (active) params.set("active", active === "active" ? "true" : "false");
+        const data = await apiRequest<PaginatedResponse<ServiceItem>>(
+          `/admin/businesses/${api.businessId}/services?${params.toString()}`,
+          api.authHeaders
+        );
+        setServices(data.items);
+        setServicesTotal(data.total);
+        setServicesLoaded(true);
+      } catch (err) {
+        api.setError(err instanceof Error ? err.message : "Error cargando servicios");
+      } finally {
+        api.setLoading(false);
+        endLoad();
+      }
+    },
+    [api, endLoad, startLoad]
+  );
 
-  async function loadResources() {
-    if (api.role === "staff") {
-      return;
-    }
-    if (!startLoad()) return;
-    api.setLoading(true);
-    api.resetError();
-    try {
-      const data = await apiRequest<ResourceItem[]>(
-        `/admin/businesses/${api.businessId}/resources`,
-        api.authHeaders
-      );
-      setResources(data);
-      setResourcesLoaded(true);
-    } catch (err) {
-      api.setError(err instanceof Error ? err.message : "Error cargando recursos");
-    } finally {
-      api.setLoading(false);
-      endLoad();
-    }
-  }
+  const loadResources = useCallback(
+    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+      if (api.role === "staff") {
+        return;
+      }
+      if (!startLoad()) return;
+      api.setLoading(true);
+      api.resetError();
+      api.resetSuccess();
+      try {
+        resourcesQueryRef.current = { page, limit, search, active };
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        if (search) params.set("search", search);
+        if (active) params.set("active", active === "active" ? "true" : "false");
+        const data = await apiRequest<PaginatedResponse<ResourceItem>>(
+          `/admin/businesses/${api.businessId}/resources?${params.toString()}`,
+          api.authHeaders
+        );
+        setResources(data.items);
+        setResourcesTotal(data.total);
+        setResourcesLoaded(true);
+      } catch (err) {
+        api.setError(err instanceof Error ? err.message : "Error cargando recursos");
+      } finally {
+        api.setLoading(false);
+        endLoad();
+      }
+    },
+    [api, endLoad, startLoad]
+  );
 
-  async function loadStaff() {
-    if (!startLoad()) return;
-    api.setLoading(true);
-    api.resetError();
-    try {
-      const data = await apiRequest<StaffItem[]>(
-        `/admin/businesses/${api.businessId}/staff`,
-        api.authHeaders
-      );
-      setStaff(data);
-      setStaffLoaded(true);
-    } catch (err) {
-      api.setError(err instanceof Error ? err.message : "Error cargando staff");
-    } finally {
-      api.setLoading(false);
-      endLoad();
-    }
-  }
+  const loadStaff = useCallback(
+    async (page = 1, limit = 25, search = "", active: "" | "active" | "inactive" = "") => {
+      if (!startLoad()) return;
+      api.setLoading(true);
+      api.resetError();
+      api.resetSuccess();
+      try {
+        staffQueryRef.current = { page, limit, search, active };
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        if (search) params.set("search", search);
+        if (active) params.set("active", active === "active" ? "true" : "false");
+        const data = await apiRequest<PaginatedResponse<StaffItem>>(
+          `/admin/businesses/${api.businessId}/staff?${params.toString()}`,
+          api.authHeaders
+        );
+        setStaff(data.items);
+        setStaffTotal(data.total);
+        setStaffLoaded(true);
+      } catch (err) {
+        api.setError(err instanceof Error ? err.message : "Error cargando staff");
+      } finally {
+        api.setLoading(false);
+        endLoad();
+      }
+    },
+    [api, endLoad, startLoad]
+  );
 
   async function createService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
       name: String(form.get("name") || "").trim(),
@@ -105,8 +145,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
-      setServicesLoaded(false);
-      await loadServices();
+      await loadServices(
+        servicesQueryRef.current.page,
+        servicesQueryRef.current.limit,
+        servicesQueryRef.current.search,
+        servicesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Servicio creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando servicio");
     } finally {
@@ -117,6 +162,7 @@ export function useAdminCatalog(api: AdminApiContext) {
 
   async function updateService(serviceId: string, payload: Partial<ServiceItem>) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -125,8 +171,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setServicesLoaded(false);
-      await loadServices();
+      await loadServices(
+        servicesQueryRef.current.page,
+        servicesQueryRef.current.limit,
+        servicesQueryRef.current.search,
+        servicesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Servicio actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando servicio");
     } finally {
@@ -137,6 +188,7 @@ export function useAdminCatalog(api: AdminApiContext) {
 
   async function deleteService(serviceId: string) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -144,8 +196,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      setServicesLoaded(false);
-      await loadServices();
+      await loadServices(
+        servicesQueryRef.current.page,
+        servicesQueryRef.current.limit,
+        servicesQueryRef.current.search,
+        servicesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Servicio eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando servicio");
     } finally {
@@ -157,6 +214,7 @@ export function useAdminCatalog(api: AdminApiContext) {
   async function createResource(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
       name: String(form.get("name") || "").trim()
@@ -175,8 +233,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
-      setResourcesLoaded(false);
-      await loadResources();
+      await loadResources(
+        resourcesQueryRef.current.page,
+        resourcesQueryRef.current.limit,
+        resourcesQueryRef.current.search,
+        resourcesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Recurso creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando recurso");
     } finally {
@@ -187,6 +250,7 @@ export function useAdminCatalog(api: AdminApiContext) {
 
   async function updateResource(resourceId: string, payload: Partial<ResourceItem>) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -195,8 +259,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setResourcesLoaded(false);
-      await loadResources();
+      await loadResources(
+        resourcesQueryRef.current.page,
+        resourcesQueryRef.current.limit,
+        resourcesQueryRef.current.search,
+        resourcesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Recurso actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando recurso");
     } finally {
@@ -207,6 +276,7 @@ export function useAdminCatalog(api: AdminApiContext) {
 
   async function deleteResource(resourceId: string) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -214,8 +284,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      setResourcesLoaded(false);
-      await loadResources();
+      await loadResources(
+        resourcesQueryRef.current.page,
+        resourcesQueryRef.current.limit,
+        resourcesQueryRef.current.search,
+        resourcesQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Recurso eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando recurso");
     } finally {
@@ -227,6 +302,7 @@ export function useAdminCatalog(api: AdminApiContext) {
   async function createStaff(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
+    api.resetSuccess();
     const form = new FormData(event.currentTarget);
     const payload = {
       email: String(form.get("email") || "").trim(),
@@ -249,8 +325,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
-      setStaffLoaded(false);
-      await loadStaff();
+      await loadStaff(
+        staffQueryRef.current.page,
+        staffQueryRef.current.limit,
+        staffQueryRef.current.search,
+        staffQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Staff creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando staff");
     } finally {
@@ -264,6 +345,7 @@ export function useAdminCatalog(api: AdminApiContext) {
     payload: { resourceId?: string; password?: string; active?: boolean }
   ) {
     api.resetError();
+    api.resetSuccess();
     try {
       if (!startLoad()) return;
       api.setLoading(true);
@@ -272,8 +354,13 @@ export function useAdminCatalog(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      setStaffLoaded(false);
-      await loadStaff();
+      await loadStaff(
+        staffQueryRef.current.page,
+        staffQueryRef.current.limit,
+        staffQueryRef.current.search,
+        staffQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Staff actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando staff");
     } finally {
@@ -284,14 +371,20 @@ export function useAdminCatalog(api: AdminApiContext) {
 
   async function deleteStaff(staffId: string) {
     api.resetError();
+    api.resetSuccess();
     try {
       api.setLoading(true);
       await apiRequest(`/admin/businesses/${api.businessId}/staff/${staffId}`, {
         method: "DELETE",
         ...api.authHeaders
       });
-      setStaffLoaded(false);
-      await loadStaff();
+      await loadStaff(
+        staffQueryRef.current.page,
+        staffQueryRef.current.limit,
+        staffQueryRef.current.search,
+        staffQueryRef.current.active as "" | "active" | "inactive"
+      );
+      api.setSuccess("Staff eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando staff");
     } finally {
@@ -324,6 +417,9 @@ export function useAdminCatalog(api: AdminApiContext) {
     services,
     resources,
     staff,
+    servicesTotal,
+    resourcesTotal,
+    staffTotal,
     servicesLoaded,
     resourcesLoaded,
     staffLoaded,

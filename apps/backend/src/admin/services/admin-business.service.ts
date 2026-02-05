@@ -19,6 +19,16 @@ export class AdminBusinessService {
     return this.businessContext.getBusinessContext(businessId);
   }
 
+  async getPolicies(businessId: string) {
+    const business = await this.businessContext.getBusinessContext(businessId);
+    return business.policies;
+  }
+
+  async getHours(businessId: string) {
+    const business = await this.businessContext.getBusinessContext(businessId);
+    return business.hours;
+  }
+
   async updateBusiness(businessId: string, payload: UpdateBusinessDto) {
     await this.businessContext.getBusinessContext(businessId);
 

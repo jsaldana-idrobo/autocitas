@@ -7,5 +7,7 @@ export interface AdminApiContext {
   resourceId?: string;
   setLoading: (value: boolean) => void;
   setError: (value: string | null) => void;
+  setSuccess: (value: string | null) => void;
   resetError: () => void;
+  resetSuccess: () => void;
 }

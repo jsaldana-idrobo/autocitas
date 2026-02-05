@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ResourceItem, ServiceItem } from "../../types";
+import React, { useEffect, useMemo, useState } from "react";
+import { BusinessProfile, ResourceItem, ServiceItem } from "../../types";
 import { ServiceEditor } from "../../components/ServiceEditor";
 import { InputField } from "../../components/InputField";
 import { Badge } from "../../ui/Badge";
@@ -15,54 +15,118 @@ import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
 
-export function ServicesSection({
+export function PlatformServicesSection({
   services,
   resources,
-  createService,
-  updateService,
-  deleteService,
-  loadServices,
-  ensureResourcesLoaded,
-  total
+  businesses,
+  onRefresh,
+  onCreate,
+  onUpdate,
+  onDelete,
+  total,
+  authHeaders
 }: {
   services: ServiceItem[];
   resources: ResourceItem[];
-  createService: (event: React.FormEvent<HTMLFormElement>) => void;
-  updateService: (serviceId: string, payload: Partial<ServiceItem>) => void;
-  deleteService: (serviceId: string) => void;
-  loadServices: (page?: number, limit?: number, search?: string, status?: string) => void;
-  ensureResourcesLoaded: () => void;
+  businesses: BusinessProfile[];
+  onRefresh: (
+    page?: number,
+    limit?: number,
+    search?: string,
+    status?: string,
+    businessId?: string,
+    minDuration?: string,
+    maxDuration?: string,
+    minPrice?: string,
+    maxPrice?: string
+  ) => void;
+  onCreate: (
+    businessId: string,
+    payload: { name: string; durationMinutes: number; price?: number }
+  ) => void;
+  onUpdate: (businessId: string, serviceId: string, payload: Partial<ServiceItem>) => void;
+  onDelete: (businessId: string, serviceId: string) => void;
   total: number;
+  authHeaders: { token: string };
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [businessFilter, setBusinessFilter] = useState("");
+  const [durationMin, setDurationMin] = useState("");
+  const [durationMax, setDurationMax] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
   const [deletingService, setDeletingService] = useState<ServiceItem | null>(null);
   const [viewingService, setViewingService] = useState<ServiceItem | null>(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [createBusinessId, setCreateBusinessId] = useState("");
   const debouncedSearch = useDebouncedValue(search, 400);
 
-  useEffect(() => {
+  const businessLookup = useMemo(() => {
+    return new Map(businesses.map((business) => [business._id ?? "", business.name ?? ""]));
+  }, [businesses]);
+
+  React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, businessFilter, durationMin, durationMax, priceMin, priceMax]);
 
   useEffect(() => {
-    loadServices(page, pageSize, debouncedSearch, statusFilter);
-  }, [page, pageSize, debouncedSearch, statusFilter, loadServices]);
+    onRefresh(
+      page,
+      pageSize,
+      debouncedSearch,
+      statusFilter,
+      businessFilter,
+      durationMin,
+      durationMax,
+      priceMin,
+      priceMax
+    );
+  }, [
+    page,
+    pageSize,
+    debouncedSearch,
+    statusFilter,
+    businessFilter,
+    durationMin,
+    durationMax,
+    priceMin,
+    priceMax,
+    onRefresh
+  ]);
+
+  function getResourcesForService(service: ServiceItem) {
+    if (!service.businessId) return [];
+    return resources.filter((resource) => resource.businessId === service.businessId);
+  }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <SectionHeader
         title="Servicios"
-        subtitle="Crea y administra los servicios de tu negocio."
+        subtitle="Administra los servicios de todos los negocios."
         actions={
           <>
             <button
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              onClick={() => loadServices(page, pageSize, search, statusFilter)}
+              onClick={() =>
+                onRefresh(
+                  page,
+                  pageSize,
+                  search,
+                  statusFilter,
+                  businessFilter,
+                  durationMin,
+                  durationMax,
+                  priceMin,
+                  priceMax
+                )
+              }
             >
               Refrescar
             </button>
@@ -92,12 +156,53 @@ export function ServicesSection({
           <option value="active">Activos</option>
           <option value="inactive">Inactivos</option>
         </select>
+        <select
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          value={businessFilter}
+          onChange={(event) => setBusinessFilter(event.target.value)}
+        >
+          <option value="">Todos los negocios</option>
+          {businesses.map((business) => (
+            <option key={business._id} value={business._id}>
+              {business.name ?? business._id}
+            </option>
+          ))}
+        </select>
+        <input
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          type="number"
+          placeholder="Duracion min"
+          value={durationMin}
+          onChange={(event) => setDurationMin(event.target.value)}
+        />
+        <input
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          type="number"
+          placeholder="Duracion max"
+          value={durationMax}
+          onChange={(event) => setDurationMax(event.target.value)}
+        />
+        <input
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          type="number"
+          placeholder="Precio min"
+          value={priceMin}
+          onChange={(event) => setPriceMin(event.target.value)}
+        />
+        <input
+          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          type="number"
+          placeholder="Precio max"
+          value={priceMax}
+          onChange={(event) => setPriceMax(event.target.value)}
+        />
       </div>
 
       <div className="mt-4">
         <DataTable>
           <TableHead>
             <TableRow>
+              <TableHeaderCell>Negocio</TableHeaderCell>
               <TableHeaderCell>Servicio</TableHeaderCell>
               <TableHeaderCell>Duracion</TableHeaderCell>
               <TableHeaderCell>Precio</TableHeaderCell>
@@ -108,6 +213,11 @@ export function ServicesSection({
           <TableBody>
             {services.map((service) => (
               <TableRow key={service._id}>
+                <TableCell>
+                  {service.businessId
+                    ? businessLookup.get(service.businessId) || service.businessId
+                    : "-"}
+                </TableCell>
                 <TableCell>
                   <div className="font-medium">{service.name}</div>
                 </TableCell>
@@ -128,16 +238,16 @@ export function ServicesSection({
                     </button>
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => {
-                        ensureResourcesLoaded();
-                        setEditingService(service);
-                      }}
+                      onClick={() => setEditingService(service)}
                     >
                       Editar
                     </button>
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => updateService(service._id, { active: !service.active })}
+                      onClick={() => {
+                        if (!service.businessId) return;
+                        onUpdate(service.businessId, service._id, { active: !service.active });
+                      }}
                     >
                       {service.active ? "Desactivar" : "Activar"}
                     </button>
@@ -153,7 +263,7 @@ export function ServicesSection({
             ))}
             {services.length === 0 && (
               <TableRow>
-                <TableCell className="text-slate-500" colSpan={5}>
+                <TableCell className="text-slate-500" colSpan={6}>
                   No hay servicios para los filtros actuales.
                 </TableCell>
               </TableRow>
@@ -177,10 +287,30 @@ export function ServicesSection({
         <form
           className="grid gap-3 md:grid-cols-2"
           onSubmit={(event) => {
-            createService(event);
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            const name = String(form.get("name") || "").trim();
+            const durationMinutes = Number(form.get("durationMinutes"));
+            const priceValue = form.get("price");
+            const price = priceValue ? Number(priceValue) : undefined;
+            if (!createBusinessId || !name || !durationMinutes) {
+              return;
+            }
+            onCreate(createBusinessId, { name, durationMinutes, price });
+            event.currentTarget.reset();
+            setCreateBusinessId("");
             setCreateOpen(false);
           }}
         >
+          <BusinessSearchSelect
+            className="md:col-span-2"
+            value={createBusinessId}
+            onChange={setCreateBusinessId}
+            authHeaders={authHeaders}
+            initialOptions={businesses}
+            selectedLabel={businessLookup.get(createBusinessId)}
+            required
+          />
           <InputField name="name" label="Nombre" placeholder="Corte clasico" />
           <InputField name="durationMinutes" label="Duracion (min)" type="number" />
           <InputField name="price" label="Precio" type="number" />
@@ -195,6 +325,7 @@ export function ServicesSection({
             <button
               className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
               type="submit"
+              disabled={!createBusinessId}
             >
               Crear
             </button>
@@ -210,10 +341,11 @@ export function ServicesSection({
         {editingService && (
           <ServiceEditor
             item={editingService}
-            resources={resources}
+            resources={getResourcesForService(editingService)}
             onCancel={() => setEditingService(null)}
             onSave={(payload) => {
-              updateService(editingService._id, payload);
+              if (!editingService.businessId) return;
+              onUpdate(editingService.businessId, editingService._id, payload);
               setEditingService(null);
             }}
           />
@@ -227,6 +359,14 @@ export function ServicesSection({
       >
         {viewingService && (
           <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Negocio</div>
+              <div className="font-medium">
+                {viewingService.businessId
+                  ? businessLookup.get(viewingService.businessId) || viewingService.businessId
+                  : "-"}
+              </div>
+            </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
               <div className="font-medium">{viewingService.name}</div>
@@ -237,25 +377,11 @@ export function ServicesSection({
             </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Precio</div>
-              <div className="font-medium">
-                {viewingService.price != null ? `$${viewingService.price}` : "-"}
-              </div>
+              <div className="font-medium">${viewingService.price ?? "-"}</div>
             </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
               <div className="font-medium">{viewingService.active ? "Activo" : "Inactivo"}</div>
-            </div>
-            <div className="text-sm md:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-slate-400">
-                Recursos permitidos
-              </div>
-              <div className="font-medium">
-                {viewingService.allowedResourceIds?.length
-                  ? viewingService.allowedResourceIds
-                      .map((id) => resources.find((resource) => resource._id === id)?.name || id)
-                      .join(", ")
-                  : "Todos"}
-              </div>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <button
@@ -293,7 +419,8 @@ export function ServicesSection({
                 className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
                 type="button"
                 onClick={() => {
-                  deleteService(deletingService._id);
+                  if (!deletingService.businessId) return;
+                  onDelete(deletingService.businessId, deletingService._id);
                   setDeletingService(null);
                 }}
               >
