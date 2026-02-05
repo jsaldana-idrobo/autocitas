@@ -99,9 +99,6 @@ export function useAdminBlocks(api: AdminApiContext) {
   }
 
   async function deleteBlock(blockId: string) {
-    if (!confirm("Deseas eliminar este bloqueo?")) {
-      return;
-    }
     api.resetError();
     try {
       if (!startLoad()) return;

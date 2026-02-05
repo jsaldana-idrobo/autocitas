@@ -35,6 +35,8 @@ export function ServicesSection({
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [deletingService, setDeletingService] = useState<ServiceItem | null>(null);
+  const [viewingService, setViewingService] = useState<ServiceItem | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -115,6 +117,12 @@ export function ServicesSection({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                      onClick={() => setViewingService(service)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                       onClick={() => {
                         ensureResourcesLoaded();
                         setEditingService(service);
@@ -130,7 +138,7 @@ export function ServicesSection({
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => deleteService(service._id)}
+                      onClick={() => setDeletingService(service)}
                     >
                       Eliminar
                     </button>
@@ -193,6 +201,90 @@ export function ServicesSection({
               setEditingService(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingService)}
+        title="Detalle del servicio"
+        onClose={() => setViewingService(null)}
+      >
+        {viewingService && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
+              <div className="font-medium">{viewingService.name}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Duracion</div>
+              <div className="font-medium">{viewingService.durationMinutes} min</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Precio</div>
+              <div className="font-medium">
+                {viewingService.price != null ? `$${viewingService.price}` : "-"}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">{viewingService.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">
+                Recursos permitidos
+              </div>
+              <div className="font-medium">
+                {viewingService.allowedResourceIds?.length
+                  ? viewingService.allowedResourceIds
+                      .map((id) => resources.find((resource) => resource._id === id)?.name || id)
+                      .join(", ")
+                  : "Todos"}
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingService(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingService)}
+        title="Eliminar servicio"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingService(null)}
+      >
+        {deletingService && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingService.name}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingService(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  deleteService(deletingService._id);
+                  setDeletingService(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

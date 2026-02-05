@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { AppointmentItem, ResourceItem, ServiceItem } from "../../types";
 import { Badge } from "../../ui/Badge";
 import {
@@ -10,6 +10,7 @@ import {
   TableRow
 } from "../../ui/DataTable";
 import { SectionHeader } from "../../ui/SectionHeader";
+import { Modal } from "../../ui/Modal";
 
 export function AppointmentsSection({
   appointments,
@@ -36,6 +37,8 @@ export function AppointmentsSection({
   loadAppointments: () => void;
   updateAppointmentStatus: (appointmentId: string, status: string) => void;
 }) {
+  const [viewingAppointment, setViewingAppointment] = useState<AppointmentItem | null>(null);
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
       <SectionHeader
@@ -132,6 +135,12 @@ export function AppointmentsSection({
                     <div className="flex justify-end gap-2">
                       <button
                         className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                        onClick={() => setViewingAppointment(item)}
+                      >
+                        Ver
+                      </button>
+                      <button
+                        className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                         onClick={() => updateAppointmentStatus(item._id, "completed")}
                       >
                         Completar
@@ -157,6 +166,61 @@ export function AppointmentsSection({
           </TableBody>
         </DataTable>
       </div>
+
+      <Modal
+        open={Boolean(viewingAppointment)}
+        title="Detalle de la cita"
+        onClose={() => setViewingAppointment(null)}
+      >
+        {viewingAppointment && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Cliente</div>
+              <div className="font-medium">{viewingAppointment.customerName}</div>
+              <div className="text-xs text-slate-500">{viewingAppointment.customerPhone}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">{viewingAppointment.status}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Servicio</div>
+              <div className="font-medium">
+                {services.find((service) => service._id === viewingAppointment.serviceId)?.name ||
+                  "-"}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Recurso</div>
+              <div className="font-medium">
+                {resources.find((resource) => resource._id === viewingAppointment.resourceId)
+                  ?.name || "-"}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Inicio</div>
+              <div className="font-medium">
+                {new Date(viewingAppointment.startTime).toLocaleString()}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Fin</div>
+              <div className="font-medium">
+                {new Date(viewingAppointment.endTime).toLocaleString()}
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingAppointment(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </section>
   );
 }

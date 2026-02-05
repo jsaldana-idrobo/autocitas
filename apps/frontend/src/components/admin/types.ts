@@ -89,10 +89,10 @@ export interface BusinessProfile {
 }
 
 export const tabConfig: { key: TabKey; label: string }[] = [
-  { key: "platform_businesses", label: "Negocios (Plataforma)" },
-  { key: "platform_owners", label: "Owners (Plataforma)" },
-  { key: "platform_staff", label: "Staff (Plataforma)" },
-  { key: "platform_appointments", label: "Citas (Plataforma)" },
+  { key: "platform_businesses", label: "Negocios" },
+  { key: "platform_owners", label: "Owners" },
+  { key: "platform_staff", label: "Staff" },
+  { key: "platform_appointments", label: "Citas" },
   { key: "business", label: "Negocio" },
   { key: "services", label: "Servicios" },
   { key: "resources", label: "Recursos" },

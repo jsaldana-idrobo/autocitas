@@ -31,6 +31,8 @@ export function ResourcesSection({
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<ResourceItem | null>(null);
+  const [deletingResource, setDeletingResource] = useState<ResourceItem | null>(null);
+  const [viewingResource, setViewingResource] = useState<ResourceItem | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -107,6 +109,12 @@ export function ResourcesSection({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                      onClick={() => setViewingResource(resource)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                       onClick={() => setEditingResource(resource)}
                     >
                       Editar
@@ -119,7 +127,7 @@ export function ResourcesSection({
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => deleteResource(resource._id)}
+                      onClick={() => setDeletingResource(resource)}
                     >
                       Eliminar
                     </button>
@@ -179,6 +187,68 @@ export function ResourcesSection({
               setEditingResource(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingResource)}
+        title="Detalle del recurso"
+        onClose={() => setViewingResource(null)}
+      >
+        {viewingResource && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
+              <div className="font-medium">{viewingResource.name}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">{viewingResource.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingResource(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingResource)}
+        title="Eliminar recurso"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingResource(null)}
+      >
+        {deletingResource && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingResource.name}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingResource(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  deleteResource(deletingResource._id);
+                  setDeletingResource(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

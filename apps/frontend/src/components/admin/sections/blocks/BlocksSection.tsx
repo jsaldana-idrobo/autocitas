@@ -35,6 +35,8 @@ export function BlocksSection({
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<BlockItem | null>(null);
+  const [deletingBlock, setDeletingBlock] = useState<BlockItem | null>(null);
+  const [viewingBlock, setViewingBlock] = useState<BlockItem | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -96,13 +98,19 @@ export function BlocksSection({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                      onClick={() => setViewingBlock(block)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                       onClick={() => setEditingBlock(block)}
                     >
                       Editar
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => deleteBlock(block._id)}
+                      onClick={() => setDeletingBlock(block)}
                     >
                       Eliminar
                     </button>
@@ -187,6 +195,80 @@ export function BlocksSection({
               setEditingBlock(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingBlock)}
+        title="Detalle del bloqueo"
+        onClose={() => setViewingBlock(null)}
+      >
+        {viewingBlock && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Motivo</div>
+              <div className="font-medium">{viewingBlock.reason || "Bloqueo"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Inicio</div>
+              <div className="font-medium">{new Date(viewingBlock.startTime).toLocaleString()}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Fin</div>
+              <div className="font-medium">{new Date(viewingBlock.endTime).toLocaleString()}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Recurso</div>
+              <div className="font-medium">
+                {resources.find((resource) => resource._id === viewingBlock.resourceId)?.name ||
+                  viewingBlock.resourceId ||
+                  "Todos"}
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingBlock(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingBlock)}
+        title="Eliminar bloqueo"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingBlock(null)}
+      >
+        {deletingBlock && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingBlock.reason || "este bloqueo"}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingBlock(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  deleteBlock(deletingBlock._id);
+                  setDeletingBlock(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

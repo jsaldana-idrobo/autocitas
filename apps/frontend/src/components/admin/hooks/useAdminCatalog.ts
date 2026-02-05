@@ -136,9 +136,6 @@ export function useAdminCatalog(api: AdminApiContext) {
   }
 
   async function deleteService(serviceId: string) {
-    if (!confirm("Deseas eliminar este servicio?")) {
-      return;
-    }
     api.resetError();
     try {
       if (!startLoad()) return;
@@ -209,9 +206,6 @@ export function useAdminCatalog(api: AdminApiContext) {
   }
 
   async function deleteResource(resourceId: string) {
-    if (!confirm("Deseas eliminar este recurso?")) {
-      return;
-    }
     api.resetError();
     try {
       if (!startLoad()) return;
@@ -289,9 +283,6 @@ export function useAdminCatalog(api: AdminApiContext) {
   }
 
   async function deleteStaff(staffId: string) {
-    if (!confirm("Deseas eliminar este staff?")) {
-      return;
-    }
     api.resetError();
     try {
       api.setLoading(true);

@@ -37,6 +37,8 @@ export function StaffSection({
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffItem | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<StaffItem | null>(null);
+  const [viewingStaff, setViewingStaff] = useState<StaffItem | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -118,6 +120,12 @@ export function StaffSection({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                      onClick={() => setViewingStaff(member)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                       onClick={() => {
                         loadResources();
                         setEditingStaff(member);
@@ -127,7 +135,7 @@ export function StaffSection({
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => deleteStaff(member._id)}
+                      onClick={() => setDeletingStaff(member)}
                     >
                       Eliminar
                     </button>
@@ -217,6 +225,80 @@ export function StaffSection({
               setEditingStaff(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingStaff)}
+        title="Detalle del staff"
+        onClose={() => setViewingStaff(null)}
+      >
+        {viewingStaff && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Email</div>
+              <div className="font-medium">{viewingStaff.email}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Rol</div>
+              <div className="font-medium">{viewingStaff.role}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Recurso</div>
+              <div className="font-medium">
+                {resources.find((resource) => resource._id === viewingStaff.resourceId)?.name ||
+                  viewingStaff.resourceId ||
+                  "-"}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">{viewingStaff.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingStaff(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingStaff)}
+        title="Eliminar staff"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingStaff(null)}
+      >
+        {deletingStaff && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingStaff.email}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingStaff(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  deleteStaff(deletingStaff._id);
+                  setDeletingStaff(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

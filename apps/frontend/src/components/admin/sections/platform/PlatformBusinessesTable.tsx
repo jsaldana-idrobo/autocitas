@@ -19,20 +19,20 @@ export function PlatformBusinessesTable({
   onRefresh,
   onCreate,
   onUpdate,
-  onDelete,
-  onSelectBusiness
+  onDelete
 }: {
   businesses: BusinessProfile[];
   onRefresh: () => void;
   onCreate: (event: React.FormEvent<HTMLFormElement>) => void;
   onUpdate: (businessId: string, payload: Partial<BusinessProfile>) => void;
   onDelete: (businessId: string) => void;
-  onSelectBusiness: (businessId: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<BusinessProfile | null>(null);
+  const [viewingBusiness, setViewingBusiness] = useState<BusinessProfile | null>(null);
+  const [deletingBusiness, setDeletingBusiness] = useState<BusinessProfile | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -116,9 +116,9 @@ export function PlatformBusinessesTable({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => onSelectBusiness(String(business._id || ""))}
+                      onClick={() => setViewingBusiness(business)}
                     >
-                      Usar
+                      Ver
                     </button>
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
@@ -128,7 +128,7 @@ export function PlatformBusinessesTable({
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => business._id && onDelete(business._id)}
+                      onClick={() => setDeletingBusiness(business)}
                     >
                       Eliminar
                     </button>
@@ -208,6 +208,88 @@ export function PlatformBusinessesTable({
               setEditingBusiness(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingBusiness)}
+        title="Detalle del negocio"
+        onClose={() => setViewingBusiness(null)}
+      >
+        {viewingBusiness && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
+              <div className="font-medium">{viewingBusiness.name || "-"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Slug</div>
+              <div className="font-medium">{viewingBusiness.slug || "-"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Zona horaria</div>
+              <div className="font-medium">{viewingBusiness.timezone || "America/Bogota"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Telefono</div>
+              <div className="font-medium">{viewingBusiness.contactPhone || "-"}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Direccion</div>
+              <div className="font-medium">{viewingBusiness.address || "-"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">
+                {viewingBusiness.status === "active" ? "Activo" : "Inactivo"}
+              </div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingBusiness(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingBusiness)}
+        title="Eliminar negocio"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingBusiness(null)}
+      >
+        {deletingBusiness && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingBusiness.name || "este negocio"}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingBusiness(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  if (deletingBusiness._id) {
+                    onDelete(deletingBusiness._id);
+                  }
+                  setDeletingBusiness(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

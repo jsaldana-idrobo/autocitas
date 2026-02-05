@@ -21,7 +21,6 @@ export function PlatformSection({
   updateBusiness,
   deleteBusiness,
   createOwner,
-  onSelectBusiness,
   owners,
   staff,
   appointments,
@@ -46,7 +45,6 @@ export function PlatformSection({
   updateBusiness: (businessId: string, payload: Partial<BusinessProfile>) => void;
   deleteBusiness: (businessId: string) => void;
   createOwner: (event: React.FormEvent<HTMLFormElement>) => void;
-  onSelectBusiness: (businessId: string) => void;
   owners: StaffItem[];
   staff: StaffItem[];
   appointments: AppointmentItem[];
@@ -73,7 +71,6 @@ export function PlatformSection({
           onCreate={createBusiness}
           onUpdate={updateBusiness}
           onDelete={deleteBusiness}
-          onSelectBusiness={onSelectBusiness}
         />
       )}
 

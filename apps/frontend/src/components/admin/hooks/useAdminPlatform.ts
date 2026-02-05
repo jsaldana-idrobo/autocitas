@@ -196,9 +196,6 @@ export function useAdminPlatform(api: AdminApiContext) {
   }
 
   async function deleteBusiness(businessId: string) {
-    if (!confirm("Deseas eliminar este negocio?")) {
-      return;
-    }
     api.resetError();
     try {
       if (!startLoad()) return;
@@ -244,9 +241,6 @@ export function useAdminPlatform(api: AdminApiContext) {
   }
 
   async function deletePlatformUser(userId: string) {
-    if (!confirm("Deseas eliminar este usuario?")) {
-      return;
-    }
     api.resetError();
     try {
       api.setLoading(true);

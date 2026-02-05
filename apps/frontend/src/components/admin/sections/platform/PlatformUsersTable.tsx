@@ -31,6 +31,8 @@ export function PlatformUsersTable({
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [editingUser, setEditingUser] = useState<StaffItem | null>(null);
+  const [deletingUser, setDeletingUser] = useState<StaffItem | null>(null);
+  const [viewingUser, setViewingUser] = useState<StaffItem | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -105,13 +107,19 @@ export function PlatformUsersTable({
                   <div className="flex justify-end gap-2">
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                      onClick={() => setViewingUser(user)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
                       onClick={() => setEditingUser(user)}
                     >
                       Editar
                     </button>
                     <button
                       className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => onDelete(user._id)}
+                      onClick={() => setDeletingUser(user)}
                     >
                       Eliminar
                     </button>
@@ -144,6 +152,80 @@ export function PlatformUsersTable({
               setEditingUser(null);
             }}
           />
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(viewingUser)}
+        title="Detalle del usuario"
+        onClose={() => setViewingUser(null)}
+      >
+        {viewingUser && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Email</div>
+              <div className="font-medium">{viewingUser.email}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Rol</div>
+              <div className="font-medium">{viewingUser.role}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Business ID</div>
+              <div className="font-medium">{viewingUser.businessId ?? "-"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Recurso ID</div>
+              <div className="font-medium">{viewingUser.resourceId ?? "-"}</div>
+            </div>
+            <div className="text-sm">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
+              <div className="font-medium">{viewingUser.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="md:col-span-2 flex justify-end">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setViewingUser(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(deletingUser)}
+        title="Eliminar usuario"
+        description="Esta accion no se puede deshacer."
+        onClose={() => setDeletingUser(null)}
+      >
+        {deletingUser && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Vas a eliminar <strong>{deletingUser.email}</strong>.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
+                type="button"
+                onClick={() => setDeletingUser(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
+                type="button"
+                onClick={() => {
+                  onDelete(deletingUser._id);
+                  setDeletingUser(null);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </section>

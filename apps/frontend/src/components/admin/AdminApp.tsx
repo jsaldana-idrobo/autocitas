@@ -269,9 +269,6 @@ export function AdminApp() {
               updateBusiness={platform.updateBusiness}
               deleteBusiness={platform.deleteBusiness}
               createOwner={platform.createOwner}
-              onSelectBusiness={(id) => {
-                platform.setOwnerBusinessId(id);
-              }}
               owners={platform.platformOwners}
               staff={platform.platformStaff}
               appointments={platform.platformAppointments}
