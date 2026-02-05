@@ -26,6 +26,12 @@ const ERR_APPOINTMENT_NOT_FOUND = "Appointment not found";
 const ERR_CANCEL_WINDOW = "Cancellation window has passed.";
 const ERR_RESCHEDULE_LIMIT = "Reschedule limit reached.";
 
+function assertActiveBusiness(business: Business | null): asserts business is Business {
+  if (!business || business.status !== STATUS_ACTIVE) {
+    throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
+  }
+}
+
 interface SlotAvailability {
   startTime: string;
   endTime: string;
@@ -164,9 +170,7 @@ export class PublicService {
 
   async getPublicBusiness(slug: string) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     const [services, resources] = await Promise.all([
       this.serviceModel.find({ businessId: business._id, active: true }).lean(),
@@ -187,9 +191,7 @@ export class PublicService {
     resourceId?: string;
   }) {
     const business = await this.businessModel.findOne({ slug: params.slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     const timezone = business.timezone || DEFAULT_TIMEZONE;
     const dateLocal = parseDate(params.date, timezone);
@@ -290,9 +292,7 @@ export class PublicService {
 
   async createAppointment(slug: string, payload: CreateAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     if (!isValidObjectId(payload.serviceId)) {
       throw new BadRequestException(ERR_INVALID_SERVICE_ID);
@@ -362,9 +362,7 @@ export class PublicService {
 
   async listAppointmentsByPhone(slug: string, phone?: string) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
     const normalized = (phone || "").trim();
     if (!normalized) {
       return { appointments: [] };
@@ -379,9 +377,7 @@ export class PublicService {
 
   async cancelAppointment(slug: string, appointmentId: string, payload: CancelAppointmentDto) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     if (!isValidObjectId(appointmentId)) {
       throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
@@ -420,9 +416,7 @@ export class PublicService {
     payload: RescheduleAppointmentDto
   ) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     if (!isValidObjectId(appointmentId)) {
       throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
@@ -505,9 +499,7 @@ export class PublicService {
     payload: UpdatePublicAppointmentDto
   ) {
     const business = await this.businessModel.findOne({ slug }).lean();
-    if (business?.status !== STATUS_ACTIVE) {
-      throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
-    }
+    assertActiveBusiness(business);
 
     if (!isValidObjectId(appointmentId)) {
       throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);

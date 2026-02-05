@@ -88,6 +88,58 @@ export function useAdminPlatform(api: AdminApiContext) {
     return typeof value === "string" ? value.trim() : "";
   };
 
+  const buildServicesQueryOptions = () => ({
+    page: servicesQueryRef.current.page,
+    limit: servicesQueryRef.current.limit,
+    search: servicesQueryRef.current.search,
+    active: servicesQueryRef.current.active as ActiveFilter,
+    businessId: servicesQueryRef.current.businessId,
+    minDuration: servicesQueryRef.current.minDuration,
+    maxDuration: servicesQueryRef.current.maxDuration,
+    minPrice: servicesQueryRef.current.minPrice,
+    maxPrice: servicesQueryRef.current.maxPrice
+  });
+
+  const refreshPlatformServices = async () => loadPlatformServices(buildServicesQueryOptions());
+
+  const buildResourcesQueryParams = () => ({
+    page: resourcesQueryRef.current.page,
+    limit: resourcesQueryRef.current.limit,
+    search: resourcesQueryRef.current.search,
+    active: resourcesQueryRef.current.active as ActiveFilter,
+    businessId: resourcesQueryRef.current.businessId
+  });
+
+  const refreshPlatformResources = async () => {
+    const options = buildResourcesQueryParams();
+    await loadPlatformResources(
+      options.page,
+      options.limit,
+      options.search,
+      options.active,
+      options.businessId
+    );
+  };
+
+  const buildBlocksQueryOptions = () => ({
+    page: blocksQueryRef.current.page,
+    limit: blocksQueryRef.current.limit,
+    businessId: blocksQueryRef.current.businessId,
+    resourceId: blocksQueryRef.current.resourceId,
+    search: blocksQueryRef.current.search,
+    type: blocksQueryRef.current.type as BlockTypeFilter,
+    from: blocksQueryRef.current.from,
+    to: blocksQueryRef.current.to
+  });
+
+  const refreshPlatformBlocks = async () => loadPlatformBlocks(buildBlocksQueryOptions());
+
+  const buildBlockPayload = (payload: Partial<BlockItem>) => ({
+    ...payload,
+    startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined,
+    endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
+  });
+
   const loadBusinesses = useCallback(
     async (page = 1, limit = 25, search = "", status: StatusFilter = "") => {
       if (!startLoad()) return;
@@ -582,17 +634,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformServices({
-        page: servicesQueryRef.current.page,
-        limit: servicesQueryRef.current.limit,
-        search: servicesQueryRef.current.search,
-        active: servicesQueryRef.current.active as ActiveFilter,
-        businessId: servicesQueryRef.current.businessId,
-        minDuration: servicesQueryRef.current.minDuration,
-        maxDuration: servicesQueryRef.current.maxDuration,
-        minPrice: servicesQueryRef.current.minPrice,
-        maxPrice: servicesQueryRef.current.maxPrice
-      });
+      await refreshPlatformServices();
       api.setSuccess("Servicio creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando servicio");
@@ -617,17 +659,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformServices({
-        page: servicesQueryRef.current.page,
-        limit: servicesQueryRef.current.limit,
-        search: servicesQueryRef.current.search,
-        active: servicesQueryRef.current.active as ActiveFilter,
-        businessId: servicesQueryRef.current.businessId,
-        minDuration: servicesQueryRef.current.minDuration,
-        maxDuration: servicesQueryRef.current.maxDuration,
-        minPrice: servicesQueryRef.current.minPrice,
-        maxPrice: servicesQueryRef.current.maxPrice
-      });
+      await refreshPlatformServices();
       api.setSuccess("Servicio actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando servicio");
@@ -647,17 +679,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadPlatformServices({
-        page: servicesQueryRef.current.page,
-        limit: servicesQueryRef.current.limit,
-        search: servicesQueryRef.current.search,
-        active: servicesQueryRef.current.active as ActiveFilter,
-        businessId: servicesQueryRef.current.businessId,
-        minDuration: servicesQueryRef.current.minDuration,
-        maxDuration: servicesQueryRef.current.maxDuration,
-        minPrice: servicesQueryRef.current.minPrice,
-        maxPrice: servicesQueryRef.current.maxPrice
-      });
+      await refreshPlatformServices();
       api.setSuccess("Servicio eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando servicio");
@@ -678,13 +700,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformResources(
-        resourcesQueryRef.current.page,
-        resourcesQueryRef.current.limit,
-        resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as ActiveFilter,
-        resourcesQueryRef.current.businessId
-      );
+      await refreshPlatformResources();
       api.setSuccess("Recurso creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando recurso");
@@ -709,13 +725,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadPlatformResources(
-        resourcesQueryRef.current.page,
-        resourcesQueryRef.current.limit,
-        resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as ActiveFilter,
-        resourcesQueryRef.current.businessId
-      );
+      await refreshPlatformResources();
       api.setSuccess("Recurso actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando recurso");
@@ -735,13 +745,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadPlatformResources(
-        resourcesQueryRef.current.page,
-        resourcesQueryRef.current.limit,
-        resourcesQueryRef.current.search,
-        resourcesQueryRef.current.active as ActiveFilter,
-        resourcesQueryRef.current.businessId
-      );
+      await refreshPlatformResources();
       api.setSuccess("Recurso eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando recurso");
@@ -757,26 +761,13 @@ export function useAdminPlatform(api: AdminApiContext) {
     try {
       if (!startLoad()) return;
       api.setLoading(true);
-      const payloadToSend = {
-        ...payload,
-        startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined,
-        endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
-      };
+      const payloadToSend = buildBlockPayload(payload);
       await apiRequest(`/admin/businesses/${businessId}/blocks`, {
         method: "POST",
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      await loadPlatformBlocks({
-        page: blocksQueryRef.current.page,
-        limit: blocksQueryRef.current.limit,
-        businessId: blocksQueryRef.current.businessId,
-        resourceId: blocksQueryRef.current.resourceId,
-        search: blocksQueryRef.current.search,
-        type: blocksQueryRef.current.type as BlockTypeFilter,
-        from: blocksQueryRef.current.from,
-        to: blocksQueryRef.current.to
-      });
+      await refreshPlatformBlocks();
       api.setSuccess("Bloqueo creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando bloqueo");
@@ -796,26 +787,13 @@ export function useAdminPlatform(api: AdminApiContext) {
     try {
       if (!startLoad()) return;
       api.setLoading(true);
-      const payloadToSend = {
-        ...payload,
-        startTime: payload.startTime ? toIsoIfPossible(payload.startTime) : undefined,
-        endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
-      };
+      const payloadToSend = buildBlockPayload(payload);
       await apiRequest(`/admin/businesses/${businessId}/blocks/${blockId}`, {
         method: "PATCH",
         body: JSON.stringify(payloadToSend),
         ...api.authHeaders
       });
-      await loadPlatformBlocks({
-        page: blocksQueryRef.current.page,
-        limit: blocksQueryRef.current.limit,
-        businessId: blocksQueryRef.current.businessId,
-        resourceId: blocksQueryRef.current.resourceId,
-        search: blocksQueryRef.current.search,
-        type: blocksQueryRef.current.type as BlockTypeFilter,
-        from: blocksQueryRef.current.from,
-        to: blocksQueryRef.current.to
-      });
+      await refreshPlatformBlocks();
       api.setSuccess("Bloqueo actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando bloqueo");
@@ -835,16 +813,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadPlatformBlocks({
-        page: blocksQueryRef.current.page,
-        limit: blocksQueryRef.current.limit,
-        businessId: blocksQueryRef.current.businessId,
-        resourceId: blocksQueryRef.current.resourceId,
-        search: blocksQueryRef.current.search,
-        type: blocksQueryRef.current.type as BlockTypeFilter,
-        from: blocksQueryRef.current.from,
-        to: blocksQueryRef.current.to
-      });
+      await refreshPlatformBlocks();
       api.setSuccess("Bloqueo eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando bloqueo");
