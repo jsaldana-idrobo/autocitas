@@ -14,7 +14,7 @@ import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto";
 import { hash } from "bcryptjs";
 import { ERR_INVALID_DATE_FORMAT } from "./admin.constants";
 
-const SELECT_WITHOUT_PASSWORD = "-passwordHash";
+const SELECT_WITHOUT_PASSWORD = "-passwordHash"; // NOSONAR - field name, not a hard-coded password
 const TEXT_SCORE = "textScore";
 const ERR_INVALID_BUSINESS_ID = "Invalid businessId.";
 const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";

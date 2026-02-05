@@ -29,19 +29,27 @@ export function AdminApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastIdRef = React.useRef(0);
 
   const authHeaders = useMemo(() => ({ token }), [token]);
   const resetError = React.useCallback(() => setError(null), []);
   const resetSuccess = React.useCallback(() => {}, []);
-  const pushToast = React.useCallback((message: string, variant: "success" | "error") => {
-    setToasts((prev) => {
-      const next = [
-        ...prev,
-        { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, message, variant }
-      ];
-      return next.slice(-3);
-    });
+  const createToastId = React.useCallback(() => {
+    if (globalThis.crypto?.randomUUID) {
+      return globalThis.crypto.randomUUID();
+    }
+    toastIdRef.current += 1;
+    return `toast-${Date.now()}-${toastIdRef.current}`;
   }, []);
+  const pushToast = React.useCallback(
+    (message: string, variant: "success" | "error") => {
+      setToasts((prev) => {
+        const next = [...prev, { id: createToastId(), message, variant }];
+        return next.slice(-3);
+      });
+    },
+    [createToastId]
+  );
   const fireAndForget = React.useCallback((promise: Promise<unknown>) => {
     promise.catch(() => {});
   }, []);

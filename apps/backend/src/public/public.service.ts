@@ -27,7 +27,7 @@ const ERR_CANCEL_WINDOW = "Cancellation window has passed.";
 const ERR_RESCHEDULE_LIMIT = "Reschedule limit reached.";
 
 function assertActiveBusiness(business: Business | null): asserts business is Business {
-  if (!business || business.status !== STATUS_ACTIVE) {
+  if (business?.status !== STATUS_ACTIVE) {
     throw new NotFoundException(ERR_BUSINESS_NOT_FOUND);
   }
 }

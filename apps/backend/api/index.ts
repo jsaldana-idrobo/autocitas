@@ -11,6 +11,7 @@ let cachedServer: ExpressHandler | null = null;
 
 async function bootstrap(): Promise<ExpressHandler> {
   const server = express();
+  server.disable("x-powered-by");
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalPipes(
     new ValidationPipe({
