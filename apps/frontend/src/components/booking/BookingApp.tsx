@@ -344,9 +344,7 @@ export function BookingApp({ slug }: { slug: string }) {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="card p-6">
           <h2 className="text-2xl font-semibold">{business.business.name}</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Reserva tu cita en minutos · Zona horaria {timezone}
-          </p>
+          <p className="mt-2 text-sm text-slate-500">Reserva tu cita en minutos</p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium">

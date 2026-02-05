@@ -1,10 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap");
+@import "./toast.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import "./toast.css";
 
 :root {
   color-scheme: light;
