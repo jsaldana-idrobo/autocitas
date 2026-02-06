@@ -39,10 +39,15 @@ export function formatTime(iso: string, timezone: string) {
     minute: "2-digit",
     hour12: true
   });
-  return raw
-    .replace(/\./g, "")
-    .replace(/\s*(am|pm)$/i, " $1")
-    .toLowerCase();
+  const cleaned = raw.replaceAll(".", "").trim();
+  const lower = cleaned.toLowerCase();
+  if (lower.endsWith("am")) {
+    return `${lower.slice(0, -2).trim()} am`;
+  }
+  if (lower.endsWith("pm")) {
+    return `${lower.slice(0, -2).trim()} pm`;
+  }
+  return lower;
 }
 
 export function formatDateTime(iso: string, timezone: string) {
