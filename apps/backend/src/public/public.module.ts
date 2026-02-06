@@ -1,13 +1,13 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { Appointment, AppointmentSchema } from "../schemas/appointment.schema";
-import { Block, BlockSchema } from "../schemas/block.schema";
-import { Business, BusinessSchema } from "../schemas/business.schema";
-import { Resource, ResourceSchema } from "../schemas/resource.schema";
-import { Service, ServiceSchema } from "../schemas/service.schema";
-import { AuditModule } from "../audit/audit.module";
-import { PublicController } from "./public.controller";
-import { PublicService } from "./public.service";
+import { Appointment, AppointmentSchema } from "../schemas/appointment.schema.js";
+import { Block, BlockSchema } from "../schemas/block.schema.js";
+import { Business, BusinessSchema } from "../schemas/business.schema.js";
+import { Resource, ResourceSchema } from "../schemas/resource.schema.js";
+import { Service, ServiceSchema } from "../schemas/service.schema.js";
+import { AuditModule } from "../audit/audit.module.js";
+import { PublicController } from "./public.controller.js";
+import { PublicService } from "./public.service.js";
 
 @Module({
   imports: [

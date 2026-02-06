@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
-import { JwtPayload } from "../auth/jwt.strategy";
+import { JwtPayload } from "../auth/jwt.strategy.js";
 
 @Injectable()
 export class AdminAccessService {

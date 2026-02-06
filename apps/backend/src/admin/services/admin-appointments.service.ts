@@ -7,25 +7,25 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { DateTime } from "luxon";
 import { Model, isValidObjectId } from "mongoose";
-import { Appointment } from "../../schemas/appointment.schema";
-import { Block } from "../../schemas/block.schema";
-import { Business } from "../../schemas/business.schema";
+import { Appointment } from "../../schemas/appointment.schema.js";
+import { Block } from "../../schemas/block.schema.js";
+import { Business } from "../../schemas/business.schema.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_APPOINTMENT_NOT_FOUND,
   ERR_CANCEL_WINDOW,
   ERR_INVALID_DATE_FORMAT,
   ERR_INVALID_STARTTIME
-} from "./admin.constants";
-import { AdminBusinessContextService } from "./admin-business-context.service";
-import { AdminCatalogService } from "./admin-catalog.service";
+} from "./admin.constants.js";
+import { AdminBusinessContextService } from "./admin-business-context.service.js";
+import { AdminCatalogService } from "./admin-catalog.service.js";
 import {
   assertWithinBusinessHours,
   buildAppointmentSearchQuery,
   ensureNoConflicts,
   ensureServiceResource,
   TEXT_SCORE
-} from "./admin-appointments.helpers";
+} from "./admin-appointments.helpers.js";
 
 type AppointmentStatus = "booked" | "cancelled" | "completed";
 

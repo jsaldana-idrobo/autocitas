@@ -10,13 +10,13 @@ import {
   Req,
   UseGuards
 } from "@nestjs/common";
-import { CreateServiceDto } from "../dto/create-service.dto";
-import { UpdateServiceDto } from "../dto/update-service.dto";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
-import { AdminAccessService } from "../services/admin-access.service";
-import { AdminCatalogService } from "../services/admin-catalog.service";
-import { AuditService } from "../../audit/audit.service";
-import { ActiveFilter, AuthenticatedRequest, logAdminAction } from "./admin-controller.helpers";
+import { CreateServiceDto } from "../dto/create-service.dto.js";
+import { UpdateServiceDto } from "../dto/update-service.dto.js";
+import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
+import { AdminAccessService } from "../services/admin-access.service.js";
+import { AdminCatalogService } from "../services/admin-catalog.service.js";
+import { AuditService } from "../../audit/audit.service.js";
+import { ActiveFilter, AuthenticatedRequest, logAdminAction } from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

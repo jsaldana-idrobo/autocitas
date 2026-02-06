@@ -1,14 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
-import { Resource } from "../../schemas/resource.schema";
-import { Service } from "../../schemas/service.schema";
-import { CreateResourceDto } from "../dto/create-resource.dto";
-import { CreateServiceDto } from "../dto/create-service.dto";
-import { UpdateResourceDto } from "../dto/update-resource.dto";
-import { UpdateServiceDto } from "../dto/update-service.dto";
-import { ERR_INVALID_RESOURCE_ID, ERR_RESOURCE_NOT_FOUND, ERR_NO_UPDATES } from "./admin.constants";
-import { AdminBusinessContextService } from "./admin-business-context.service";
+import { Resource } from "../../schemas/resource.schema.js";
+import { Service } from "../../schemas/service.schema.js";
+import { CreateResourceDto } from "../dto/create-resource.dto.js";
+import { CreateServiceDto } from "../dto/create-service.dto.js";
+import { UpdateResourceDto } from "../dto/update-resource.dto.js";
+import { UpdateServiceDto } from "../dto/update-service.dto.js";
+import {
+  ERR_INVALID_RESOURCE_ID,
+  ERR_RESOURCE_NOT_FOUND,
+  ERR_NO_UPDATES
+} from "./admin.constants.js";
+import { AdminBusinessContextService } from "./admin-business-context.service.js";
 
 const TEXT_SCORE = "textScore";
 const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";

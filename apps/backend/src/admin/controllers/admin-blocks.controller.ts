@@ -11,17 +11,17 @@ import {
   Req,
   UseGuards
 } from "@nestjs/common";
-import { CreateBlockDto } from "../dto/create-block.dto";
-import { UpdateBlockDto } from "../dto/update-block.dto";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
-import { AdminAccessService } from "../services/admin-access.service";
-import { AdminBlocksService } from "../services/admin-blocks.service";
-import { AuditService } from "../../audit/audit.service";
+import { CreateBlockDto } from "../dto/create-block.dto.js";
+import { UpdateBlockDto } from "../dto/update-block.dto.js";
+import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
+import { AdminAccessService } from "../services/admin-access.service.js";
+import { AdminBlocksService } from "../services/admin-blocks.service.js";
+import { AuditService } from "../../audit/audit.service.js";
 import {
   AuthenticatedRequest,
   ERR_STAFF_RESOURCE_NOT_LINKED,
   logAdminAction
-} from "./admin-controller.helpers";
+} from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

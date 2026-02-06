@@ -11,15 +11,15 @@ import {
   UseGuards
 } from "@nestjs/common";
 import { Request } from "express";
-import { CreateBusinessDto } from "./dto/create-business.dto";
-import { CreateOwnerDto } from "./dto/create-owner.dto";
-import { UpdateBusinessDto } from "./dto/update-business.dto";
-import { UpdatePlatformUserDto } from "./dto/update-platform-user.dto";
-import { JwtPayload } from "./auth/jwt.strategy";
-import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { AdminAccessService } from "./services/admin-access.service";
-import { AdminPlatformService } from "./services/admin-platform.service";
-import { AuditService } from "../audit/audit.service";
+import { CreateBusinessDto } from "./dto/create-business.dto.js";
+import { CreateOwnerDto } from "./dto/create-owner.dto.js";
+import { UpdateBusinessDto } from "./dto/update-business.dto.js";
+import { UpdatePlatformUserDto } from "./dto/update-platform-user.dto.js";
+import { JwtPayload } from "./auth/jwt.strategy.js";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard.js";
+import { AdminAccessService } from "./services/admin-access.service.js";
+import { AdminPlatformService } from "./services/admin-platform.service.js";
+import { AuditService } from "../audit/audit.service.js";
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;

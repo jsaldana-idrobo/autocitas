@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
-import { Business } from "../../schemas/business.schema";
-import { ERR_BUSINESS_NOT_FOUND } from "./admin.constants";
+import { Business } from "../../schemas/business.schema.js";
+import { ERR_BUSINESS_NOT_FOUND } from "./admin.constants.js";
 
 @Injectable()
 export class AdminBusinessContextService {

@@ -1,9 +1,9 @@
 import { BadRequestException } from "@nestjs/common";
 import { Model, isValidObjectId } from "mongoose";
-import { Business } from "../../schemas/business.schema";
-import { CreateBusinessDto } from "../dto/create-business.dto";
-import { UpdateBusinessDto } from "../dto/update-business.dto";
-import { applyTextSearchSort } from "./admin-platform.query";
+import { Business } from "../../schemas/business.schema.js";
+import { CreateBusinessDto } from "../dto/create-business.dto.js";
+import { UpdateBusinessDto } from "../dto/update-business.dto.js";
+import { applyTextSearchSort } from "./admin-platform.query.js";
 
 const ERR_INVALID_BUSINESS_ID = "Invalid businessId.";
 const ERR_NO_UPDATES = "No updates provided.";

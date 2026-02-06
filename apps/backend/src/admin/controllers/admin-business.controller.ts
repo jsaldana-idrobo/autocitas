@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Req, UseGuards } from "@nestjs/common";
-import { UpdateBusinessDto } from "../dto/update-business.dto";
-import { UpdateHoursDto } from "../dto/update-hours.dto";
-import { UpdatePoliciesDto } from "../dto/update-policies.dto";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
-import { AdminAccessService } from "../services/admin-access.service";
-import { AdminBusinessService } from "../services/admin-business.service";
-import { AuditService } from "../../audit/audit.service";
-import { AuthenticatedRequest, logAdminAction } from "./admin-controller.helpers";
+import { UpdateBusinessDto } from "../dto/update-business.dto.js";
+import { UpdateHoursDto } from "../dto/update-hours.dto.js";
+import { UpdatePoliciesDto } from "../dto/update-policies.dto.js";
+import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
+import { AdminAccessService } from "../services/admin-access.service.js";
+import { AdminBusinessService } from "../services/admin-business.service.js";
+import { AuditService } from "../../audit/audit.service.js";
+import { AuthenticatedRequest, logAdminAction } from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

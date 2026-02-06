@@ -1,20 +1,20 @@
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Block } from "../schemas/block.schema";
-import { Business } from "../schemas/business.schema";
-import { Resource } from "../schemas/resource.schema";
-import { Service } from "../schemas/service.schema";
-import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
-import { CreateAppointmentDto } from "./dto/create-appointment.dto";
-import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto";
-import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto";
-import { getPublicBusiness } from "./public-business.handlers";
-import { getAvailability } from "./public-availability.handlers";
-import { cancelAppointment, updatePublicAppointment } from "./public-appointments.manage";
-import { createAppointment } from "./public-appointments.create";
-import { listAppointmentsByPhone } from "./public-appointments.list";
-import { rescheduleAppointment } from "./public-appointments.reschedule";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Block } from "../schemas/block.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { Resource } from "../schemas/resource.schema.js";
+import { Service } from "../schemas/service.schema.js";
+import { CancelAppointmentDto } from "./dto/cancel-appointment.dto.js";
+import { CreateAppointmentDto } from "./dto/create-appointment.dto.js";
+import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto.js";
+import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto.js";
+import { getPublicBusiness } from "./public-business.handlers.js";
+import { getAvailability } from "./public-availability.handlers.js";
+import { cancelAppointment, updatePublicAppointment } from "./public-appointments.manage.js";
+import { createAppointment } from "./public-appointments.create.js";
+import { listAppointmentsByPhone } from "./public-appointments.list.js";
+import { rescheduleAppointment } from "./public-appointments.reschedule.js";
 
 export class PublicService {
   constructor(

@@ -1,10 +1,10 @@
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import { DateTime } from "luxon";
 import { Model, Types, isValidObjectId } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Block } from "../schemas/block.schema";
-import { Business } from "../schemas/business.schema";
-import { Service } from "../schemas/service.schema";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Block } from "../schemas/block.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { Service } from "../schemas/service.schema.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_BUSINESS_NOT_FOUND,
@@ -15,7 +15,7 @@ import {
   STATUS_BOOKED,
   assertActiveBusiness,
   parseBusinessHours
-} from "./public.service.helpers";
+} from "./public.service.helpers.js";
 
 export type BusinessWithId = Business & { _id: Types.ObjectId };
 

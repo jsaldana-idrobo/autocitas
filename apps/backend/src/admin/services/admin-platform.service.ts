@@ -1,34 +1,34 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { Appointment } from "../../schemas/appointment.schema";
-import { AdminUser } from "../../schemas/admin-user.schema";
-import { Business } from "../../schemas/business.schema";
-import { Resource } from "../../schemas/resource.schema";
-import { Service } from "../../schemas/service.schema";
-import { Block } from "../../schemas/block.schema";
-import { CreateBusinessDto } from "../dto/create-business.dto";
-import { UpdateBusinessDto } from "../dto/update-business.dto";
-import { CreateOwnerDto } from "../dto/create-owner.dto";
-import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto";
+import { Appointment } from "../../schemas/appointment.schema.js";
+import { AdminUser } from "../../schemas/admin-user.schema.js";
+import { Business } from "../../schemas/business.schema.js";
+import { Resource } from "../../schemas/resource.schema.js";
+import { Service } from "../../schemas/service.schema.js";
+import { Block } from "../../schemas/block.schema.js";
+import { CreateBusinessDto } from "../dto/create-business.dto.js";
+import { UpdateBusinessDto } from "../dto/update-business.dto.js";
+import { CreateOwnerDto } from "../dto/create-owner.dto.js";
+import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto.js";
 import {
   createBusiness,
   deleteBusiness,
   listBusinesses,
   updateBusiness
-} from "./admin-platform.business";
+} from "./admin-platform.business.js";
 import {
   createOwner,
   deletePlatformUser,
   listPlatformUsers,
   updatePlatformUser
-} from "./admin-platform.users";
-import { listPlatformAppointmentsWithSearch } from "./admin-platform.appointments";
+} from "./admin-platform.users.js";
+import { listPlatformAppointmentsWithSearch } from "./admin-platform.appointments.js";
 import {
   listPlatformBlocks,
   listPlatformResources,
   listPlatformServices
-} from "./admin-platform.catalog";
+} from "./admin-platform.catalog.js";
 
 @Injectable()
 export class AdminPlatformService {

@@ -1,8 +1,8 @@
 import { Model } from "mongoose";
-import { Business } from "../schemas/business.schema";
-import { Resource } from "../schemas/resource.schema";
-import { Service } from "../schemas/service.schema";
-import { assertActiveBusiness } from "./public.service.helpers";
+import { Business } from "../schemas/business.schema.js";
+import { Resource } from "../schemas/resource.schema.js";
+import { Service } from "../schemas/service.schema.js";
+import { assertActiveBusiness } from "./public.service.helpers.js";
 
 export async function getPublicBusiness(
   businessModel: Model<Business>,

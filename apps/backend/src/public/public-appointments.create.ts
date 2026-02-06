@@ -1,17 +1,17 @@
 import { Model } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Block } from "../schemas/block.schema";
-import { Business } from "../schemas/business.schema";
-import { Service } from "../schemas/service.schema";
-import { CreateAppointmentDto } from "./dto/create-appointment.dto";
-import { STATUS_BOOKED } from "./public.service.helpers";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Block } from "../schemas/block.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { Service } from "../schemas/service.schema.js";
+import { CreateAppointmentDto } from "./dto/create-appointment.dto.js";
+import { STATUS_BOOKED } from "./public.service.helpers.js";
 import {
   assertNoConflicts,
   getActiveBusinessBySlug,
   getActiveService,
   resolveAppointmentTimes,
   resolveResourceId
-} from "./public-appointments.helpers";
+} from "./public-appointments.helpers.js";
 
 export async function createAppointment(
   businessModel: Model<Business>,

@@ -1,11 +1,11 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Model, Types, isValidObjectId } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Block } from "../schemas/block.schema";
-import { Business } from "../schemas/business.schema";
-import { Resource } from "../schemas/resource.schema";
-import { Service } from "../schemas/service.schema";
-import { assertNotInPast, assertSameDayAllowed } from "./policies";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Block } from "../schemas/block.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { Resource } from "../schemas/resource.schema.js";
+import { Service } from "../schemas/service.schema.js";
+import { assertNotInPast, assertSameDayAllowed } from "./policies.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_INVALID_RESOURCE_ID,
@@ -19,7 +19,7 @@ import {
   generateSlots,
   parseBusinessHours,
   parseDate
-} from "./public.service.helpers";
+} from "./public.service.helpers.js";
 
 export async function getAvailability(
   businessModel: Model<Business>,

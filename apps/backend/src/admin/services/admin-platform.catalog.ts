@@ -1,10 +1,10 @@
 import { BadRequestException } from "@nestjs/common";
 import { Model, isValidObjectId } from "mongoose";
-import { Block } from "../../schemas/block.schema";
-import { Resource } from "../../schemas/resource.schema";
-import { Service } from "../../schemas/service.schema";
-import { ERR_INVALID_DATE_FORMAT } from "./admin.constants";
-import { applyTextSearchSort } from "./admin-platform.query";
+import { Block } from "../../schemas/block.schema.js";
+import { Resource } from "../../schemas/resource.schema.js";
+import { Service } from "../../schemas/service.schema.js";
+import { ERR_INVALID_DATE_FORMAT } from "./admin.constants.js";
+import { applyTextSearchSort } from "./admin-platform.query.js";
 
 const ERR_INVALID_BUSINESS_ID = "Invalid businessId.";
 const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";

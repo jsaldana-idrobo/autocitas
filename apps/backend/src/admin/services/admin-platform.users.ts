@@ -1,10 +1,10 @@
 import { BadRequestException } from "@nestjs/common";
 import { Model, isValidObjectId } from "mongoose";
 import { hash } from "bcryptjs";
-import { AdminUser } from "../../schemas/admin-user.schema";
-import { CreateOwnerDto } from "../dto/create-owner.dto";
-import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto";
-import { applyTextSearchSort } from "./admin-platform.query";
+import { AdminUser } from "../../schemas/admin-user.schema.js";
+import { CreateOwnerDto } from "../dto/create-owner.dto.js";
+import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto.js";
+import { applyTextSearchSort } from "./admin-platform.query.js";
 
 const SELECT_WITHOUT_PASSWORD = "-passwordHash"; // NOSONAR - field name, not a hard-coded password
 const ERR_NO_UPDATES = "No updates provided.";

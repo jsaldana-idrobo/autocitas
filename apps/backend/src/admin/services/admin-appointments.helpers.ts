@@ -1,17 +1,17 @@
 import { BadRequestException } from "@nestjs/common";
 import { DateTime } from "luxon";
 import { Model } from "mongoose";
-import { Block } from "../../schemas/block.schema";
-import { Appointment } from "../../schemas/appointment.schema";
-import { Business } from "../../schemas/business.schema";
-import { Service } from "../../schemas/service.schema";
+import { Block } from "../../schemas/block.schema.js";
+import { Appointment } from "../../schemas/appointment.schema.js";
+import { Business } from "../../schemas/business.schema.js";
+import { Service } from "../../schemas/service.schema.js";
 import {
   ERR_APPOINTMENT_CONFLICT,
   ERR_OUTSIDE_HOURS,
   ERR_RESOURCE_NOT_ALLOWED,
   ERR_RESOURCE_REQUIRED,
   STATUS_BOOKED
-} from "./admin.constants";
+} from "./admin.constants.js";
 
 export const TEXT_SCORE = "textScore";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;

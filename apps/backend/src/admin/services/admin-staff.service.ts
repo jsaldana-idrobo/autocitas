@@ -2,12 +2,12 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
 import { hash } from "bcryptjs";
-import { AdminUser } from "../../schemas/admin-user.schema";
-import { CreateStaffDto } from "../dto/create-staff.dto";
-import { UpdateStaffDto } from "../dto/update-staff.dto";
-import { AdminBusinessContextService } from "./admin-business-context.service";
-import { AdminCatalogService } from "./admin-catalog.service";
-import { ERR_INVALID_RESOURCE_ID } from "./admin.constants";
+import { AdminUser } from "../../schemas/admin-user.schema.js";
+import { CreateStaffDto } from "../dto/create-staff.dto.js";
+import { UpdateStaffDto } from "../dto/update-staff.dto.js";
+import { AdminBusinessContextService } from "./admin-business-context.service.js";
+import { AdminCatalogService } from "./admin-catalog.service.js";
+import { ERR_INVALID_RESOURCE_ID } from "./admin.constants.js";
 
 const SELECT_WITHOUT_PASSWORD = "-passwordHash"; // NOSONAR - field name, not a hard-coded password
 const TEXT_SCORE = "textScore";

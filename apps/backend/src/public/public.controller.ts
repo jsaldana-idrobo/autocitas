@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
-import { CreateAppointmentDto } from "./dto/create-appointment.dto";
-import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
-import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto";
-import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto";
-import { PublicService } from "./public.service";
-import { AuditService } from "../audit/audit.service";
+import { CreateAppointmentDto } from "./dto/create-appointment.dto.js";
+import { CancelAppointmentDto } from "./dto/cancel-appointment.dto.js";
+import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto.js";
+import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto.js";
+import { PublicService } from "./public.service.js";
+import { AuditService } from "../audit/audit.service.js";
 
 @Controller("public/businesses")
 export class PublicController {

@@ -10,19 +10,19 @@ import {
   Req,
   UseGuards
 } from "@nestjs/common";
-import { CreateAdminAppointmentDto } from "../dto/create-appointment.dto";
-import { UpdateAppointmentDto } from "../dto/update-appointment.dto";
-import { UpdateAdminAppointmentDto } from "../dto/update-admin-appointment.dto";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
-import { AdminAccessService } from "../services/admin-access.service";
-import { AdminAppointmentsService } from "../services/admin-appointments.service";
-import { AuditService } from "../../audit/audit.service";
+import { CreateAdminAppointmentDto } from "../dto/create-appointment.dto.js";
+import { UpdateAppointmentDto } from "../dto/update-appointment.dto.js";
+import { UpdateAdminAppointmentDto } from "../dto/update-admin-appointment.dto.js";
+import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
+import { AdminAccessService } from "../services/admin-access.service.js";
+import { AdminAppointmentsService } from "../services/admin-appointments.service.js";
+import { AuditService } from "../../audit/audit.service.js";
 import {
   AppointmentStatus,
   AuthenticatedRequest,
   ERR_STAFF_RESOURCE_NOT_LINKED,
   logAdminAction
-} from "./admin-controller.helpers";
+} from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

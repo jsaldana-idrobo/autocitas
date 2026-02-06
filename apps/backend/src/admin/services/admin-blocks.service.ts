@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, isValidObjectId } from "mongoose";
-import { Block } from "../../schemas/block.schema";
-import { Appointment } from "../../schemas/appointment.schema";
-import { CreateBlockDto } from "../dto/create-block.dto";
-import { UpdateBlockDto } from "../dto/update-block.dto";
+import { Block } from "../../schemas/block.schema.js";
+import { Appointment } from "../../schemas/appointment.schema.js";
+import { CreateBlockDto } from "../dto/create-block.dto.js";
+import { UpdateBlockDto } from "../dto/update-block.dto.js";
 import {
   ERR_BLOCK_APPOINTMENT_CONFLICT,
   ERR_BLOCK_NOT_FOUND,
   ERR_INVALID_DATE_FORMAT,
   ERR_NO_UPDATES
-} from "./admin.constants";
-import { AdminBusinessContextService } from "./admin-business-context.service";
-import { AdminCatalogService } from "./admin-catalog.service";
+} from "./admin.constants.js";
+import { AdminBusinessContextService } from "./admin-business-context.service.js";
+import { AdminCatalogService } from "./admin-catalog.service.js";
 
 @Injectable()
 export class AdminBlocksService {

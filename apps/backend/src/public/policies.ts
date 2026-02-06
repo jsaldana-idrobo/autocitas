@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { BadRequestException } from "@nestjs/common";
-import { Business } from "../schemas/business.schema";
+import { Business } from "../schemas/business.schema.js";
 
 export function assertSameDayAllowed(dateLocal: DateTime, business: Business) {
   const allowSameDay = business.policies?.allowSameDay ?? true;

@@ -1,9 +1,9 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { DateTime } from "luxon";
-import { Appointment } from "../schemas/appointment.schema";
-import { Block } from "../schemas/block.schema";
-import { Business } from "../schemas/business.schema";
-import { Resource } from "../schemas/resource.schema";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Block } from "../schemas/block.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { Resource } from "../schemas/resource.schema.js";
 import { Types } from "mongoose";
 
 export const DEFAULT_TIMEZONE = "America/Bogota";

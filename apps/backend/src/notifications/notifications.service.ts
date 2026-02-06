@@ -2,9 +2,9 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { DateTime } from "luxon";
 import { Model } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Business } from "../schemas/business.schema";
-import Twilio = require("twilio");
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import twilio from "twilio";
 
 const REMINDER_WINDOWS_HOURS = [3];
 const WINDOW_MINUTES = 2;
@@ -12,7 +12,7 @@ const WINDOW_MINUTES = 2;
 type AppointmentDoc = Appointment & { reminderSentHours?: number[] };
 
 export class NotificationsService {
-  private readonly twilioClient?: ReturnType<typeof Twilio>;
+  private readonly twilioClient?: ReturnType<typeof twilio>;
   private readonly fromNumber?: string;
 
   constructor(
@@ -23,7 +23,7 @@ export class NotificationsService {
     const token = process.env.TWILIO_AUTH_TOKEN;
     const from = process.env.TWILIO_FROM_NUMBER;
     if (sid && token && from) {
-      this.twilioClient = Twilio(sid, token);
+      this.twilioClient = twilio(sid, token);
       this.fromNumber = from;
     }
   }

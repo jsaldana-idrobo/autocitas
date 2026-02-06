@@ -1,21 +1,21 @@
 import { BadRequestException } from "@nestjs/common";
 import { DateTime } from "luxon";
 import { Model } from "mongoose";
-import { Appointment } from "../schemas/appointment.schema";
-import { Business } from "../schemas/business.schema";
-import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
-import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto";
+import { Appointment } from "../schemas/appointment.schema.js";
+import { Business } from "../schemas/business.schema.js";
+import { CancelAppointmentDto } from "./dto/cancel-appointment.dto.js";
+import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_APPOINTMENT_NOT_FOUND,
   ERR_CANCEL_WINDOW,
   ERR_INVALID_APPOINTMENT_ID
-} from "./public.service.helpers";
+} from "./public.service.helpers.js";
 import {
   assertPhoneMatch,
   assertValidObjectId,
   getBusinessAndAppointment
-} from "./public-appointments.helpers";
+} from "./public-appointments.helpers.js";
 
 export async function cancelAppointment(
   businessModel: Model<Business>,
