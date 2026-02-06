@@ -148,6 +148,9 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
     !loading &&
     (nameChanged || timeChanged || (phoneChanged && phoneValid));
   const canCancel = Boolean(manageSelected) && normalizedManagePhone.length >= PHONE_MIN_LEN;
+  const searchOpacityClass = canSearch ? "" : DISABLED_OPACITY;
+  const updateOpacityClass = canUpdate ? "" : DISABLED_OPACITY;
+  const cancelOpacityClass = canCancel ? "" : DISABLED_OPACITY;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
@@ -507,11 +510,9 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
                 className={INPUT_CLASS}
               />
               <button
-                className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
-                  !canSearch ? DISABLED_OPACITY : ""
-                }`}
+                className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${searchOpacityClass}`}
                 onClick={() => fireAndForget(handleSearchAppointments())}
-                disabled={!canSearch}
+                disabled={canSearch ? false : true}
               >
                 Buscar
               </button>
@@ -583,20 +584,16 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
                     />
                     <div className="flex flex-wrap gap-3">
                       <button
-                        className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
-                          !canUpdate ? DISABLED_OPACITY : ""
-                        }`}
+                        className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${updateOpacityClass}`}
                         onClick={() => fireAndForget(handleUpdateAppointment())}
-                        disabled={!canUpdate}
+                        disabled={canUpdate ? false : true}
                       >
                         Guardar cambios
                       </button>
                       <button
-                        className={`rounded-xl border border-rose-200 px-4 py-2 text-sm text-rose-600 ${
-                          !canCancel ? DISABLED_OPACITY : ""
-                        }`}
+                        className={`rounded-xl border border-rose-200 px-4 py-2 text-sm text-rose-600 ${cancelOpacityClass}`}
                         onClick={() => fireAndForget(handleCancelAppointment())}
-                        disabled={!canCancel}
+                        disabled={canCancel ? false : true}
                       >
                         Cancelar cita
                       </button>
