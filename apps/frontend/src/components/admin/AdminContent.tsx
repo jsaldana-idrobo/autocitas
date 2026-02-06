@@ -9,7 +9,7 @@ import { ResourcesSection } from "./sections/resources/ResourcesSection";
 import { ServicesSection } from "./sections/services/ServicesSection";
 import { StaffSection } from "./sections/staff/StaffSection";
 import { CalendarSection } from "./sections/CalendarSection";
-import { Loader } from "./ui/Loader";
+import { AdminSkeleton } from "./ui/AdminSkeleton";
 import { useAdminAppointments } from "./hooks/useAdminAppointments";
 import { useAdminBlocks } from "./hooks/useAdminBlocks";
 import { useAdminBusinessSettings } from "./hooks/useAdminBusinessSettings";
@@ -58,8 +58,10 @@ export function AdminContent({
   return (
     <div className="relative">
       {loading && (
-        <div className="absolute inset-0 z-10 flex items-start justify-center pt-6">
-          <Loader />
+        <div className="absolute inset-0 z-10 flex items-start justify-center px-4 pt-4">
+          <div className="w-full max-w-6xl">
+            <AdminSkeleton activeTab={activeTab} role={role} />
+          </div>
         </div>
       )}
       <div className={`space-y-6 ${loading ? "pointer-events-none opacity-0" : "opacity-100"}`}>
