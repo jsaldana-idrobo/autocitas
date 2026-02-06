@@ -87,6 +87,12 @@ export function useAdminPlatform(api: AdminApiContext) {
     const value = form.get(key);
     return typeof value === "string" ? value.trim() : "";
   };
+  const createPaginationParams = (page: number, limit: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    return params;
+  };
 
   const buildServicesQueryOptions = () => ({
     page: servicesQueryRef.current.page,
@@ -148,9 +154,7 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetSuccess();
       try {
         businessesQueryRef.current = { page, limit, search, status };
-        const params = new URLSearchParams();
-        params.set("page", String(page));
-        params.set("limit", String(limit));
+        const params = createPaginationParams(page, limit);
         if (search) params.set("search", search);
         if (status) params.set("status", status);
         const data = await apiRequest<PaginatedResponse<BusinessProfile>>(
@@ -178,10 +182,8 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetSuccess();
       try {
         ownersQueryRef.current = { page, limit, search, active };
-        const params = new URLSearchParams();
+        const params = createPaginationParams(page, limit);
         params.set("role", "owner");
-        params.set("page", String(page));
-        params.set("limit", String(limit));
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         const data = await apiRequest<PaginatedResponse<StaffItem>>(
@@ -209,10 +211,8 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetSuccess();
       try {
         staffQueryRef.current = { page, limit, search, active };
-        const params = new URLSearchParams();
+        const params = createPaginationParams(page, limit);
         params.set("role", "staff");
-        params.set("page", String(page));
-        params.set("limit", String(limit));
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         const data = await apiRequest<PaginatedResponse<StaffItem>>(
@@ -239,7 +239,7 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetError();
       api.resetSuccess();
       try {
-        const params = new URLSearchParams();
+        const params = createPaginationParams(page, limit);
         const dateValue = nextDate ?? platformAppointmentsDate;
         const statusValue = nextStatus ?? platformAppointmentsStatus;
         const searchValue = nextSearch ?? platformAppointmentsSearch;
@@ -247,8 +247,6 @@ export function useAdminPlatform(api: AdminApiContext) {
         if (dateValue) params.set("date", dateValue);
         if (statusValue) params.set("status", statusValue);
         if (searchValue) params.set("search", searchValue);
-        params.set("page", String(page));
-        params.set("limit", String(limit));
         const query = params.toString() ? `?${params.toString()}` : "";
         const data = await apiRequest<PaginatedResponse<AppointmentItem>>(
           `/admin/platform/appointments${query}`,
@@ -315,9 +313,7 @@ export function useAdminPlatform(api: AdminApiContext) {
           minPrice,
           maxPrice
         };
-        const params = new URLSearchParams();
-        params.set("page", String(page));
-        params.set("limit", String(limit));
+        const params = createPaginationParams(page, limit);
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         if (businessId) params.set("businessId", businessId);
@@ -350,9 +346,7 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetSuccess();
       try {
         resourcesQueryRef.current = { page, limit, search, active, businessId };
-        const params = new URLSearchParams();
-        params.set("page", String(page));
-        params.set("limit", String(limit));
+        const params = createPaginationParams(page, limit);
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         if (businessId) params.set("businessId", businessId);
@@ -402,9 +396,7 @@ export function useAdminPlatform(api: AdminApiContext) {
       api.resetSuccess();
       try {
         blocksQueryRef.current = { page, limit, businessId, resourceId, search, type, from, to };
-        const params = new URLSearchParams();
-        params.set("page", String(page));
-        params.set("limit", String(limit));
+        const params = createPaginationParams(page, limit);
         if (businessId) params.set("businessId", businessId);
         if (resourceId) params.set("resourceId", resourceId);
         if (search) params.set("search", search);
