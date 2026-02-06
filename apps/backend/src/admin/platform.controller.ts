@@ -10,12 +10,12 @@ import {
   Req,
   UseGuards
 } from "@nestjs/common";
-import { Request } from "express";
+import type { Request } from "express";
 import { CreateBusinessDto } from "./dto/create-business.dto.js";
 import { CreateOwnerDto } from "./dto/create-owner.dto.js";
 import { UpdateBusinessDto } from "./dto/update-business.dto.js";
 import { UpdatePlatformUserDto } from "./dto/update-platform-user.dto.js";
-import { JwtPayload } from "./auth/jwt.strategy.js";
+import type { JwtPayload } from "./auth/jwt.strategy.js";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard.js";
 import { AdminAccessService } from "./services/admin-access.service.js";
 import { AdminPlatformService } from "./services/admin-platform.service.js";

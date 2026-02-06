@@ -57,7 +57,7 @@ export async function rescheduleAppointment(
     appointmentModel,
     blockModel,
     businessId: business._id,
-    resourceId: appointment.resourceId,
+    resourceId: appointment.resourceId ? String(appointment.resourceId) : undefined,
     startUtc,
     endUtc,
     excludeAppointmentId: appointmentId

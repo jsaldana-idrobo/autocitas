@@ -6,7 +6,8 @@ import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
 import { AdminAccessService } from "../services/admin-access.service.js";
 import { AdminBusinessService } from "../services/admin-business.service.js";
 import { AuditService } from "../../audit/audit.service.js";
-import { AuthenticatedRequest, logAdminAction } from "./admin-controller.helpers.js";
+import type { AuthenticatedRequest } from "./admin-controller.helpers.js";
+import { logAdminAction } from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

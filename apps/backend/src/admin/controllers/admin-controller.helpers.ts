@@ -1,6 +1,6 @@
-import { Request } from "express";
+import type { Request } from "express";
 import { AuditService } from "../../audit/audit.service.js";
-import { JwtPayload } from "../auth/jwt.strategy.js";
+import type { JwtPayload } from "../auth/jwt.strategy.js";
 
 export interface AuthenticatedRequest extends Request {
   user: JwtPayload;

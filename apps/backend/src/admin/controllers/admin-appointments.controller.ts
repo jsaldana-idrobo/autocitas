@@ -17,12 +17,8 @@ import { JwtAuthGuard } from "../guards/jwt-auth.guard.js";
 import { AdminAccessService } from "../services/admin-access.service.js";
 import { AdminAppointmentsService } from "../services/admin-appointments.service.js";
 import { AuditService } from "../../audit/audit.service.js";
-import {
-  AppointmentStatus,
-  AuthenticatedRequest,
-  ERR_STAFF_RESOURCE_NOT_LINKED,
-  logAdminAction
-} from "./admin-controller.helpers.js";
+import type { AppointmentStatus, AuthenticatedRequest } from "./admin-controller.helpers.js";
+import { ERR_STAFF_RESOURCE_NOT_LINKED, logAdminAction } from "./admin-controller.helpers.js";
 
 @Controller("admin/businesses")
 @UseGuards(JwtAuthGuard)

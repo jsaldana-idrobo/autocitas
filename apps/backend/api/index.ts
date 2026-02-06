@@ -3,7 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import express from "express";
-import { AppModule } from "../src/app.module";
+import { AppModule } from "../src/app.module.js";
 
 type ExpressHandler = (req: VercelRequest, res: VercelResponse) => void;
 
