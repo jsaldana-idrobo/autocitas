@@ -146,6 +146,14 @@ export function useAdminPlatform(api: AdminApiContext) {
     endTime: payload.endTime ? toIsoIfPossible(payload.endTime) : undefined
   });
 
+  const refreshBusinesses = async () =>
+    loadBusinesses(
+      businessesQueryRef.current.page,
+      businessesQueryRef.current.limit,
+      businessesQueryRef.current.search,
+      businessesQueryRef.current.status as StatusFilter
+    );
+
   const loadBusinesses = useCallback(
     async (page = 1, limit = 25, search = "", status: StatusFilter = "") => {
       if (!startLoad()) return;
@@ -443,12 +451,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         ...api.authHeaders
       });
       event.currentTarget.reset();
-      await loadBusinesses(
-        businessesQueryRef.current.page,
-        businessesQueryRef.current.limit,
-        businessesQueryRef.current.search,
-        businessesQueryRef.current.status as StatusFilter
-      );
+      await refreshBusinesses();
       api.setSuccess("Negocio creado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error creando negocio");
@@ -499,12 +502,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadBusinesses(
-        businessesQueryRef.current.page,
-        businessesQueryRef.current.limit,
-        businessesQueryRef.current.search,
-        businessesQueryRef.current.status as StatusFilter
-      );
+      await refreshBusinesses();
       api.setSuccess("Negocio actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando negocio");
@@ -524,12 +522,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         method: "DELETE",
         ...api.authHeaders
       });
-      await loadBusinesses(
-        businessesQueryRef.current.page,
-        businessesQueryRef.current.limit,
-        businessesQueryRef.current.search,
-        businessesQueryRef.current.status as StatusFilter
-      );
+      await refreshBusinesses();
       api.setSuccess("Negocio eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando negocio");
@@ -826,12 +819,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify({ hours: payloadHours }),
         ...api.authHeaders
       });
-      await loadBusinesses(
-        businessesQueryRef.current.page,
-        businessesQueryRef.current.limit,
-        businessesQueryRef.current.search,
-        businessesQueryRef.current.status as StatusFilter
-      );
+      await refreshBusinesses();
       api.setSuccess("Horarios actualizados.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando horarios");
@@ -852,12 +840,7 @@ export function useAdminPlatform(api: AdminApiContext) {
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await loadBusinesses(
-        businessesQueryRef.current.page,
-        businessesQueryRef.current.limit,
-        businessesQueryRef.current.search,
-        businessesQueryRef.current.status as StatusFilter
-      );
+      await refreshBusinesses();
       api.setSuccess("Politicas actualizadas.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error guardando politicas");

@@ -2,7 +2,7 @@
   "extends": "@autocitas/config/tsconfig-base",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["astro/client"]
+    "types": ["astro/client", "react", "react-dom"]
   },
   "include": ["src", "astro.config.mjs"]
 }

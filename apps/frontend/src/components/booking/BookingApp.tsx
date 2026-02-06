@@ -512,7 +512,7 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
               <button
                 className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${searchOpacityClass}`}
                 onClick={() => fireAndForget(handleSearchAppointments())}
-                disabled={canSearch ? false : true}
+                disabled={!canSearch}
               >
                 Buscar
               </button>
@@ -586,14 +586,14 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
                       <button
                         className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${updateOpacityClass}`}
                         onClick={() => fireAndForget(handleUpdateAppointment())}
-                        disabled={canUpdate ? false : true}
+                        disabled={!canUpdate}
                       >
                         Guardar cambios
                       </button>
                       <button
                         className={`rounded-xl border border-rose-200 px-4 py-2 text-sm text-rose-600 ${cancelOpacityClass}`}
                         onClick={() => fireAndForget(handleCancelAppointment())}
-                        disabled={canCancel ? false : true}
+                        disabled={!canCancel}
                       >
                         Cancelar cita
                       </button>
