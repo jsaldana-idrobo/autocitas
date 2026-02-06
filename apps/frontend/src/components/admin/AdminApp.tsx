@@ -126,7 +126,7 @@ export function AdminApp() {
       <div className="space-y-6">
         <AdminHeader businessId={businessId} role={role} onLogout={handleLogout} />
 
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <div className="grid gap-6 md:grid-cols-[300px_1fr] md:items-start">
           <AdminSidebar
             activeTab={activeTab}
             availableTabs={availableTabs}

@@ -1,5 +1,6 @@
 import React from "react";
 import { BookingForm } from "./BookingForm";
+import { LoadingCard } from "./LoadingCard";
 import { ManageAppointmentModal } from "./ManageAppointmentModal";
 import { useBookingState } from "./useBookingState";
 
@@ -55,7 +56,7 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
   } = useBookingState(slug);
 
   if (loading && !business) {
-    return <div className="card p-6">Cargando...</div>;
+    return <LoadingCard />;
   }
 
   if (!business) {

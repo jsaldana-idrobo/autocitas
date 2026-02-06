@@ -15,7 +15,7 @@ export function AdminSidebar({
   const isPlatformTab = (key: TabKey) => key.startsWith("platform_");
 
   return (
-    <aside className="w-full rounded-2xl border border-slate-200 bg-white p-5 md:w-72">
+    <aside className="h-fit w-full self-start rounded-2xl border border-slate-200 bg-white p-5 md:w-72">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Modulos</p>
       </div>

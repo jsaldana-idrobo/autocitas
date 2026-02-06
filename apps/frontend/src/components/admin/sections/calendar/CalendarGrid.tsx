@@ -48,9 +48,13 @@ export function CalendarGrid({
             {day}
           </div>
         ))}
-        <div className="space-y-2 text-xs text-slate-500">
+        <div className="flex flex-col text-xs text-slate-500">
           {timeLabels.map((label) => (
-            <div key={label} style={{ height: SLOT_HEIGHT * (60 / intervalMinutes) }}>
+            <div
+              key={label}
+              className="flex items-start"
+              style={{ height: SLOT_HEIGHT * (60 / intervalMinutes) }}
+            >
               {label}
             </div>
           ))}
@@ -112,7 +116,7 @@ export function CalendarGrid({
                 return (
                   <button
                     key={appt._id}
-                    className={`absolute left-1 right-1 rounded-md p-1 text-left text-[10px] ${statusClass}`}
+                    className={`absolute left-1 right-1 overflow-hidden rounded-md p-1 text-left text-[10px] leading-tight ${statusClass}`}
                     style={{ top, height }}
                     onClick={() => onSelectAppointment(appt)}
                     title={`${appt.customerName} · ${service?.name ?? "Servicio"} · ${statusLabel}${
@@ -124,10 +128,10 @@ export function CalendarGrid({
                         className="inline-block h-2 w-2 rounded-full"
                         style={{ backgroundColor: accent }}
                       />
-                      <div className="font-semibold">{appt.customerName}</div>
+                      <div className="truncate font-semibold">{appt.customerName}</div>
                     </div>
                     <div className="truncate">{service?.name ?? "Servicio"}</div>
-                    <div>
+                    <div className="text-[9px]">
                       {new Date(appt.startTime).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit"
