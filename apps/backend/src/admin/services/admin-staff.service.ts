@@ -9,7 +9,7 @@ import { AdminBusinessContextService } from "./admin-business-context.service";
 import { AdminCatalogService } from "./admin-catalog.service";
 import { ERR_INVALID_RESOURCE_ID } from "./admin.constants";
 
-const SELECT_WITHOUT_PASSWORD = "-passwordHash";
+const SELECT_WITHOUT_PASSWORD = "-passwordHash"; // NOSONAR - field name, not a hard-coded password
 const TEXT_SCORE = "textScore";
 
 function applyTextSearchSort<T>(
