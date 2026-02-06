@@ -11,7 +11,7 @@ export function PlatformCreateOwnerModal({
   onSubmit,
   authHeaders,
   businesses
-}: {
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   ownerBusinessId: string;
@@ -19,7 +19,7 @@ export function PlatformCreateOwnerModal({
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   authHeaders: { token: string };
   businesses: BusinessProfile[];
-}) {
+}>) {
   const businessLookup = useMemo(() => {
     return new Map(businesses.map((business) => [business._id ?? "", business.name ?? ""]));
   }, [businesses]);
@@ -37,7 +37,7 @@ export function PlatformCreateOwnerModal({
           required
         />
         <label className="block text-sm font-medium">
-          Email
+          <span>Email</span>
           <input
             name="email"
             type="email"
@@ -45,7 +45,7 @@ export function PlatformCreateOwnerModal({
           />
         </label>
         <label className="block text-sm font-medium">
-          Password
+          <span>Password</span>
           <input
             name="password"
             type="password"

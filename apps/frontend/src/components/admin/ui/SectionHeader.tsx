@@ -4,11 +4,11 @@ export function SectionHeader({
   title,
   subtitle,
   actions
-}: {
+}: Readonly<{
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>

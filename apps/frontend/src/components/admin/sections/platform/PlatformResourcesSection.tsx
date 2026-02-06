@@ -26,7 +26,7 @@ export function PlatformResourcesSection({
   onDelete,
   total,
   authHeaders
-}: {
+}: Readonly<{
   resources: ResourceItem[];
   businesses: BusinessProfile[];
   onRefresh: (
@@ -41,7 +41,7 @@ export function PlatformResourcesSection({
   onDelete: (businessId: string, resourceId: string) => void;
   total: number;
   authHeaders: { token: string };
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [businessFilter, setBusinessFilter] = useState("");

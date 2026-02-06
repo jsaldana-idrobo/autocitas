@@ -74,7 +74,7 @@ export function PlatformSection({
   onError,
   onSuccess,
   onLoading
-}: {
+}: Readonly<{
   activeTab: TabKey;
   businesses: BusinessProfile[];
   businessesTotal: number;
@@ -158,7 +158,7 @@ export function PlatformSection({
   onError: (message: string | null) => void;
   onSuccess: (message: string | null) => void;
   onLoading: (value: boolean) => void;
-}) {
+}>) {
   const [ownerModalOpen, setOwnerModalOpen] = React.useState(false);
 
   return (

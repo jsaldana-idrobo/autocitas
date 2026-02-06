@@ -9,13 +9,18 @@ export async function apiRequest<T>(
   options: RequestInit & { token?: string } = {}
 ): Promise<T> {
   const { token, headers, ...rest } = options;
+  const mergedHeaders: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+  if (token) {
+    mergedHeaders.Authorization = `Bearer ${token}`;
+  }
+  if (headers) {
+    Object.assign(mergedHeaders, headers);
+  }
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(headers ?? {})
-    }
+    headers: mergedHeaders
   });
 
   if (!response.ok) {

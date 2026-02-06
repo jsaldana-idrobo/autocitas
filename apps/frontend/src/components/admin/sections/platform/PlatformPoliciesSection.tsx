@@ -18,12 +18,12 @@ export function PlatformPoliciesSection({
   onSavePolicies,
   onRefresh,
   total
-}: {
+}: Readonly<{
   businesses: BusinessProfile[];
   onSavePolicies: (businessId: string, payload: Policies) => void;
   onRefresh: (page?: number, limit?: number) => void;
   total: number;
-}) {
+}>) {
   const [editingBusiness, setEditingBusiness] = useState<BusinessProfile | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -155,7 +155,7 @@ export function PlatformPoliciesSection({
                 type="checkbox"
                 defaultChecked={editingBusiness.policies?.allowSameDay ?? true}
               />
-              Permitir mismo dia
+              <span>Permitir mismo dia</span>
             </label>
             <div className="flex justify-end gap-2">
               <button

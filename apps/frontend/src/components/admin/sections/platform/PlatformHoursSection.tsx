@@ -17,12 +17,12 @@ export function PlatformHoursSection({
   onSaveHours,
   onRefresh,
   total
-}: {
+}: Readonly<{
   businesses: BusinessProfile[];
   onSaveHours: (businessId: string, payload: BusinessHoursItem[]) => void;
   onRefresh: (page?: number, limit?: number) => void;
   total: number;
-}) {
+}>) {
   const [editingBusiness, setEditingBusiness] = useState<BusinessProfile | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);

@@ -101,7 +101,7 @@ export function BusinessSection({
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
       <p className="text-xs uppercase text-slate-500">{label}</p>

@@ -7,10 +7,10 @@ import { SectionHeader } from "../../ui/SectionHeader";
 export function PoliciesSection({
   policies,
   savePolicies
-}: {
+}: Readonly<{
   policies: Policies | null;
   savePolicies: (event: React.FormEvent<HTMLFormElement>) => void;
-}) {
+}>) {
   const [editOpen, setEditOpen] = useState(false);
   const current = policies ?? { cancellationHours: 24, rescheduleLimit: 1, allowSameDay: true };
 
@@ -58,7 +58,7 @@ export function PoliciesSection({
           />
           <label className="flex items-center gap-2 text-sm font-medium">
             <input name="allowSameDay" type="checkbox" defaultChecked={current.allowSameDay} />
-            Permitir mismo dia
+            <span>Permitir mismo dia</span>
           </label>
           <div className="flex justify-end gap-2">
             <button
@@ -81,7 +81,7 @@ export function PoliciesSection({
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function InfoItem({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
       <p className="text-xs uppercase text-slate-500">{label}</p>

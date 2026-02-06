@@ -18,7 +18,7 @@ export function PlatformCalendarSection({
   onError,
   onSuccess,
   onLoading
-}: {
+}: Readonly<{
   businesses: BusinessProfile[];
   resources: ResourceItem[];
   services: ServiceItem[];
@@ -26,7 +26,7 @@ export function PlatformCalendarSection({
   onError: (message: string | null) => void;
   onSuccess: (message: string | null) => void;
   onLoading: (value: boolean) => void;
-}) {
+}>) {
   const [selectedBusinessId, setSelectedBusinessId] = useState(businesses[0]?._id ?? "");
   const [weekStart, setWeekStart] = useState(getWeekStartValue());
   const [intervalMinutes, setIntervalMinutes] = useState(30);
@@ -200,7 +200,7 @@ export function PlatformCalendarSection({
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <label className="block text-sm font-medium">
-          Negocio
+          <span>Negocio</span>
           <select
             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
             value={selectedBusinessId}

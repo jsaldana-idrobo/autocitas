@@ -23,7 +23,7 @@ export function PlatformUsersTable({
   onDelete,
   actions,
   total
-}: {
+}: Readonly<{
   title: string;
   users: StaffItem[];
   onRefresh: (page?: number, limit?: number, search?: string, status?: string) => void;
@@ -31,7 +31,7 @@ export function PlatformUsersTable({
   onDelete: (userId: string) => void;
   actions?: React.ReactNode;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [editingUser, setEditingUser] = useState<StaffItem | null>(null);

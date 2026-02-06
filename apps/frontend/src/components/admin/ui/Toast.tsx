@@ -12,11 +12,11 @@ function ToastCard({
   message,
   onClose,
   variant
-}: {
+}: Readonly<{
   message: string;
   onClose: () => void;
   variant: ToastVariant;
-}) {
+}>) {
   const tone =
     variant === "success"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -39,10 +39,10 @@ function ToastCard({
 export function ToastStack({
   toasts,
   onClose
-}: {
+}: Readonly<{
   toasts: ToastItem[];
   onClose: (id: string) => void;
-}) {
+}>) {
   React.useEffect(() => {
     if (toasts.length === 0) return;
     const timers = toasts.map((toast) => setTimeout(() => onClose(toast.id), 3000));

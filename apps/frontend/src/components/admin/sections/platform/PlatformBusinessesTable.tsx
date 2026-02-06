@@ -23,14 +23,14 @@ export function PlatformBusinessesTable({
   onUpdate,
   onDelete,
   total
-}: {
+}: Readonly<{
   businesses: BusinessProfile[];
   onRefresh: (page?: number, limit?: number, search?: string, status?: string) => void;
   onCreate: (event: React.FormEvent<HTMLFormElement>) => void;
   onUpdate: (businessId: string, payload: Partial<BusinessProfile>) => void;
   onDelete: (businessId: string) => void;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -180,7 +180,7 @@ export function PlatformBusinessesTable({
           <InputField name="contactPhone" label="Telefono" />
           <InputField name="address" label="Direccion" />
           <label className="block text-sm font-medium">
-            Estado
+            <span>Estado</span>
             <select
               name="status"
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"

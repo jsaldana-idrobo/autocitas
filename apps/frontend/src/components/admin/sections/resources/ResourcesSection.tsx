@@ -23,14 +23,14 @@ export function ResourcesSection({
   deleteResource,
   loadResources,
   total
-}: {
+}: Readonly<{
   resources: ResourceItem[];
   createResource: (event: React.FormEvent<HTMLFormElement>) => void;
   updateResource: (resourceId: string, payload: Partial<ResourceItem>) => void;
   deleteResource: (resourceId: string) => void;
   loadResources: (page?: number, limit?: number, search?: string, status?: string) => void;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);

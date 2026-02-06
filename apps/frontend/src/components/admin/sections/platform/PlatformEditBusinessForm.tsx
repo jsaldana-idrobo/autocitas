@@ -5,11 +5,11 @@ export function PlatformEditBusinessForm({
   business,
   onSave,
   onCancel
-}: {
+}: Readonly<{
   business: BusinessProfile;
   onSave: (payload: Partial<BusinessProfile>) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [name, setName] = useState(business.name ?? "");
   const [slug, setSlug] = useState(business.slug ?? "");
   const [timezone, setTimezone] = useState(business.timezone ?? "");
@@ -20,7 +20,7 @@ export function PlatformEditBusinessForm({
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <label className="block text-sm font-medium">
-        Nombre
+        <span>Nombre</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={name}
@@ -28,7 +28,7 @@ export function PlatformEditBusinessForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Slug
+        <span>Slug</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={slug}
@@ -36,7 +36,7 @@ export function PlatformEditBusinessForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Zona horaria
+        <span>Zona horaria</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={timezone}
@@ -44,7 +44,7 @@ export function PlatformEditBusinessForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Telefono
+        <span>Telefono</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={contactPhone}
@@ -52,7 +52,7 @@ export function PlatformEditBusinessForm({
         />
       </label>
       <label className="block text-sm font-medium md:col-span-2">
-        Direccion
+        <span>Direccion</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={address}
@@ -60,7 +60,7 @@ export function PlatformEditBusinessForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Estado
+        <span>Estado</span>
         <select
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={status}

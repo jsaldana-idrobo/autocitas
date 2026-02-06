@@ -23,7 +23,7 @@ export function PlatformAppointmentsTable({
   onSearch,
   onRefresh,
   total
-}: {
+}: Readonly<{
   appointments: AppointmentItem[];
   date: string;
   status: string;
@@ -34,7 +34,7 @@ export function PlatformAppointmentsTable({
   onSearch: (page?: number, limit?: number) => void;
   onRefresh: (page?: number, limit?: number) => void;
   total: number;
-}) {
+}>) {
   const [viewingAppointment, setViewingAppointment] = useState<AppointmentItem | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);

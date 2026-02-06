@@ -25,15 +25,16 @@ export function useAdminSession() {
   const [resourceId, setResourceId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    const storedToken = window.localStorage.getItem("admin_token") || "";
-    const storedBusiness = window.localStorage.getItem("business_id") || "";
+    const storage = globalThis.localStorage;
+    const storedToken = storage?.getItem("admin_token") || "";
+    const storedBusiness = storage?.getItem("business_id") || "";
     setToken(storedToken);
     setBusinessId(storedBusiness);
     const payload = parseJwt(storedToken);
     setRole(payload.role);
     setResourceId(payload.resourceId);
     if (!storedBusiness && payload.businessId) {
-      localStorage.setItem("business_id", payload.businessId);
+      storage?.setItem("business_id", payload.businessId);
       setBusinessId(payload.businessId);
     }
   }, []);
@@ -43,7 +44,8 @@ export function useAdminSession() {
       method: "POST",
       body: JSON.stringify({ email, password })
     });
-    localStorage.setItem("admin_token", response.token);
+    const storage = globalThis.localStorage;
+    storage?.setItem("admin_token", response.token);
     setToken(response.token);
     const payload = parseJwt(response.token);
     setRole(payload.role);
@@ -51,7 +53,7 @@ export function useAdminSession() {
     if (payload.role !== "platform_admin" && payload.role !== "unknown") {
       const inferred = payload.businessId ?? "";
       if (inferred) {
-        localStorage.setItem("business_id", inferred);
+        storage?.setItem("business_id", inferred);
         setBusinessId(inferred);
       }
     }
@@ -59,8 +61,9 @@ export function useAdminSession() {
   }
 
   function logout() {
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("business_id");
+    const storage = globalThis.localStorage;
+    storage?.removeItem("admin_token");
+    storage?.removeItem("business_id");
     setToken("");
     setBusinessId("");
     setRole("unknown");
@@ -68,7 +71,8 @@ export function useAdminSession() {
   }
 
   function selectBusiness(id: string) {
-    localStorage.setItem("business_id", id);
+    const storage = globalThis.localStorage;
+    storage?.setItem("business_id", id);
     setBusinessId(id);
   }
 

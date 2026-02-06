@@ -24,7 +24,7 @@ export function StaffSection({
   loadStaff,
   loadResources,
   total
-}: {
+}: Readonly<{
   staff: StaffItem[];
   resources: ResourceItem[];
   createStaff: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -36,7 +36,7 @@ export function StaffSection({
   loadStaff: (page?: number, limit?: number, search?: string, status?: string) => void;
   loadResources: () => void;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -183,7 +183,7 @@ export function StaffSection({
           }}
         >
           <label className="block text-sm font-medium">
-            Email
+            <span>Email</span>
             <input
               name="email"
               type="email"
@@ -191,7 +191,7 @@ export function StaffSection({
             />
           </label>
           <label className="block text-sm font-medium">
-            Password
+            <span>Password</span>
             <input
               name="password"
               type="password"
@@ -199,7 +199,7 @@ export function StaffSection({
             />
           </label>
           <label className="block text-sm font-medium md:col-span-2">
-            Recurso
+            <span>Recurso</span>
             <select
               name="resourceId"
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"

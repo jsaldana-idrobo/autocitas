@@ -7,14 +7,14 @@ export function Modal({
   onClose,
   children,
   footer
-}: {
+}: Readonly<{
   open: boolean;
   title: string;
   description?: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
-}) {
+}>) {
   if (!open) return null;
 
   return (

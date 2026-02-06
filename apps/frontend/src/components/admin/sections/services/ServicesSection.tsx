@@ -25,7 +25,7 @@ export function ServicesSection({
   loadServices,
   ensureResourcesLoaded,
   total
-}: {
+}: Readonly<{
   services: ServiceItem[];
   resources: ResourceItem[];
   createService: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -34,7 +34,7 @@ export function ServicesSection({
   loadServices: (page?: number, limit?: number, search?: string, status?: string) => void;
   ensureResourcesLoaded: () => void;
   total: number;
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -44,6 +44,7 @@ export function ServicesSection({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const debouncedSearch = useDebouncedValue(search, 400);
+  const viewingPriceLabel = viewingService?.price == null ? "-" : `$${viewingService.price}`;
 
   useEffect(() => {
     setPage(1);
@@ -237,9 +238,7 @@ export function ServicesSection({
             </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Precio</div>
-              <div className="font-medium">
-                {viewingService.price != null ? `$${viewingService.price}` : "-"}
-              </div>
+              <div className="font-medium">{viewingPriceLabel}</div>
             </div>
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>

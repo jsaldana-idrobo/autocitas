@@ -97,11 +97,11 @@ function formatDateTime(iso: string, timezone: string) {
 }
 
 function normalizePhone(value: string) {
-  return value.replace(/\s+/g, "").replace(/[^\d+]/g, "");
+  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
-export function BookingApp({ slug }: { slug: string }) {
+export function BookingApp({ slug }: Readonly<{ slug: string }>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<BusinessResponse | null>(null);
@@ -121,6 +121,9 @@ export function BookingApp({ slug }: { slug: string }) {
   const [managePhone, setManagePhone] = useState("");
   const [manageStartTime, setManageStartTime] = useState("");
   const [manageMessage, setManageMessage] = useState<string | null>(null);
+  const fireAndForget = useCallback((promise: Promise<unknown>) => {
+    promise.catch(() => {});
+  }, []);
 
   const normalizedPhone = normalizePhone(customerPhone);
   const normalizedManagePhone = normalizePhone(manageSearchPhone);
@@ -153,7 +156,7 @@ export function BookingApp({ slug }: { slug: string }) {
 
   const availableResources = useMemo(() => {
     if (!business) return [];
-    if (!service || !service.allowedResourceIds || service.allowedResourceIds.length === 0) {
+    if (!service?.allowedResourceIds?.length) {
       return business.resources;
     }
     return business.resources.filter((resource) =>
@@ -196,7 +199,7 @@ export function BookingApp({ slug }: { slug: string }) {
         const today = getTodayInTimezone(data.business.timezone || DEFAULT_TIMEZONE);
         setDate(today);
         if (defaultServiceId) {
-          void loadAvailability(today, defaultServiceId);
+          fireAndForget(loadAvailability(today, defaultServiceId));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo cargar el negocio");
@@ -205,8 +208,8 @@ export function BookingApp({ slug }: { slug: string }) {
       }
     }
 
-    void loadBusiness();
-  }, [loadAvailability, slug]);
+    fireAndForget(loadBusiness());
+  }, [fireAndForget, loadAvailability, slug]);
 
   async function handleBooking() {
     if (!serviceId || !selectedSlot || !customerName.trim() || !normalizedPhone) {
@@ -348,7 +351,7 @@ export function BookingApp({ slug }: { slug: string }) {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium">
-              Servicio
+              <span>Servicio</span>
               <select
                 className={`mt-1 w-full ${INPUT_CLASS}`}
                 value={serviceId}
@@ -357,7 +360,9 @@ export function BookingApp({ slug }: { slug: string }) {
                   setServiceId(nextService);
                   setResourceId("");
                   setSelectedSlot(null);
-                  if (date) void loadAvailability(date, nextService);
+                  if (date) {
+                    fireAndForget(loadAvailability(date, nextService));
+                  }
                 }}
               >
                 {business.services.map((item) => (
@@ -368,27 +373,29 @@ export function BookingApp({ slug }: { slug: string }) {
               </select>
             </label>
             <label className="block text-sm font-medium">
-              Fecha
+              <span>Fecha</span>
               <input
                 type="date"
                 value={date}
                 min={getTodayInTimezone(timezone)}
                 onChange={(event) => {
                   setDate(event.target.value);
-                  void loadAvailability(event.target.value, serviceId, resourceId);
+                  fireAndForget(loadAvailability(event.target.value, serviceId, resourceId));
                 }}
                 className={`mt-1 w-full ${INPUT_CLASS}`}
               />
             </label>
             <label className="block text-sm font-medium">
-              Profesional
+              <span>Profesional</span>
               <select
                 className={`mt-1 w-full ${INPUT_CLASS}`}
                 value={resourceId}
                 onChange={(event) => {
                   const nextResource = event.target.value;
                   setResourceId(nextResource);
-                  if (date) void loadAvailability(date, serviceId, nextResource || undefined);
+                  if (date) {
+                    fireAndForget(loadAvailability(date, serviceId, nextResource || undefined));
+                  }
                 }}
               >
                 <option value="">Cualquiera</option>
@@ -449,7 +456,7 @@ export function BookingApp({ slug }: { slug: string }) {
               className={`w-full rounded-xl bg-primary-600 px-4 py-2 text-white ${
                 !canSubmit || loading ? DISABLED_OPACITY : ""
               }`}
-              onClick={() => void handleBooking()}
+              onClick={() => fireAndForget(handleBooking())}
               disabled={!canSubmit || loading}
             >
               {loading ? "Procesando..." : "Reservar"}
@@ -503,7 +510,7 @@ export function BookingApp({ slug }: { slug: string }) {
                 className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
                   !canSearch ? DISABLED_OPACITY : ""
                 }`}
-                onClick={() => void handleSearchAppointments()}
+                onClick={() => fireAndForget(handleSearchAppointments())}
                 disabled={!canSearch}
               >
                 Buscar
@@ -579,7 +586,7 @@ export function BookingApp({ slug }: { slug: string }) {
                         className={`rounded-xl bg-primary-600 px-4 py-2 text-sm text-white ${
                           !canUpdate ? DISABLED_OPACITY : ""
                         }`}
-                        onClick={() => void handleUpdateAppointment()}
+                        onClick={() => fireAndForget(handleUpdateAppointment())}
                         disabled={!canUpdate}
                       >
                         Guardar cambios
@@ -588,7 +595,7 @@ export function BookingApp({ slug }: { slug: string }) {
                         className={`rounded-xl border border-rose-200 px-4 py-2 text-sm text-rose-600 ${
                           !canCancel ? DISABLED_OPACITY : ""
                         }`}
-                        onClick={() => void handleCancelAppointment()}
+                        onClick={() => fireAndForget(handleCancelAppointment())}
                         disabled={!canCancel}
                       >
                         Cancelar cita

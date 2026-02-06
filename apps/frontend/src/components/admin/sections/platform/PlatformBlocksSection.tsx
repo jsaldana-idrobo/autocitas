@@ -27,7 +27,7 @@ export function PlatformBlocksSection({
   onDelete,
   total,
   authHeaders
-}: {
+}: Readonly<{
   blocks: BlockItem[];
   resources: ResourceItem[];
   businesses: BusinessProfile[];
@@ -46,7 +46,7 @@ export function PlatformBlocksSection({
   onDelete: (businessId: string, blockId: string) => void;
   total: number;
   authHeaders: { token: string };
-}) {
+}>) {
   const [search, setSearch] = useState("");
   const [businessFilter, setBusinessFilter] = useState("");
   const [resourceFilter, setResourceFilter] = useState("");
@@ -339,7 +339,7 @@ export function PlatformBlocksSection({
           <InputField name="startTime" label="Inicio" type="datetime-local" />
           <InputField name="endTime" label="Fin" type="datetime-local" />
           <label className="block text-sm font-medium md:col-span-2">
-            Recurso
+            <span>Recurso</span>
             <select
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
               value={createResourceId}

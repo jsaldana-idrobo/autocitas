@@ -5,11 +5,11 @@ export function PlatformEditUserForm({
   user,
   onSave,
   onCancel
-}: {
+}: Readonly<{
   user: StaffItem;
   onSave: (payload: PlatformUserUpdate) => void;
   onCancel: () => void;
-}) {
+}>) {
   const [email, setEmail] = useState(user.email);
   const [businessId, setBusinessId] = useState(user.businessId ?? "");
   const [resourceId, setResourceId] = useState(user.resourceId ?? "");
@@ -19,7 +19,7 @@ export function PlatformEditUserForm({
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <label className="block text-sm font-medium">
-        Email
+        <span>Email</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={email}
@@ -27,7 +27,7 @@ export function PlatformEditUserForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Business ID
+        <span>Business ID</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={businessId}
@@ -35,7 +35,7 @@ export function PlatformEditUserForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Resource ID
+        <span>Resource ID</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           value={resourceId}
@@ -43,7 +43,7 @@ export function PlatformEditUserForm({
         />
       </label>
       <label className="block text-sm font-medium">
-        Nuevo password
+        <span>Nuevo password</span>
         <input
           className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
           type="password"
@@ -57,7 +57,7 @@ export function PlatformEditUserForm({
           checked={active}
           onChange={(event) => setActive(event.target.checked)}
         />
-        Activo
+        <span>Activo</span>
       </label>
       <div className="md:col-span-2 flex justify-end gap-2">
         <button
