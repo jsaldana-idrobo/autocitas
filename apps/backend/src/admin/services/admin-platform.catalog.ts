@@ -1,5 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
-import { Model, isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
 import { Block } from "../../schemas/block.schema.js";
 import { Resource } from "../../schemas/resource.schema.js";
 import { Service } from "../../schemas/service.schema.js";

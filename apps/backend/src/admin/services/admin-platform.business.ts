@@ -1,5 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
-import { Model, isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
 import { Business } from "../../schemas/business.schema.js";
 import { CreateBusinessDto } from "../dto/create-business.dto.js";
 import { UpdateBusinessDto } from "../dto/update-business.dto.js";

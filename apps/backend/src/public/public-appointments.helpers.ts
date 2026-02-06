@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import { DateTime } from "luxon";
-import { Model, Types, isValidObjectId } from "mongoose";
+import { Types, isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema.js";
 import { Block } from "../schemas/block.schema.js";
 import { Business } from "../schemas/business.schema.js";

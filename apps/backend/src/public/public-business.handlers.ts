@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Business } from "../schemas/business.schema.js";
 import { Resource } from "../schemas/resource.schema.js";
 import { Service } from "../schemas/service.schema.js";

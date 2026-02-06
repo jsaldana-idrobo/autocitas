@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, isValidObjectId } from "mongoose";
-import { hash } from "bcryptjs";
+import { isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
+import bcrypt from "bcryptjs";
 import { AdminUser } from "../../schemas/admin-user.schema.js";
 import { CreateStaffDto } from "../dto/create-staff.dto.js";
 import { UpdateStaffDto } from "../dto/update-staff.dto.js";
@@ -78,7 +79,7 @@ export class AdminStaffService {
 
     await this.catalogService.assertResource(businessId, payload.resourceId);
 
-    const passwordHash = await hash(payload.password, 10);
+    const passwordHash = await bcrypt.hash(payload.password, 10);
 
     return this.adminUserModel.create({
       businessId,
@@ -108,7 +109,7 @@ export class AdminStaffService {
     }
 
     if (payload.password) {
-      update.passwordHash = await hash(payload.password, 10);
+      update.passwordHash = await bcrypt.hash(payload.password, 10);
       delete update.password;
     }
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Business } from "../../schemas/business.schema.js";
 import { UpdateBusinessDto } from "../dto/update-business.dto.js";
 import { UpdateHoursDto } from "../dto/update-hours.dto.js";

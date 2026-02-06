@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 
 export const TEXT_SCORE = "textScore";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;

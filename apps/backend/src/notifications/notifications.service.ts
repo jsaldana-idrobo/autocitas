@@ -1,7 +1,7 @@
 import { InjectModel } from "@nestjs/mongoose";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { DateTime } from "luxon";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import twilio from "twilio";

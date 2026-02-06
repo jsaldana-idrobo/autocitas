@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
 import { Resource } from "../../schemas/resource.schema.js";
 import { Service } from "../../schemas/service.schema.js";
 import { CreateResourceDto } from "../dto/create-resource.dto.js";

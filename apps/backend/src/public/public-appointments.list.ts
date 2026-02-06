@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import { assertActiveBusiness } from "./public.service.helpers.js";

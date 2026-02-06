@@ -1,6 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
-import { Model, isValidObjectId } from "mongoose";
-import { hash } from "bcryptjs";
+import { isValidObjectId } from "mongoose";
+import type { Model } from "mongoose";
+import bcrypt from "bcryptjs";
 import { AdminUser } from "../../schemas/admin-user.schema.js";
 import { CreateOwnerDto } from "../dto/create-owner.dto.js";
 import { UpdatePlatformUserDto } from "../dto/update-platform-user.dto.js";
@@ -11,7 +12,7 @@ const ERR_NO_UPDATES = "No updates provided.";
 const ERR_USER_NOT_FOUND = "User not found.";
 
 export async function createOwner(adminUserModel: Model<AdminUser>, payload: CreateOwnerDto) {
-  const passwordHash = await hash(payload.password, 10);
+  const passwordHash = await bcrypt.hash(payload.password, 10);
 
   return adminUserModel.create({
     businessId: payload.businessId,
@@ -71,7 +72,7 @@ export async function updatePlatformUser(
   if (payload.businessId) update.businessId = payload.businessId;
   if (payload.resourceId) update.resourceId = payload.resourceId;
   if (payload.password) {
-    update.passwordHash = await hash(payload.password, 10);
+    update.passwordHash = await bcrypt.hash(payload.password, 10);
   }
   if (Object.keys(update).length === 0) {
     throw new BadRequestException(ERR_NO_UPDATES);

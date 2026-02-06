@@ -27,4 +27,5 @@ app.setGlobalPrefix("api", {
     { path: "health", method: RequestMethod.GET }
   ]
 });
-await app.listen(3000);
+const port = Number(process.env.PORT ?? 3000);
+await app.listen(port);

@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { DateTime } from "luxon";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Block } from "../../schemas/block.schema.js";
 import { Appointment } from "../../schemas/appointment.schema.js";
 import { Business } from "../../schemas/business.schema.js";

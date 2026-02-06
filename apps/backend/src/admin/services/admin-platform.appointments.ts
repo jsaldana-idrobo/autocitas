@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { Model } from "mongoose";
+import type { Model } from "mongoose";
 import { Appointment } from "../../schemas/appointment.schema.js";
 import { ERR_INVALID_DATE_FORMAT } from "./admin.constants.js";
 import {

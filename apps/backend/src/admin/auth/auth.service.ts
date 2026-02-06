@@ -1,8 +1,8 @@
 import { UnauthorizedException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { JwtService } from "@nestjs/jwt";
-import { compare } from "bcryptjs";
-import { Model } from "mongoose";
+import bcrypt from "bcryptjs";
+import type { Model } from "mongoose";
 import { AdminUser } from "../../schemas/admin-user.schema.js";
 import { LoginDto } from "../dto/login.dto.js";
 
@@ -19,7 +19,7 @@ export class AuthService {
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    const isValid = await compare(payload.password, user.passwordHash);
+    const isValid = await bcrypt.compare(payload.password, user.passwordHash);
     if (!isValid) {
       throw new UnauthorizedException("Invalid credentials");
     }
