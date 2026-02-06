@@ -9,6 +9,7 @@ const envDefault = resolve(process.cwd(), ".env");
 config({ path: existsSync(envLocal) ? envLocal : envDefault });
 
 void (async () => {
+  // NOSONAR -- top-level await not available with current CommonJS module config
   const { AppModule } = await import("./app.module");
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
