@@ -1,6 +1,9 @@
 import React from "react";
 
 export function LoadingCard({ label = "Cargando..." }: Readonly<{ label?: string }>) {
+  const fieldKeys = Array.from({ length: 4 }, (_, idx) => `field-${idx}`);
+  const slotKeys = Array.from({ length: 6 }, (_, idx) => `slot-${idx}`);
+
   return (
     <div className="card p-6">
       <div className="animate-pulse space-y-4">
@@ -15,13 +18,13 @@ export function LoadingCard({ label = "Cargando..." }: Readonly<{ label?: string
           <div className="h-3 w-64 rounded-full bg-slate-200/80" />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={`field-${index}`} className="h-10 w-full rounded-xl bg-slate-200/80" />
+          {fieldKeys.map((key) => (
+            <div key={key} className="h-10 w-full rounded-xl bg-slate-200/80" />
           ))}
         </div>
         <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={`slot-${index}`} className="h-9 w-full rounded-full bg-slate-200/80" />
+          {slotKeys.map((key) => (
+            <div key={key} className="h-9 w-full rounded-full bg-slate-200/80" />
           ))}
         </div>
       </div>

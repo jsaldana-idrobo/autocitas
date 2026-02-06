@@ -1,7 +1,7 @@
 import React from "react";
 import { BusinessProfile, ResourceItem } from "../../types";
 
-type PlatformBlocksFiltersProps = {
+type PlatformBlocksFiltersProps = Readonly<{
   search: string;
   setSearch: (value: string) => void;
   businessFilter: string;
@@ -16,7 +16,7 @@ type PlatformBlocksFiltersProps = {
   setToFilter: (value: string) => void;
   businesses: BusinessProfile[];
   resources: ResourceItem[];
-};
+}>;
 
 export function PlatformBlocksFilters({
   search,
@@ -93,12 +93,12 @@ export function PlatformBlocksFilters({
   );
 }
 
-type InputFilterProps = {
+type InputFilterProps = Readonly<{
   type: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
-};
+}>;
 
 function InputFilter({ type, placeholder, value, onChange }: InputFilterProps) {
   return (

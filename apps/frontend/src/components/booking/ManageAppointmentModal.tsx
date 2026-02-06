@@ -2,7 +2,7 @@ import React from "react";
 import type { AppointmentItem, BusinessResponse } from "./types";
 import { formatDateTime, INPUT_CLASS, LABEL_PHONE, toDateTimeLocalValue } from "./utils";
 
-type ManageAppointmentModalProps = {
+type ManageAppointmentModalProps = Readonly<{
   open: boolean;
   business: BusinessResponse;
   timezone: string;
@@ -29,7 +29,7 @@ type ManageAppointmentModalProps = {
   updateOpacityClass: string;
   cancelOpacityClass: string;
   fireAndForget: (promise: Promise<unknown>) => void;
-};
+}>;
 
 export function ManageAppointmentModal({
   open,

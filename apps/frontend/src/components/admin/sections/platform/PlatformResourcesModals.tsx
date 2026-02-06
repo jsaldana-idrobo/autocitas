@@ -6,7 +6,7 @@ import { Modal } from "../../ui/Modal";
 import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
 import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
-type PlatformResourcesModalsProps = {
+type PlatformResourcesModalsProps = Readonly<{
   businesses: BusinessProfile[];
   businessLookup: Map<string, string>;
   createOpen: boolean;
@@ -23,7 +23,7 @@ type PlatformResourcesModalsProps = {
   onCreate: (businessId: string, payload: { name: string }) => void;
   onUpdate: (businessId: string, resourceId: string, payload: Partial<ResourceItem>) => void;
   onDelete: (businessId: string, resourceId: string) => void;
-};
+}>;
 
 export function PlatformResourcesModals({
   businesses,

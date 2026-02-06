@@ -14,6 +14,10 @@ function SkeletonCard({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 function TableSkeleton({ rows = 6, cols = 4 }: Readonly<{ rows?: number; cols?: number }>) {
+  const headerKeys = Array.from({ length: cols }, (_, idx) => `th-${idx}`);
+  const rowKeys = Array.from({ length: rows }, (_, idx) => `row-${idx}`);
+  const colKeys = Array.from({ length: cols }, (_, idx) => `cell-${idx}`);
+
   return (
     <SkeletonCard>
       <div className="space-y-3">
@@ -27,17 +31,14 @@ function TableSkeleton({ rows = 6, cols = 4 }: Readonly<{ rows?: number; cols?: 
       </div>
       <div className="rounded-2xl border border-slate-200 bg-white">
         <div className="grid grid-cols-4 gap-3 border-b border-slate-100 px-4 py-3 text-xs text-slate-300">
-          {Array.from({ length: cols }).map((_, index) => (
-            <SkeletonBlock key={`th-${index}`} className="h-3 w-full" />
+          {headerKeys.map((key) => (
+            <SkeletonBlock key={key} className="h-3 w-full" />
           ))}
         </div>
-        {Array.from({ length: rows }).map((_, row) => (
-          <div
-            key={`row-${row}`}
-            className="grid grid-cols-4 gap-3 border-b border-slate-100 px-4 py-3"
-          >
-            {Array.from({ length: cols }).map((_, col) => (
-              <SkeletonBlock key={`cell-${row}-${col}`} className="h-3 w-full" />
+        {rowKeys.map((rowKey) => (
+          <div key={rowKey} className="grid grid-cols-4 gap-3 border-b border-slate-100 px-4 py-3">
+            {colKeys.map((colKey) => (
+              <SkeletonBlock key={`${rowKey}-${colKey}`} className="h-3 w-full" />
             ))}
           </div>
         ))}
@@ -47,6 +48,8 @@ function TableSkeleton({ rows = 6, cols = 4 }: Readonly<{ rows?: number; cols?: 
 }
 
 function FormSkeleton() {
+  const fieldKeys = Array.from({ length: 6 }, (_, idx) => `field-${idx}`);
+
   return (
     <SkeletonCard>
       <div className="space-y-3">
@@ -54,8 +57,8 @@ function FormSkeleton() {
         <SkeletonBlock className="h-3 w-64" />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <SkeletonBlock key={`field-${index}`} className="h-10 w-full rounded-xl" />
+        {fieldKeys.map((key) => (
+          <SkeletonBlock key={key} className="h-10 w-full rounded-xl" />
         ))}
       </div>
       <div className="flex justify-end gap-2">
@@ -67,6 +70,11 @@ function FormSkeleton() {
 }
 
 function CalendarSkeleton() {
+  const metricKeys = Array.from({ length: 3 }, (_, idx) => `metric-${idx}`);
+  const dayKeys = Array.from({ length: 7 }, (_, idx) => `day-${idx}`);
+  const timeKeys = Array.from({ length: 8 }, (_, idx) => `time-${idx}`);
+  const colKeys = Array.from({ length: 7 }, (_, idx) => `col-${idx}`);
+
   return (
     <SkeletonCard>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -81,22 +89,22 @@ function CalendarSkeleton() {
         </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <SkeletonBlock key={`metric-${index}`} className="h-16 w-full rounded-2xl" />
+        {metricKeys.map((key) => (
+          <SkeletonBlock key={key} className="h-16 w-full rounded-2xl" />
         ))}
       </div>
       <div className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] gap-2">
         <div />
-        {Array.from({ length: 7 }).map((_, index) => (
-          <SkeletonBlock key={`day-${index}`} className="h-4 w-full" />
+        {dayKeys.map((key) => (
+          <SkeletonBlock key={key} className="h-4 w-full" />
         ))}
         <div className="space-y-2">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <SkeletonBlock key={`time-${index}`} className="h-6 w-full" />
+          {timeKeys.map((key) => (
+            <SkeletonBlock key={key} className="h-6 w-full" />
           ))}
         </div>
-        {Array.from({ length: 7 }).map((_, index) => (
-          <SkeletonBlock key={`col-${index}`} className="h-56 w-full rounded-xl" />
+        {colKeys.map((key) => (
+          <SkeletonBlock key={key} className="h-56 w-full rounded-xl" />
         ))}
       </div>
     </SkeletonCard>

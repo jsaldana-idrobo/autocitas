@@ -3,7 +3,7 @@ import { ResourceItem, StaffItem } from "../../types";
 import { StaffEditor } from "../../components/StaffEditor";
 import { Modal } from "../../ui/Modal";
 
-type StaffModalsProps = {
+type StaffModalsProps = Readonly<{
   createOpen: boolean;
   setCreateOpen: (value: boolean) => void;
   editingStaff: StaffItem | null;
@@ -19,7 +19,7 @@ type StaffModalsProps = {
     payload: { resourceId?: string; password?: string; active?: boolean }
   ) => void;
   deleteStaff: (staffId: string) => void;
-};
+}>;
 
 export function StaffModals({
   createOpen,

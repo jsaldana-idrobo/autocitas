@@ -8,7 +8,7 @@ const envLocal = resolve(process.cwd(), ".env.local");
 const envDefault = resolve(process.cwd(), ".env");
 config({ path: existsSync(envLocal) ? envLocal : envDefault });
 
-async function bootstrap() {
+void (async () => {
   const { AppModule } = await import("./app.module");
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
@@ -29,6 +29,4 @@ async function bootstrap() {
     ]
   });
   await app.listen(3000);
-}
-
-void bootstrap();
+})();

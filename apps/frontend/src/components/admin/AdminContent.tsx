@@ -18,7 +18,7 @@ import { useAdminCatalog } from "./hooks/useAdminCatalog";
 import { useAdminPlatform } from "./hooks/useAdminPlatform";
 import { TabKey } from "./types";
 
-export type AdminContentProps = {
+export type AdminContentProps = Readonly<{
   role: string;
   resourceId: string;
   activeTab: TabKey;
@@ -35,7 +35,7 @@ export type AdminContentProps = {
   onPrevWeek: () => void;
   onNextWeek: () => void;
   loading: boolean;
-};
+}>;
 
 export function AdminContent({
   role,

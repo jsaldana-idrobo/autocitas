@@ -4,7 +4,7 @@ import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { PlatformEditBusinessForm } from "./PlatformEditBusinessForm";
 
-type PlatformBusinessModalsProps = {
+type PlatformBusinessModalsProps = Readonly<{
   createOpen: boolean;
   setCreateOpen: (value: boolean) => void;
   editingBusiness: BusinessProfile | null;
@@ -16,7 +16,7 @@ type PlatformBusinessModalsProps = {
   onCreate: (event: React.FormEvent<HTMLFormElement>) => void;
   onUpdate: (businessId: string, payload: Partial<BusinessProfile>) => void;
   onDelete: (businessId: string) => void;
-};
+}>;
 
 export function PlatformBusinessModals({
   createOpen,

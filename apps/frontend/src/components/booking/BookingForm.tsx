@@ -9,7 +9,7 @@ import {
   getTodayInTimezone
 } from "./utils";
 
-type BookingFormProps = {
+type BookingFormProps = Readonly<{
   business: BusinessResponse;
   serviceId: string;
   date: string;
@@ -33,7 +33,7 @@ type BookingFormProps = {
   onCustomerNameChange: (value: string) => void;
   onCustomerPhoneChange: (value: string) => void;
   onOpenManage: () => void;
-};
+}>;
 
 export function BookingForm({
   business,

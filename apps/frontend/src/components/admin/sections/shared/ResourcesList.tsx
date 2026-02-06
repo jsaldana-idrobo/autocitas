@@ -10,7 +10,7 @@ import {
   TableRow
 } from "../../ui/DataTable";
 
-type ResourcesListProps = {
+type ResourcesListProps = Readonly<{
   resources: ResourceItem[];
   emptyLabel: string;
   showBusiness?: boolean;
@@ -19,7 +19,7 @@ type ResourcesListProps = {
   onEdit: (resource: ResourceItem) => void;
   onToggleActive: (resource: ResourceItem) => void;
   onDelete: (resource: ResourceItem) => void;
-};
+}>;
 
 export function ResourcesList({
   resources,

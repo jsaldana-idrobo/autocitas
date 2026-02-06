@@ -1,14 +1,14 @@
 import React from "react";
 import { Modal } from "./Modal";
 
-type ConfirmDeleteModalProps = {
+type ConfirmDeleteModalProps = Readonly<{
   open: boolean;
   title: string;
   description?: string;
   itemLabel: string;
   onClose: () => void;
   onConfirm: () => void;
-};
+}>;
 
 export function ConfirmDeleteModal({
   open,

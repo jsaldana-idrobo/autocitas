@@ -9,7 +9,7 @@ import {
   TableRow
 } from "../../ui/DataTable";
 
-type BlocksListProps = {
+type BlocksListProps = Readonly<{
   blocks: BlockItem[];
   resources: ResourceItem[];
   emptyLabel: string;
@@ -19,7 +19,7 @@ type BlocksListProps = {
   onView: (block: BlockItem) => void;
   onEdit: (block: BlockItem) => void;
   onDelete: (block: BlockItem) => void;
-};
+}>;
 
 export function BlocksList({
   blocks,

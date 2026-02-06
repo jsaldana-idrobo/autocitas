@@ -5,7 +5,7 @@ import { Modal } from "../../ui/Modal";
 import { ServiceEditor } from "../../components/ServiceEditor";
 import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
-type ServicesModalsProps = {
+type ServicesModalsProps = Readonly<{
   createOpen: boolean;
   setCreateOpen: (value: boolean) => void;
   editingService: ServiceItem | null;
@@ -18,7 +18,7 @@ type ServicesModalsProps = {
   createService: (event: React.FormEvent<HTMLFormElement>) => void;
   updateService: (serviceId: string, payload: Partial<ServiceItem>) => void;
   deleteService: (serviceId: string) => void;
-};
+}>;
 
 export function ServicesModals({
   createOpen,

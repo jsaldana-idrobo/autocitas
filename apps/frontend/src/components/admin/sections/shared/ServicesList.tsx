@@ -10,7 +10,7 @@ import {
   TableRow
 } from "../../ui/DataTable";
 
-type ServicesListProps = {
+type ServicesListProps = Readonly<{
   services: ServiceItem[];
   emptyLabel: string;
   showBusiness?: boolean;
@@ -19,7 +19,7 @@ type ServicesListProps = {
   onEdit: (service: ServiceItem) => void;
   onToggleActive: (service: ServiceItem) => void;
   onDelete: (service: ServiceItem) => void;
-};
+}>;
 
 export function ServicesList({
   services,
