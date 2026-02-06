@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BusinessProfile, ResourceItem, ServiceItem } from "../../types";
-import { ServiceEditor } from "../../components/ServiceEditor";
-import { InputField } from "../../components/InputField";
+import { ServiceItem } from "../../types";
 import { Badge } from "../../ui/Badge";
 import {
   DataTable,
@@ -11,11 +9,11 @@ import {
   TableHeaderCell,
   TableRow
 } from "../../ui/DataTable";
-import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
+import type { PlatformServicesSectionProps } from "./PlatformServicesSection.types";
+import { PlatformServicesModals } from "./PlatformServicesModals";
 
 export function PlatformServicesSection({
   services,
@@ -27,30 +25,7 @@ export function PlatformServicesSection({
   onDelete,
   total,
   authHeaders
-}: Readonly<{
-  services: ServiceItem[];
-  resources: ResourceItem[];
-  businesses: BusinessProfile[];
-  onRefresh: (options?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    active?: string;
-    businessId?: string;
-    minDuration?: string;
-    maxDuration?: string;
-    minPrice?: string;
-    maxPrice?: string;
-  }) => void;
-  onCreate: (
-    businessId: string,
-    payload: { name: string; durationMinutes: number; price?: number }
-  ) => void;
-  onUpdate: (businessId: string, serviceId: string, payload: Partial<ServiceItem>) => void;
-  onDelete: (businessId: string, serviceId: string) => void;
-  total: number;
-  authHeaders: { token: string };
-}>) {
+}: PlatformServicesSectionProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [businessFilter, setBusinessFilter] = useState("");
@@ -99,11 +74,6 @@ export function PlatformServicesSection({
     priceMax,
     onRefresh
   ]);
-
-  function getResourcesForService(service: ServiceItem) {
-    if (!service.businessId) return [];
-    return resources.filter((resource) => resource.businessId === service.businessId);
-  }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -283,157 +253,25 @@ export function PlatformServicesSection({
         }}
       />
 
-      <Modal open={createOpen} title="Nuevo servicio" onClose={() => setCreateOpen(false)}>
-        <form
-          className="grid gap-3 md:grid-cols-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const form = new FormData(event.currentTarget);
-            const readString = (key: string) => {
-              const value = form.get(key);
-              return typeof value === "string" ? value.trim() : "";
-            };
-            const name = readString("name");
-            const durationMinutes = Number(readString("durationMinutes"));
-            const priceRaw = readString("price");
-            const price = priceRaw ? Number(priceRaw) : undefined;
-            if (!createBusinessId || !name || !durationMinutes) {
-              return;
-            }
-            onCreate(createBusinessId, { name, durationMinutes, price });
-            event.currentTarget.reset();
-            setCreateBusinessId("");
-            setCreateOpen(false);
-          }}
-        >
-          <BusinessSearchSelect
-            className="md:col-span-2"
-            value={createBusinessId}
-            onChange={setCreateBusinessId}
-            authHeaders={authHeaders}
-            initialOptions={businesses}
-            selectedLabel={businessLookup.get(createBusinessId)}
-            required
-          />
-          <InputField name="name" label="Nombre" placeholder="Corte clasico" />
-          <InputField name="durationMinutes" label="Duracion (min)" type="number" />
-          <InputField name="price" label="Precio" type="number" />
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-              onClick={() => setCreateOpen(false)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
-              type="submit"
-              disabled={!createBusinessId}
-            >
-              Crear
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal
-        open={Boolean(editingService)}
-        title="Editar servicio"
-        onClose={() => setEditingService(null)}
-      >
-        {editingService && (
-          <ServiceEditor
-            item={editingService}
-            resources={getResourcesForService(editingService)}
-            onCancel={() => setEditingService(null)}
-            onSave={(payload) => {
-              if (!editingService.businessId) return;
-              onUpdate(editingService.businessId, editingService._id, payload);
-              setEditingService(null);
-            }}
-          />
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(viewingService)}
-        title="Detalle del servicio"
-        onClose={() => setViewingService(null)}
-      >
-        {viewingService && (
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="text-sm md:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Negocio</div>
-              <div className="font-medium">
-                {viewingService.businessId
-                  ? businessLookup.get(viewingService.businessId) || viewingService.businessId
-                  : "-"}
-              </div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
-              <div className="font-medium">{viewingService.name}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Duracion</div>
-              <div className="font-medium">{viewingService.durationMinutes} min</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Precio</div>
-              <div className="font-medium">${viewingService.price ?? "-"}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
-              <div className="font-medium">{viewingService.active ? "Activo" : "Inactivo"}</div>
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingService(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(deletingService)}
-        title="Eliminar servicio"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingService(null)}
-      >
-        {deletingService && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingService.name}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingService(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  if (!deletingService.businessId) return;
-                  onDelete(deletingService.businessId, deletingService._id);
-                  setDeletingService(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <PlatformServicesModals
+        businesses={businesses}
+        businessLookup={businessLookup}
+        resources={resources}
+        createOpen={createOpen}
+        setCreateOpen={setCreateOpen}
+        createBusinessId={createBusinessId}
+        setCreateBusinessId={setCreateBusinessId}
+        editingService={editingService}
+        setEditingService={setEditingService}
+        viewingService={viewingService}
+        setViewingService={setViewingService}
+        deletingService={deletingService}
+        setDeletingService={setDeletingService}
+        authHeaders={authHeaders}
+        onCreate={onCreate}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+      />
     </section>
   );
 }

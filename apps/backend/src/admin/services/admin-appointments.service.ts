@@ -12,38 +12,22 @@ import { Block } from "../../schemas/block.schema";
 import { Business } from "../../schemas/business.schema";
 import {
   DEFAULT_TIMEZONE,
-  ERR_APPOINTMENT_CONFLICT,
   ERR_APPOINTMENT_NOT_FOUND,
   ERR_CANCEL_WINDOW,
   ERR_INVALID_DATE_FORMAT,
-  ERR_INVALID_STARTTIME,
-  ERR_OUTSIDE_HOURS,
-  ERR_RESOURCE_NOT_ALLOWED,
-  ERR_RESOURCE_REQUIRED,
-  STATUS_BOOKED
+  ERR_INVALID_STARTTIME
 } from "./admin.constants";
 import { AdminBusinessContextService } from "./admin-business-context.service";
 import { AdminCatalogService } from "./admin-catalog.service";
-import { Service } from "../../schemas/service.schema";
+import {
+  assertWithinBusinessHours,
+  buildAppointmentSearchQuery,
+  ensureNoConflicts,
+  ensureServiceResource,
+  TEXT_SCORE
+} from "./admin-appointments.helpers";
 
-const TEXT_SCORE = "textScore";
-const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
 type AppointmentStatus = "booked" | "cancelled" | "completed";
-
-function normalizePhone(value: string) {
-  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
-}
-
-function buildAppointmentSearchQuery(search?: string) {
-  const trimmed = search?.trim() ?? "";
-  if (!trimmed) {
-    return { query: {}, useTextScore: false };
-  }
-  if (PHONE_SEARCH_REGEX.test(trimmed)) {
-    return { query: { customerPhone: normalizePhone(trimmed) }, useTextScore: false };
-  }
-  return { query: { $text: { $search: trimmed } }, useTextScore: true };
-}
 
 @Injectable()
 export class AdminAppointmentsService {
@@ -186,7 +170,7 @@ export class AdminAppointmentsService {
     const resourceId = payload.resourceId
       ? await this.catalogService.assertResource(businessId, payload.resourceId)
       : undefined;
-    this.ensureServiceResource(service, resourceId);
+    ensureServiceResource(service, resourceId);
 
     const timezone = business.timezone || DEFAULT_TIMEZONE;
     const startLocal = DateTime.fromISO(payload.startTime, { zone: timezone });
@@ -194,13 +178,15 @@ export class AdminAppointmentsService {
       throw new BadRequestException(ERR_INVALID_STARTTIME);
     }
 
-    this.assertWithinBusinessHours(business, startLocal, service.durationMinutes);
-    await this.ensureNoConflicts(
+    assertWithinBusinessHours(business, startLocal, service.durationMinutes);
+    await ensureNoConflicts({
+      appointmentModel: this.appointmentModel,
+      blockModel: this.blockModel,
       businessId,
       startLocal,
-      service.durationMinutes,
-      resourceId ?? undefined
-    );
+      durationMinutes: service.durationMinutes,
+      resourceId: resourceId ?? undefined
+    });
 
     const startUtc = startLocal.toUTC();
     const endUtc = startUtc.plus({ minutes: service.durationMinutes });
@@ -213,7 +199,7 @@ export class AdminAppointmentsService {
       customerPhone: payload.customerPhone.trim(),
       startTime: startUtc.toJSDate(),
       endTime: endUtc.toJSDate(),
-      status: STATUS_BOOKED
+      status: "booked"
     });
 
     return {
@@ -249,7 +235,7 @@ export class AdminAppointmentsService {
     const resourceId = payload.resourceId
       ? await this.catalogService.assertResource(businessId, payload.resourceId)
       : appointment.resourceId?.toString();
-    this.ensureServiceResource(service, resourceId);
+    ensureServiceResource(service, resourceId);
 
     const business = await this.businessContext.getBusinessContext(businessId);
     const timezone = business.timezone || DEFAULT_TIMEZONE;
@@ -261,14 +247,16 @@ export class AdminAppointmentsService {
       throw new BadRequestException(ERR_INVALID_STARTTIME);
     }
 
-    this.assertWithinBusinessHours(business, startLocal, service.durationMinutes);
-    await this.ensureNoConflicts(
+    assertWithinBusinessHours(business, startLocal, service.durationMinutes);
+    await ensureNoConflicts({
+      appointmentModel: this.appointmentModel,
+      blockModel: this.blockModel,
       businessId,
       startLocal,
-      service.durationMinutes,
-      resourceId ?? undefined,
-      appointment._id.toString()
-    );
+      durationMinutes: service.durationMinutes,
+      resourceId: resourceId ?? undefined,
+      ignoreAppointmentId: appointment._id.toString()
+    });
 
     const startUtc = startLocal.toUTC();
     const endUtc = startUtc.plus({ minutes: service.durationMinutes });
@@ -287,90 +275,5 @@ export class AdminAppointmentsService {
       .lean();
 
     return updated ?? appointment;
-  }
-
-  private async ensureNoConflicts(
-    businessId: string,
-    startLocal: DateTime,
-    durationMinutes: number,
-    resourceId?: string,
-    ignoreAppointmentId?: string
-  ) {
-    const startUtc = startLocal.toUTC().toJSDate();
-    const endUtc = startLocal.toUTC().plus({ minutes: durationMinutes }).toJSDate();
-
-    const appointmentQuery: Record<string, unknown> = {
-      businessId,
-      status: STATUS_BOOKED,
-      startTime: { $lt: endUtc },
-      endTime: { $gt: startUtc }
-    };
-    if (resourceId) {
-      appointmentQuery.resourceId = resourceId;
-    }
-    if (ignoreAppointmentId) {
-      appointmentQuery._id = { $ne: ignoreAppointmentId };
-    }
-
-    const blockQuery: Record<string, unknown> = {
-      businessId,
-      startTime: { $lt: endUtc },
-      endTime: { $gt: startUtc }
-    };
-    if (resourceId) {
-      blockQuery.$or = [{ resourceId }, { resourceId: { $exists: false } }];
-    }
-
-    const [appointments, blocks] = await Promise.all([
-      this.appointmentModel.countDocuments(appointmentQuery),
-      this.blockModel.countDocuments(blockQuery)
-    ]);
-
-    if (appointments > 0 || blocks > 0) {
-      throw new BadRequestException(ERR_APPOINTMENT_CONFLICT);
-    }
-  }
-
-  private assertWithinBusinessHours(
-    business: Business,
-    startLocal: DateTime,
-    durationMinutes: number
-  ) {
-    const dayIndex = startLocal.weekday % 7;
-    const dayHours = business.hours?.find((hour) => hour.dayOfWeek === dayIndex);
-    if (!dayHours) {
-      throw new BadRequestException(ERR_OUTSIDE_HOURS);
-    }
-    const [openHour, openMinute] = dayHours.openTime.split(":").map(Number);
-    const [closeHour, closeMinute] = dayHours.closeTime.split(":").map(Number);
-    const openLocal = startLocal.set({
-      hour: openHour,
-      minute: openMinute,
-      second: 0,
-      millisecond: 0
-    });
-    const closeLocal = startLocal.set({
-      hour: closeHour,
-      minute: closeMinute,
-      second: 0,
-      millisecond: 0
-    });
-    const endLocal = startLocal.plus({ minutes: durationMinutes });
-    if (startLocal < openLocal || endLocal > closeLocal) {
-      throw new BadRequestException(ERR_OUTSIDE_HOURS);
-    }
-  }
-
-  private ensureServiceResource(service: Service, resourceId?: string) {
-    const allowedResourceIds = (service.allowedResourceIds || []).map((id) => id.toString());
-    if (allowedResourceIds.length === 0) {
-      return;
-    }
-    if (!resourceId) {
-      throw new BadRequestException(ERR_RESOURCE_REQUIRED);
-    }
-    if (!allowedResourceIds.includes(resourceId)) {
-      throw new BadRequestException(ERR_RESOURCE_NOT_ALLOWED);
-    }
   }
 }

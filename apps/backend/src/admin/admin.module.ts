@@ -8,7 +8,12 @@ import { Block, BlockSchema } from "../schemas/block.schema";
 import { Business, BusinessSchema } from "../schemas/business.schema";
 import { Resource, ResourceSchema } from "../schemas/resource.schema";
 import { Service, ServiceSchema } from "../schemas/service.schema";
-import { AdminController } from "./admin.controller";
+import { AdminAppointmentsController } from "./controllers/admin-appointments.controller";
+import { AdminBlocksController } from "./controllers/admin-blocks.controller";
+import { AdminBusinessController } from "./controllers/admin-business.controller";
+import { AdminResourcesController } from "./controllers/admin-resources.controller";
+import { AdminServicesController } from "./controllers/admin-services.controller";
+import { AdminStaffController } from "./controllers/admin-staff.controller";
 import { AuthController } from "./auth/auth.controller";
 import { AuthService } from "./auth/auth.service";
 import { JwtStrategy } from "./auth/jwt.strategy";
@@ -40,7 +45,16 @@ import { AuditModule } from "../audit/audit.module";
       { name: Block.name, schema: BlockSchema }
     ])
   ],
-  controllers: [AuthController, AdminController, PlatformController],
+  controllers: [
+    AuthController,
+    AdminAppointmentsController,
+    AdminBlocksController,
+    AdminBusinessController,
+    AdminResourcesController,
+    AdminServicesController,
+    AdminStaffController,
+    PlatformController
+  ],
   providers: [
     AuthService,
     AdminAccessService,

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ResourceItem, ServiceItem } from "../../types";
-import { ServiceEditor } from "../../components/ServiceEditor";
-import { InputField } from "../../components/InputField";
+import { ServiceItem } from "../../types";
 import { Badge } from "../../ui/Badge";
 import {
   DataTable,
@@ -11,10 +9,11 @@ import {
   TableHeaderCell,
   TableRow
 } from "../../ui/DataTable";
-import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { ServicesModals } from "./ServicesModals";
+import type { ServicesSectionProps } from "./ServicesSection.types";
 
 export function ServicesSection({
   services,
@@ -25,16 +24,7 @@ export function ServicesSection({
   loadServices,
   ensureResourcesLoaded,
   total
-}: Readonly<{
-  services: ServiceItem[];
-  resources: ResourceItem[];
-  createService: (event: React.FormEvent<HTMLFormElement>) => void;
-  updateService: (serviceId: string, payload: Partial<ServiceItem>) => void;
-  deleteService: (serviceId: string) => void;
-  loadServices: (page?: number, limit?: number, search?: string, status?: string) => void;
-  ensureResourcesLoaded: () => void;
-  total: number;
-}>) {
+}: ServicesSectionProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -44,7 +34,6 @@ export function ServicesSection({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const debouncedSearch = useDebouncedValue(search, 400);
-  const viewingPriceLabel = viewingService?.price == null ? "-" : `$${viewingService.price}`;
 
   useEffect(() => {
     setPage(1);
@@ -174,134 +163,20 @@ export function ServicesSection({
         }}
       />
 
-      <Modal open={createOpen} title="Nuevo servicio" onClose={() => setCreateOpen(false)}>
-        <form
-          className="grid gap-3 md:grid-cols-2"
-          onSubmit={(event) => {
-            createService(event);
-            setCreateOpen(false);
-          }}
-        >
-          <InputField name="name" label="Nombre" placeholder="Corte clasico" />
-          <InputField name="durationMinutes" label="Duracion (min)" type="number" />
-          <InputField name="price" label="Precio" type="number" />
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-              onClick={() => setCreateOpen(false)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="rounded-xl bg-primary-600 px-4 py-2 text-sm text-white"
-              type="submit"
-            >
-              Crear
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal
-        open={Boolean(editingService)}
-        title="Editar servicio"
-        onClose={() => setEditingService(null)}
-      >
-        {editingService && (
-          <ServiceEditor
-            item={editingService}
-            resources={resources}
-            onCancel={() => setEditingService(null)}
-            onSave={(payload) => {
-              updateService(editingService._id, payload);
-              setEditingService(null);
-            }}
-          />
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(viewingService)}
-        title="Detalle del servicio"
-        onClose={() => setViewingService(null)}
-      >
-        {viewingService && (
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Nombre</div>
-              <div className="font-medium">{viewingService.name}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Duracion</div>
-              <div className="font-medium">{viewingService.durationMinutes} min</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Precio</div>
-              <div className="font-medium">{viewingPriceLabel}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
-              <div className="font-medium">{viewingService.active ? "Activo" : "Inactivo"}</div>
-            </div>
-            <div className="text-sm md:col-span-2">
-              <div className="text-xs uppercase tracking-wide text-slate-400">
-                Recursos permitidos
-              </div>
-              <div className="font-medium">
-                {viewingService.allowedResourceIds?.length
-                  ? viewingService.allowedResourceIds
-                      .map((id) => resources.find((resource) => resource._id === id)?.name || id)
-                      .join(", ")
-                  : "Todos"}
-              </div>
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingService(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(deletingService)}
-        title="Eliminar servicio"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingService(null)}
-      >
-        {deletingService && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingService.name}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingService(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  deleteService(deletingService._id);
-                  setDeletingService(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ServicesModals
+        createOpen={createOpen}
+        setCreateOpen={setCreateOpen}
+        editingService={editingService}
+        setEditingService={setEditingService}
+        viewingService={viewingService}
+        setViewingService={setViewingService}
+        deletingService={deletingService}
+        setDeletingService={setDeletingService}
+        resources={resources}
+        createService={createService}
+        updateService={updateService}
+        deleteService={deleteService}
+      />
     </section>
   );
 }
