@@ -1,19 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ServiceItem } from "../../types";
-import { Badge } from "../../ui/Badge";
-import {
-  DataTable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow
-} from "../../ui/DataTable";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import type { PlatformServicesSectionProps } from "./PlatformServicesSection.types";
 import { PlatformServicesModals } from "./PlatformServicesModals";
+import { ServicesList } from "../shared/ServicesList";
 
 export function PlatformServicesSection({
   services,
@@ -168,136 +160,19 @@ export function PlatformServicesSection({
         />
       </div>
 
-      <div className="mt-4 hidden md:block">
-        <DataTable>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Negocio</TableHeaderCell>
-              <TableHeaderCell>Servicio</TableHeaderCell>
-              <TableHeaderCell>Duracion</TableHeaderCell>
-              <TableHeaderCell>Precio</TableHeaderCell>
-              <TableHeaderCell>Estado</TableHeaderCell>
-              <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {services.map((service) => (
-              <TableRow key={service._id}>
-                <TableCell>
-                  {service.businessId
-                    ? businessLookup.get(service.businessId) || service.businessId
-                    : "-"}
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium">{service.name}</div>
-                </TableCell>
-                <TableCell>{service.durationMinutes} min</TableCell>
-                <TableCell>${service.price ?? "-"}</TableCell>
-                <TableCell>
-                  <Badge tone={service.active ? "success" : "warning"}>
-                    {service.active ? "Activo" : "Inactivo"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => setViewingService(service)}
-                    >
-                      Ver
-                    </button>
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => setEditingService(service)}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => {
-                        if (!service.businessId) return;
-                        onUpdate(service.businessId, service._id, { active: !service.active });
-                      }}
-                    >
-                      {service.active ? "Desactivar" : "Activar"}
-                    </button>
-                    <button
-                      className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => setDeletingService(service)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {services.length === 0 && (
-              <TableRow>
-                <TableCell className="text-slate-500" colSpan={6}>
-                  No hay servicios para los filtros actuales.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </DataTable>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:hidden">
-        {services.map((service) => (
-          <div key={service._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm text-slate-500">
-                  {service.businessId
-                    ? businessLookup.get(service.businessId) || service.businessId
-                    : "-"}
-                </div>
-                <div className="text-base font-semibold text-slate-900">{service.name}</div>
-                <div className="text-xs text-slate-500">
-                  {service.durationMinutes} min · ${service.price ?? "-"}
-                </div>
-              </div>
-              <Badge tone={service.active ? "success" : "warning"}>
-                {service.active ? "Activo" : "Inactivo"}
-              </Badge>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => setViewingService(service)}
-              >
-                Ver
-              </button>
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => setEditingService(service)}
-              >
-                Editar
-              </button>
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => {
-                  if (!service.businessId) return;
-                  onUpdate(service.businessId, service._id, { active: !service.active });
-                }}
-              >
-                {service.active ? "Desactivar" : "Activar"}
-              </button>
-              <button
-                className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                onClick={() => setDeletingService(service)}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        ))}
-        {services.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-            No hay servicios para los filtros actuales.
-          </div>
-        )}
-      </div>
+      <ServicesList
+        services={services}
+        emptyLabel="No hay servicios para los filtros actuales."
+        showBusiness
+        businessLookup={businessLookup}
+        onView={setViewingService}
+        onEdit={setEditingService}
+        onToggleActive={(service) => {
+          if (!service.businessId) return;
+          onUpdate(service.businessId, service._id, { active: !service.active });
+        }}
+        onDelete={setDeletingService}
+      />
 
       <Pagination
         total={total}

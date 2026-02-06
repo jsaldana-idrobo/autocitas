@@ -2,19 +2,12 @@ import React, { useEffect, useState } from "react";
 import { ResourceItem } from "../../types";
 import { ResourceEditor } from "../../components/ResourceEditor";
 import { InputField } from "../../components/InputField";
-import { Badge } from "../../ui/Badge";
-import {
-  DataTable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow
-} from "../../ui/DataTable";
 import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { ResourcesList } from "../shared/ResourcesList";
+import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
 export function ResourcesSection({
   resources,
@@ -90,113 +83,14 @@ export function ResourcesSection({
         </select>
       </div>
 
-      <div className="mt-4 hidden md:block">
-        <DataTable>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Recurso</TableHeaderCell>
-              <TableHeaderCell>Estado</TableHeaderCell>
-              <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {resources.map((resource) => (
-              <TableRow key={resource._id}>
-                <TableCell>
-                  <div className="font-medium">{resource.name}</div>
-                </TableCell>
-                <TableCell>
-                  <Badge tone={resource.active ? "success" : "warning"}>
-                    {resource.active ? "Activo" : "Inactivo"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => setViewingResource(resource)}
-                    >
-                      Ver
-                    </button>
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => setEditingResource(resource)}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                      onClick={() => updateResource(resource._id, { active: !resource.active })}
-                    >
-                      {resource.active ? "Desactivar" : "Activar"}
-                    </button>
-                    <button
-                      className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                      onClick={() => setDeletingResource(resource)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {resources.length === 0 && (
-              <TableRow>
-                <TableCell className="text-slate-500" colSpan={3}>
-                  No hay recursos para los filtros actuales.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </DataTable>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:hidden">
-        {resources.map((resource) => (
-          <div
-            key={resource._id}
-            className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="text-base font-semibold text-slate-900">{resource.name}</div>
-              <Badge tone={resource.active ? "success" : "warning"}>
-                {resource.active ? "Activo" : "Inactivo"}
-              </Badge>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => setViewingResource(resource)}
-              >
-                Ver
-              </button>
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => setEditingResource(resource)}
-              >
-                Editar
-              </button>
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => updateResource(resource._id, { active: !resource.active })}
-              >
-                {resource.active ? "Desactivar" : "Activar"}
-              </button>
-              <button
-                className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
-                onClick={() => setDeletingResource(resource)}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        ))}
-        {resources.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-            No hay recursos para los filtros actuales.
-          </div>
-        )}
-      </div>
+      <ResourcesList
+        resources={resources}
+        emptyLabel="No hay recursos para los filtros actuales."
+        onView={setViewingResource}
+        onEdit={setEditingResource}
+        onToggleActive={(resource) => updateResource(resource._id, { active: !resource.active })}
+        onDelete={setDeletingResource}
+      />
 
       <Pagination
         total={total}
@@ -272,39 +166,19 @@ export function ResourcesSection({
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(deletingResource)}
-        title="Eliminar recurso"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingResource(null)}
-      >
-        {deletingResource && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingResource.name}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingResource(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  deleteResource(deletingResource._id);
-                  setDeletingResource(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {deletingResource && (
+        <ConfirmDeleteModal
+          open={Boolean(deletingResource)}
+          title="Eliminar recurso"
+          description="Esta accion no se puede deshacer."
+          itemLabel={deletingResource.name}
+          onClose={() => setDeletingResource(null)}
+          onConfirm={() => {
+            deleteResource(deletingResource._id);
+            setDeletingResource(null);
+          }}
+        />
+      )}
     </section>
   );
 }

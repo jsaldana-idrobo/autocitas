@@ -2,7 +2,8 @@ import { useCallback, useRef, useState, type FormEvent } from "react";
 import { apiRequest } from "../../../../lib/api";
 import { PaginatedResponse, StaffItem } from "../../types";
 import { AdminApiContext } from "../types";
-import { createPaginationParams, readFormString, type CatalogLoadGuard } from "./utils";
+import { createPaginationParams, readFormString } from "../shared/utils";
+import type { CatalogLoadGuard } from "./utils";
 
 type ActiveFilter = "" | "active" | "inactive";
 

@@ -3,6 +3,7 @@ import { ResourceItem, ServiceItem } from "../../types";
 import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { ServiceEditor } from "../../components/ServiceEditor";
+import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
 type ServicesModalsProps = {
   createOpen: boolean;
@@ -123,39 +124,19 @@ export function ServicesModals({
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(deletingService)}
-        title="Eliminar servicio"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingService(null)}
-      >
-        {deletingService && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingService.name}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingService(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  deleteService(deletingService._id);
-                  setDeletingService(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {deletingService && (
+        <ConfirmDeleteModal
+          open={Boolean(deletingService)}
+          title="Eliminar servicio"
+          description="Esta accion no se puede deshacer."
+          itemLabel={deletingService.name}
+          onClose={() => setDeletingService(null)}
+          onConfirm={() => {
+            deleteService(deletingService._id);
+            setDeletingService(null);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -2,7 +2,8 @@ import { useCallback, useRef, useState } from "react";
 import { apiRequest } from "../../../../lib/api";
 import { AppointmentItem, PaginatedResponse } from "../../types";
 import { AdminApiContext } from "../types";
-import { createPaginationParams, type PlatformLoadGuard } from "./utils";
+import { createPaginationParams } from "../shared/utils";
+import type { PlatformLoadGuard } from "./utils";
 
 type AppointmentsState = {
   platformAppointments: AppointmentItem[];

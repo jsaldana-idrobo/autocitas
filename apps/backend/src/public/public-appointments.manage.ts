@@ -1,6 +1,6 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { DateTime } from "luxon";
-import { Model, isValidObjectId } from "mongoose";
+import { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema";
 import { Business } from "../schemas/business.schema";
 import { CancelAppointmentDto } from "./dto/cancel-appointment.dto";
@@ -9,9 +9,13 @@ import {
   DEFAULT_TIMEZONE,
   ERR_APPOINTMENT_NOT_FOUND,
   ERR_CANCEL_WINDOW,
-  ERR_INVALID_APPOINTMENT_ID,
-  assertActiveBusiness
+  ERR_INVALID_APPOINTMENT_ID
 } from "./public.service.helpers";
+import {
+  assertPhoneMatch,
+  assertValidObjectId,
+  getBusinessAndAppointment
+} from "./public-appointments.helpers";
 
 export async function cancelAppointment(
   businessModel: Model<Business>,
@@ -20,24 +24,17 @@ export async function cancelAppointment(
   appointmentId: string,
   payload: CancelAppointmentDto
 ) {
-  if (!isValidObjectId(appointmentId)) {
-    throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
-  }
+  assertValidObjectId(appointmentId, ERR_INVALID_APPOINTMENT_ID);
 
-  const business = await businessModel.findOne({ slug }).lean();
-  assertActiveBusiness(business);
+  const { business, appointment } = await getBusinessAndAppointment({
+    businessModel,
+    appointmentModel,
+    slug,
+    appointmentId,
+    notFoundMessage: ERR_APPOINTMENT_NOT_FOUND
+  });
 
-  const appointment = await appointmentModel
-    .findOne({ _id: appointmentId, businessId: business._id })
-    .lean();
-  if (!appointment) {
-    throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
-  }
-
-  const normalizedPayloadPhone = payload.customerPhone.trim();
-  if (appointment.customerPhone !== normalizedPayloadPhone) {
-    throw new BadRequestException("Phone mismatch.");
-  }
+  assertPhoneMatch(appointment.customerPhone, payload.customerPhone);
 
   const timezone = business.timezone || DEFAULT_TIMEZONE;
   const now = DateTime.now().setZone(timezone);
@@ -59,24 +56,17 @@ export async function updatePublicAppointment(
   appointmentId: string,
   payload: UpdatePublicAppointmentDto
 ) {
-  if (!isValidObjectId(appointmentId)) {
-    throw new BadRequestException(ERR_INVALID_APPOINTMENT_ID);
-  }
+  assertValidObjectId(appointmentId, ERR_INVALID_APPOINTMENT_ID);
 
-  const business = await businessModel.findOne({ slug }).lean();
-  assertActiveBusiness(business);
+  const { appointment } = await getBusinessAndAppointment({
+    businessModel,
+    appointmentModel,
+    slug,
+    appointmentId,
+    notFoundMessage: ERR_APPOINTMENT_NOT_FOUND
+  });
 
-  const appointment = await appointmentModel
-    .findOne({ _id: appointmentId, businessId: business._id })
-    .lean();
-  if (!appointment) {
-    throw new NotFoundException(ERR_APPOINTMENT_NOT_FOUND);
-  }
-
-  const normalizedPayloadPhone = payload.customerPhone.trim();
-  if (appointment.customerPhone !== normalizedPayloadPhone) {
-    throw new BadRequestException("Phone mismatch.");
-  }
+  assertPhoneMatch(appointment.customerPhone, payload.customerPhone);
 
   const update: Record<string, unknown> = {};
   if (payload.customerName) update.customerName = payload.customerName;

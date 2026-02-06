@@ -2,7 +2,8 @@ import { useCallback, useRef, useState } from "react";
 import { apiRequest } from "../../../../../lib/api";
 import { PaginatedResponse, ServiceItem } from "../../../types";
 import { AdminApiContext } from "../../types";
-import { createPaginationParams, type PlatformLoadGuard } from "../utils";
+import { createPaginationParams } from "../../shared/utils";
+import type { PlatformLoadGuard } from "../utils";
 
 type ActiveFilter = "" | "active" | "inactive";
 

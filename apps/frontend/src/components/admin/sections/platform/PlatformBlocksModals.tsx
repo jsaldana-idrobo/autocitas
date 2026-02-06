@@ -4,6 +4,7 @@ import { BlockEditor } from "../../components/BlockEditor";
 import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
+import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
 type PlatformBlocksModalsProps = {
   businesses: BusinessProfile[];
@@ -193,40 +194,20 @@ export function PlatformBlocksModals({
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(deletingBlock)}
-        title="Eliminar bloqueo"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingBlock(null)}
-      >
-        {deletingBlock && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingBlock.reason || "este bloqueo"}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingBlock(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  if (!deletingBlock.businessId) return;
-                  onDelete(deletingBlock.businessId, deletingBlock._id);
-                  setDeletingBlock(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {deletingBlock && (
+        <ConfirmDeleteModal
+          open={Boolean(deletingBlock)}
+          title="Eliminar bloqueo"
+          description="Esta accion no se puede deshacer."
+          itemLabel={deletingBlock.reason || "este bloqueo"}
+          onClose={() => setDeletingBlock(null)}
+          onConfirm={() => {
+            if (!deletingBlock.businessId) return;
+            onDelete(deletingBlock.businessId, deletingBlock._id);
+            setDeletingBlock(null);
+          }}
+        />
+      )}
     </>
   );
 }

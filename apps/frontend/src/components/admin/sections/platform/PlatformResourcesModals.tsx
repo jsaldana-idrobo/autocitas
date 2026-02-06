@@ -4,6 +4,7 @@ import { ResourceEditor } from "../../components/ResourceEditor";
 import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
+import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
 
 type PlatformResourcesModalsProps = {
   businesses: BusinessProfile[];
@@ -135,40 +136,20 @@ export function PlatformResourcesModals({
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(deletingResource)}
-        title="Eliminar recurso"
-        description="Esta accion no se puede deshacer."
-        onClose={() => setDeletingResource(null)}
-      >
-        {deletingResource && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Vas a eliminar <strong>{deletingResource.name}</strong>.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setDeletingResource(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white"
-                type="button"
-                onClick={() => {
-                  if (!deletingResource.businessId) return;
-                  onDelete(deletingResource.businessId, deletingResource._id);
-                  setDeletingResource(null);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {deletingResource && (
+        <ConfirmDeleteModal
+          open={Boolean(deletingResource)}
+          title="Eliminar recurso"
+          description="Esta accion no se puede deshacer."
+          itemLabel={deletingResource.name}
+          onClose={() => setDeletingResource(null)}
+          onConfirm={() => {
+            if (!deletingResource.businessId) return;
+            onDelete(deletingResource.businessId, deletingResource._id);
+            setDeletingResource(null);
+          }}
+        />
+      )}
     </>
   );
 }

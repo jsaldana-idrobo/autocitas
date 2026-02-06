@@ -2,7 +2,9 @@ import { useCallback, useRef, useState } from "react";
 import { apiRequest } from "../../../../../lib/api";
 import { BlockItem, PaginatedResponse } from "../../../types";
 import { AdminApiContext } from "../../types";
-import { buildBlockPayload, createPaginationParams, type PlatformLoadGuard } from "../utils";
+import { createPaginationParams } from "../../shared/utils";
+import { buildBlockPayload } from "../utils";
+import type { PlatformLoadGuard } from "../utils";
 
 type BlockTypeFilter = "" | "resource" | "global";
 
