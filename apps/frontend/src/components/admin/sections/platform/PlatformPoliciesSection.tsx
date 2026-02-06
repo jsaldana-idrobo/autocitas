@@ -4,6 +4,8 @@ import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
+import { readFormString } from "../../hooks/shared/utils";
+import { EmptyCard, EmptyTableRow } from "../shared/EmptyState";
 import {
   DataTable,
   TableBody,
@@ -44,6 +46,13 @@ export function PlatformPoliciesSection({
     onRefresh(page, pageSize);
   }, [page, pageSize, onRefresh]);
 
+  const emptyLabel = "No hay negocios registrados.";
+
+  const handleEdit = (businessId: string) => {
+    const target = businesses.find((item) => item._id === businessId) ?? null;
+    setEditingBusiness(target);
+  };
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
@@ -79,23 +88,14 @@ export function PlatformPoliciesSection({
                 <TableCell className="text-right">
                   <button
                     className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                    onClick={() => {
-                      const target = businesses.find((item) => item._id === row.id) ?? null;
-                      setEditingBusiness(target);
-                    }}
+                    onClick={() => handleEdit(row.id)}
                   >
                     Editar politicas
                   </button>
                 </TableCell>
               </TableRow>
             ))}
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell className="text-slate-500" colSpan={5}>
-                  No hay negocios registrados.
-                </TableCell>
-              </TableRow>
-            )}
+            {rows.length === 0 && <EmptyTableRow colSpan={5} label={emptyLabel} />}
           </TableBody>
         </DataTable>
       </div>
@@ -116,21 +116,14 @@ export function PlatformPoliciesSection({
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => {
-                  const target = businesses.find((item) => item._id === row.id) ?? null;
-                  setEditingBusiness(target);
-                }}
+                onClick={() => handleEdit(row.id)}
               >
                 Editar politicas
               </button>
             </div>
           </div>
         ))}
-        {rows.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-            No hay negocios registrados.
-          </div>
-        )}
+        {rows.length === 0 && <EmptyCard label={emptyLabel} />}
       </div>
 
       <Pagination
@@ -156,14 +149,10 @@ export function PlatformPoliciesSection({
             onSubmit={(event) => {
               event.preventDefault();
               const form = new FormData(event.currentTarget);
-              const readString = (key: string) => {
-                const value = form.get(key);
-                return typeof value === "string" ? value.trim() : "";
-              };
               const payload: Policies = {
-                cancellationHours: Number(readString("cancellationHours")),
-                rescheduleLimit: Number(readString("rescheduleLimit")),
-                allowSameDay: readString("allowSameDay") === "true"
+                cancellationHours: Number(readFormString(form, "cancellationHours")),
+                rescheduleLimit: Number(readFormString(form, "rescheduleLimit")),
+                allowSameDay: readFormString(form, "allowSameDay") === "true"
               };
               if (!editingBusiness._id) return;
               onSavePolicies(editingBusiness._id, payload);

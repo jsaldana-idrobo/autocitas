@@ -1,4 +1,12 @@
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type MutableRefObject,
+  type SetStateAction
+} from "react";
 import { apiRequest } from "../../../../lib/api";
 import { PaginatedResponse, PlatformUserUpdate, StaffItem } from "../../types";
 import { AdminApiContext } from "../types";
@@ -52,27 +60,38 @@ export function useAdminPlatformUsers(
   const ownersQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
   const staffQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
 
-  const loadPlatformOwners = useCallback(
-    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
+  const loadPlatformUsers = useCallback(
+    async (
+      role: "owner" | "staff",
+      queryRef: MutableRefObject<{ page: number; limit: number; search: string; active: string }>,
+      setItems: Dispatch<SetStateAction<StaffItem[]>>,
+      setTotal: Dispatch<SetStateAction<number>>,
+      setLoaded: Dispatch<SetStateAction<boolean>>,
+      errorMessage: string,
+      page = 1,
+      limit = 25,
+      search = "",
+      active: ActiveFilter = ""
+    ) => {
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
       api.resetSuccess();
       try {
-        ownersQueryRef.current = { page, limit, search, active };
+        queryRef.current = { page, limit, search, active };
         const params = createPaginationParams(page, limit);
-        params.set("role", "owner");
+        params.set("role", role);
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         const data = await apiRequest<PaginatedResponse<StaffItem>>(
           `/admin/platform/users?${params.toString()}`,
           api.authHeaders
         );
-        setPlatformOwners(data.items);
-        setPlatformOwnersTotal(data.total);
-        setPlatformOwnersLoaded(true);
+        setItems(data.items);
+        setTotal(data.total);
+        setLoaded(true);
       } catch (err) {
-        api.setError(err instanceof Error ? err.message : "Error cargando owners");
+        api.setError(err instanceof Error ? err.message : errorMessage);
       } finally {
         api.setLoading(false);
         endLoad();
@@ -81,34 +100,56 @@ export function useAdminPlatformUsers(
     [api, endLoad, startLoad]
   );
 
-  const loadPlatformStaff = useCallback(
-    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
-      if (!startLoad()) return;
-      api.setLoading(true);
-      api.resetError();
-      api.resetSuccess();
-      try {
-        staffQueryRef.current = { page, limit, search, active };
-        const params = createPaginationParams(page, limit);
-        params.set("role", "staff");
-        if (search) params.set("search", search);
-        if (active) params.set("active", active === "active" ? "true" : "false");
-        const data = await apiRequest<PaginatedResponse<StaffItem>>(
-          `/admin/platform/users?${params.toString()}`,
-          api.authHeaders
-        );
-        setPlatformStaff(data.items);
-        setPlatformStaffTotal(data.total);
-        setPlatformStaffLoaded(true);
-      } catch (err) {
-        api.setError(err instanceof Error ? err.message : "Error cargando staff");
-      } finally {
-        api.setLoading(false);
-        endLoad();
-      }
-    },
-    [api, endLoad, startLoad]
+  const loadPlatformOwners = useCallback(
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") =>
+      loadPlatformUsers(
+        "owner",
+        ownersQueryRef,
+        setPlatformOwners,
+        setPlatformOwnersTotal,
+        setPlatformOwnersLoaded,
+        "Error cargando owners",
+        page,
+        limit,
+        search,
+        active
+      ),
+    [loadPlatformUsers]
   );
+
+  const loadPlatformStaff = useCallback(
+    async (page = 1, limit = 25, search = "", active: ActiveFilter = "") =>
+      loadPlatformUsers(
+        "staff",
+        staffQueryRef,
+        setPlatformStaff,
+        setPlatformStaffTotal,
+        setPlatformStaffLoaded,
+        "Error cargando staff",
+        page,
+        limit,
+        search,
+        active
+      ),
+    [loadPlatformUsers]
+  );
+
+  const reloadUsers = useCallback(async () => {
+    await Promise.all([
+      loadPlatformOwners(
+        ownersQueryRef.current.page,
+        ownersQueryRef.current.limit,
+        ownersQueryRef.current.search,
+        ownersQueryRef.current.active as ActiveFilter
+      ),
+      loadPlatformStaff(
+        staffQueryRef.current.page,
+        staffQueryRef.current.limit,
+        staffQueryRef.current.search,
+        staffQueryRef.current.active as ActiveFilter
+      )
+    ]);
+  }, [loadPlatformOwners, loadPlatformStaff]);
 
   async function createOwner(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,20 +191,7 @@ export function useAdminPlatformUsers(
         body: JSON.stringify(payload),
         ...api.authHeaders
       });
-      await Promise.all([
-        loadPlatformOwners(
-          ownersQueryRef.current.page,
-          ownersQueryRef.current.limit,
-          ownersQueryRef.current.search,
-          ownersQueryRef.current.active as ActiveFilter
-        ),
-        loadPlatformStaff(
-          staffQueryRef.current.page,
-          staffQueryRef.current.limit,
-          staffQueryRef.current.search,
-          staffQueryRef.current.active as ActiveFilter
-        )
-      ]);
+      await reloadUsers();
       api.setSuccess("Usuario actualizado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error actualizando usuario");
@@ -181,20 +209,7 @@ export function useAdminPlatformUsers(
         method: "DELETE",
         ...api.authHeaders
       });
-      await Promise.all([
-        loadPlatformOwners(
-          ownersQueryRef.current.page,
-          ownersQueryRef.current.limit,
-          ownersQueryRef.current.search,
-          ownersQueryRef.current.active as ActiveFilter
-        ),
-        loadPlatformStaff(
-          staffQueryRef.current.page,
-          staffQueryRef.current.limit,
-          staffQueryRef.current.search,
-          staffQueryRef.current.active as ActiveFilter
-        )
-      ]);
+      await reloadUsers();
       api.setSuccess("Usuario eliminado.");
     } catch (err) {
       api.setError(err instanceof Error ? err.message : "Error eliminando usuario");

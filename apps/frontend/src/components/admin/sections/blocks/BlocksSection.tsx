@@ -3,11 +3,11 @@ import { BlockItem, ResourceItem } from "../../types";
 import { BlockEditor } from "../../components/BlockEditor";
 import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
-import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { BlocksList } from "../shared/BlocksList";
 import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
+import { PaginationControls } from "../shared/PaginationControls";
 
 export function BlocksSection({
   blocks,
@@ -88,15 +88,12 @@ export function BlocksSection({
         onDelete={setDeletingBlock}
       />
 
-      <Pagination
+      <PaginationControls
         total={total}
         page={page}
         pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(value) => {
-          setPageSize(value);
-          setPage(1);
-        }}
+        setPage={setPage}
+        setPageSize={setPageSize}
       />
 
       <Modal open={createOpen} title="Nuevo bloqueo" onClose={() => setCreateOpen(false)}>

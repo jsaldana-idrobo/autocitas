@@ -3,11 +3,11 @@ import { ResourceItem } from "../../types";
 import { ResourceEditor } from "../../components/ResourceEditor";
 import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
-import { Pagination } from "../../ui/Pagination";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { ResourcesList } from "../shared/ResourcesList";
 import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
+import { PaginationControls } from "../shared/PaginationControls";
 
 export function ResourcesSection({
   resources,
@@ -92,15 +92,12 @@ export function ResourcesSection({
         onDelete={setDeletingResource}
       />
 
-      <Pagination
+      <PaginationControls
         total={total}
         page={page}
         pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(value) => {
-          setPageSize(value);
-          setPage(1);
-        }}
+        setPage={setPage}
+        setPageSize={setPageSize}
       />
 
       <Modal open={createOpen} title="Nuevo recurso" onClose={() => setCreateOpen(false)}>

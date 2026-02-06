@@ -5,6 +5,7 @@ import { InputField } from "../../components/InputField";
 import { Modal } from "../../ui/Modal";
 import { BusinessSearchSelect } from "../../components/BusinessSearchSelect";
 import { ConfirmDeleteModal } from "../../ui/ConfirmDeleteModal";
+import { readFormString } from "../../hooks/shared/utils";
 
 type PlatformBlocksModalsProps = Readonly<{
   businesses: BusinessProfile[];
@@ -61,13 +62,9 @@ export function PlatformBlocksModals({
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            const readString = (key: string) => {
-              const value = form.get(key);
-              return typeof value === "string" ? value.trim() : "";
-            };
-            const startTime = readString("startTime");
-            const endTime = readString("endTime");
-            const reason = readString("reason");
+            const startTime = readFormString(form, "startTime");
+            const endTime = readFormString(form, "endTime");
+            const reason = readFormString(form, "reason");
             if (!createBusinessId || !startTime || !endTime) {
               return;
             }

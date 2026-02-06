@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { AppointmentItem } from "../../types";
-import {
-  DataTable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow
-} from "../../ui/DataTable";
 import { SectionHeader } from "../../ui/SectionHeader";
 import { Modal } from "../../ui/Modal";
 import { Pagination } from "../../ui/Pagination";
+import { AppointmentsList } from "../shared/AppointmentsList";
+import { AppointmentDetail } from "../shared/AppointmentDetail";
 
 export function PlatformAppointmentsTable({
   appointments,
@@ -93,80 +87,12 @@ export function PlatformAppointmentsTable({
         </button>
       </div>
 
-      <div className="mt-4 hidden md:block">
-        <DataTable>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Cliente</TableHeaderCell>
-              <TableHeaderCell>Horario</TableHeaderCell>
-              <TableHeaderCell>Estado</TableHeaderCell>
-              <TableHeaderCell>Business ID</TableHeaderCell>
-              <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {appointments.map((item) => (
-              <TableRow key={item._id}>
-                <TableCell>
-                  <div className="font-medium">{item.customerName}</div>
-                  <div className="text-xs text-slate-500">{item.customerPhone}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">{new Date(item.startTime).toLocaleString()}</div>
-                  <div className="text-xs text-slate-500">
-                    {new Date(item.endTime).toLocaleString()}
-                  </div>
-                </TableCell>
-                <TableCell className="capitalize">{item.status}</TableCell>
-                <TableCell>{item.businessId ?? "-"}</TableCell>
-                <TableCell className="text-right">
-                  <button
-                    className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                    onClick={() => setViewingAppointment(item)}
-                  >
-                    Ver
-                  </button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {appointments.length === 0 && (
-              <TableRow>
-                <TableCell className="text-slate-500" colSpan={5}>
-                  No hay citas para los filtros actuales.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </DataTable>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:hidden">
-        {appointments.map((item) => (
-          <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-            <div className="text-base font-semibold text-slate-900">{item.customerName}</div>
-            <div className="text-xs text-slate-500">{item.customerPhone}</div>
-            <div className="mt-2 text-xs text-slate-500 capitalize">{item.status}</div>
-            <div className="mt-2 text-xs text-slate-500">
-              {new Date(item.startTime).toLocaleString()} →{" "}
-              {new Date(item.endTime).toLocaleString()}
-            </div>
-            <div className="mt-2 text-xs text-slate-500">Business ID: {item.businessId ?? "-"}</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
-                onClick={() => setViewingAppointment(item)}
-              >
-                Ver
-              </button>
-            </div>
-          </div>
-        ))}
-        {appointments.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-            No hay citas para los filtros actuales.
-          </div>
-        )}
-      </div>
+      <AppointmentsList
+        variant="platform"
+        appointments={appointments}
+        emptyLabel="No hay citas para los filtros actuales."
+        onView={setViewingAppointment}
+      />
 
       <Pagination
         total={total}
@@ -185,41 +111,7 @@ export function PlatformAppointmentsTable({
         onClose={() => setViewingAppointment(null)}
       >
         {viewingAppointment && (
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Cliente</div>
-              <div className="font-medium">{viewingAppointment.customerName}</div>
-              <div className="text-xs text-slate-500">{viewingAppointment.customerPhone}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
-              <div className="font-medium">{viewingAppointment.status}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Business ID</div>
-              <div className="font-medium">{viewingAppointment.businessId ?? "-"}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Servicio ID</div>
-              <div className="font-medium">{viewingAppointment.serviceId}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Recurso ID</div>
-              <div className="font-medium">{viewingAppointment.resourceId ?? "-"}</div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Inicio</div>
-              <div className="font-medium">
-                {new Date(viewingAppointment.startTime).toLocaleString()}
-              </div>
-            </div>
-            <div className="text-sm">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Fin</div>
-              <div className="font-medium">
-                {new Date(viewingAppointment.endTime).toLocaleString()}
-              </div>
-            </div>
-          </div>
+          <AppointmentDetail variant="platform" appointment={viewingAppointment} />
         )}
       </Modal>
     </section>
