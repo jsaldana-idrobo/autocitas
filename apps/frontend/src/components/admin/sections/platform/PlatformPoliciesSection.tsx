@@ -45,7 +45,7 @@ export function PlatformPoliciesSection({
   }, [page, pageSize, onRefresh]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Politicas"
         subtitle="Politicas por negocio."
@@ -56,7 +56,7 @@ export function PlatformPoliciesSection({
         }
       />
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -98,6 +98,39 @@ export function PlatformPoliciesSection({
             )}
           </TableBody>
         </DataTable>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:hidden">
+        {rows.map((row) => (
+          <div key={row.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="text-base font-semibold text-slate-900">{row.name}</div>
+            <div className="mt-2 text-xs text-slate-500">
+              Cancelacion: {row.policies.cancellationHours} horas
+            </div>
+            <div className="text-xs text-slate-500">
+              Reprogramacion: {row.policies.rescheduleLimit}
+            </div>
+            <div className="text-xs text-slate-500">
+              Mismo dia: {row.policies.allowSameDay ? "Permitido" : "No"}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => {
+                  const target = businesses.find((item) => item._id === row.id) ?? null;
+                  setEditingBusiness(target);
+                }}
+              >
+                Editar politicas
+              </button>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay negocios registrados.
+          </div>
+        )}
       </div>
 
       <Pagination

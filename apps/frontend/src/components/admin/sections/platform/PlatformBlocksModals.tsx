@@ -189,15 +189,6 @@ export function PlatformBlocksModals({
                   "Todos"}
               </div>
             </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingBlock(null)}
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         )}
       </Modal>

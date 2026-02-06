@@ -63,8 +63,14 @@ export function BookingForm({
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="card p-6">
-        <h2 className="text-2xl font-semibold">{business.business.name}</h2>
-        <p className="mt-2 text-sm text-slate-500">Reserva tu cita en minutos</p>
+        <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">
+          <span className="bg-gradient-to-r from-slate-900 via-primary-700 to-primary-500 bg-clip-text text-transparent">
+            {business.business.name}
+          </span>
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Reserva tu cita en minutos y confirma al instante.
+        </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <label className="block text-sm font-medium">
@@ -110,21 +116,23 @@ export function BookingForm({
 
         <div className="mt-6">
           <p className="text-sm font-medium">Horarios disponibles</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid grid-cols-3 gap-2">
             {slots.length === 0 && (
-              <span className="text-sm text-slate-500">Sin disponibilidad para esta fecha.</span>
+              <span className="text-sm text-slate-500 col-span-3">
+                Sin disponibilidad para esta fecha.
+              </span>
             )}
             {slots.map((slot) => (
               <button
                 key={slot.startTime}
-                className={`rounded-full px-3 py-2 text-sm ${
+                className={`w-full rounded-full px-3 py-2 text-xs font-medium leading-none tabular-nums sm:text-sm ${
                   selectedSlot === slot.startTime
                     ? "bg-primary-600 text-white"
                     : "bg-white text-slate-700 shadow-sm"
                 }`}
                 onClick={() => onSlotSelect(slot.startTime)}
               >
-                {formatTime(slot.startTime, timezone)}
+                <span className="whitespace-nowrap">{formatTime(slot.startTime, timezone)}</span>
               </button>
             ))}
           </div>

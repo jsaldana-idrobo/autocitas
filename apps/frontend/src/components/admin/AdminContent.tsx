@@ -120,7 +120,7 @@ export function AdminContent({
         />
       )}
 
-      {activeTab === "business" && role !== "staff" && (
+      {activeTab === "business" && role === "owner" && (
         <BusinessSection
           businessProfile={businessSettings.businessProfile}
           loadBusinessSettings={businessSettings.loadBusinessSettings}
@@ -128,7 +128,7 @@ export function AdminContent({
         />
       )}
 
-      {activeTab === "services" && role !== "staff" && (
+      {activeTab === "services" && role === "owner" && (
         <ServicesSection
           services={catalog.services}
           resources={catalog.resources}
@@ -141,7 +141,7 @@ export function AdminContent({
         />
       )}
 
-      {activeTab === "resources" && role !== "staff" && (
+      {activeTab === "resources" && role === "owner" && (
         <ResourcesSection
           resources={catalog.resources}
           createResource={catalog.createResource}
@@ -152,7 +152,7 @@ export function AdminContent({
         />
       )}
 
-      {activeTab === "staff" && role !== "staff" && (
+      {activeTab === "staff" && role === "owner" && (
         <StaffSection
           staff={catalog.staff}
           resources={catalog.resources}
@@ -179,11 +179,11 @@ export function AdminContent({
         />
       )}
 
-      {activeTab === "hours" && role !== "staff" && (
+      {activeTab === "hours" && role === "owner" && (
         <HoursSection hours={businessSettings.hours} saveHours={businessSettings.saveHours} />
       )}
 
-      {activeTab === "policies" && role !== "staff" && (
+      {activeTab === "policies" && role === "owner" && (
         <PoliciesSection
           policies={businessSettings.policies}
           savePolicies={businessSettings.savePolicies}

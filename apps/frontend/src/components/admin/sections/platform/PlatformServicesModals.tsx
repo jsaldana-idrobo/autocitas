@@ -158,15 +158,6 @@ export function PlatformServicesModals({
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
               <div className="font-medium">{viewingService.active ? "Activo" : "Inactivo"}</div>
             </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingService(null)}
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         )}
       </Modal>

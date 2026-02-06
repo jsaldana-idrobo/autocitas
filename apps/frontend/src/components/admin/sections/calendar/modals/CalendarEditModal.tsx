@@ -32,7 +32,13 @@ export function CalendarEditModal({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6">
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        className="fixed inset-0 z-0 cursor-pointer"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6">
         <h4 className="text-lg font-semibold">Editar cita</h4>
         <div className="mt-4 grid gap-3">
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">

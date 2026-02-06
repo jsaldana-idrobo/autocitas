@@ -19,7 +19,13 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        className="fixed inset-0 z-0 cursor-pointer"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold">{title}</h3>

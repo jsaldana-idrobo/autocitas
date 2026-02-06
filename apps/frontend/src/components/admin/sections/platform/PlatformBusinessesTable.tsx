@@ -42,7 +42,7 @@ export function PlatformBusinessesTable({
   }, [page, pageSize, debouncedSearch, statusFilter, onRefresh]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Negocios"
         subtitle="Gestiona los negocios de la plataforma."
@@ -82,7 +82,7 @@ export function PlatformBusinessesTable({
         </select>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -140,6 +140,53 @@ export function PlatformBusinessesTable({
             )}
           </TableBody>
         </DataTable>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:hidden">
+        {businesses.map((business) => (
+          <div
+            key={business._id}
+            className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-base font-semibold text-slate-900">{business.name}</div>
+                <div className="text-xs text-slate-500">{business.slug}</div>
+              </div>
+              <Badge tone={business.status === "active" ? "success" : "warning"}>
+                {business.status === "active" ? "Activo" : "Inactivo"}
+              </Badge>
+            </div>
+            <div className="mt-2 text-xs text-slate-500">
+              {business.timezone || "America/Bogota"}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => setViewingBusiness(business)}
+              >
+                Ver
+              </button>
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => setEditingBusiness(business)}
+              >
+                Editar
+              </button>
+              <button
+                className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
+                onClick={() => setDeletingBusiness(business)}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        ))}
+        {businesses.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay negocios para los filtros actuales.
+          </div>
+        )}
       </div>
 
       <Pagination

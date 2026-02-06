@@ -119,15 +119,6 @@ export function ServicesModals({
                   : "Todos"}
               </div>
             </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingService(null)}
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         )}
       </Modal>

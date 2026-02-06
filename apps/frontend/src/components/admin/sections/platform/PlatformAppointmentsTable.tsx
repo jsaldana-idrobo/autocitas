@@ -48,7 +48,7 @@ export function PlatformAppointmentsTable({
   }, [page, pageSize, onSearch]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Citas globales"
         subtitle="Visibilidad de citas por toda la plataforma."
@@ -93,7 +93,7 @@ export function PlatformAppointmentsTable({
         </button>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -138,6 +138,34 @@ export function PlatformAppointmentsTable({
             )}
           </TableBody>
         </DataTable>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:hidden">
+        {appointments.map((item) => (
+          <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="text-base font-semibold text-slate-900">{item.customerName}</div>
+            <div className="text-xs text-slate-500">{item.customerPhone}</div>
+            <div className="mt-2 text-xs text-slate-500 capitalize">{item.status}</div>
+            <div className="mt-2 text-xs text-slate-500">
+              {new Date(item.startTime).toLocaleString()} →{" "}
+              {new Date(item.endTime).toLocaleString()}
+            </div>
+            <div className="mt-2 text-xs text-slate-500">Business ID: {item.businessId ?? "-"}</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => setViewingAppointment(item)}
+              >
+                Ver
+              </button>
+            </div>
+          </div>
+        ))}
+        {appointments.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay citas para los filtros actuales.
+          </div>
+        )}
       </div>
 
       <Pagination
@@ -190,15 +218,6 @@ export function PlatformAppointmentsTable({
               <div className="font-medium">
                 {new Date(viewingAppointment.endTime).toLocaleString()}
               </div>
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingAppointment(null)}
-              >
-                Cerrar
-              </button>
             </div>
           </div>
         )}

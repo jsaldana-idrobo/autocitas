@@ -36,8 +36,18 @@ export function useAdminCatalogServices(
   const [servicesLoaded, setServicesLoaded] = useState(false);
   const servicesQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
 
+  const ensureBusinessId = useCallback(() => {
+    if (api.businessId) {
+      return api.businessId;
+    }
+    api.setError("Selecciona un negocio primero.");
+    return "";
+  }, [api]);
+
   const loadServices = useCallback(
     async (page = 1, limit = 25, search = "", active: ActiveFilter = "") => {
+      const businessId = ensureBusinessId();
+      if (!businessId) return;
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -48,7 +58,7 @@ export function useAdminCatalogServices(
         if (search) params.set("search", search);
         if (active) params.set("active", active === "active" ? "true" : "false");
         const data = await apiRequest<PaginatedResponse<ServiceItem>>(
-          `/admin/businesses/${api.businessId}/services?${params.toString()}`,
+          `/admin/businesses/${businessId}/services?${params.toString()}`,
           api.authHeaders
         );
         setServices(data.items);
@@ -61,13 +71,15 @@ export function useAdminCatalogServices(
         endLoad();
       }
     },
-    [api, endLoad, startLoad]
+    [api, endLoad, ensureBusinessId, startLoad]
   );
 
   async function createService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     api.resetError();
     api.resetSuccess();
+    const businessId = ensureBusinessId();
+    if (!businessId) return;
     const form = new FormData(event.currentTarget);
     const durationValue = Number(readFormString(form, "durationMinutes"));
     const priceRaw = readFormString(form, "price");
@@ -85,7 +97,7 @@ export function useAdminCatalogServices(
     try {
       if (!startLoad()) return;
       api.setLoading(true);
-      await apiRequest(`/admin/businesses/${api.businessId}/services`, {
+      await apiRequest(`/admin/businesses/${businessId}/services`, {
         method: "POST",
         body: JSON.stringify(payload),
         ...api.authHeaders
@@ -109,10 +121,12 @@ export function useAdminCatalogServices(
   async function updateService(serviceId: string, payload: Partial<ServiceItem>) {
     api.resetError();
     api.resetSuccess();
+    const businessId = ensureBusinessId();
+    if (!businessId) return;
     try {
       if (!startLoad()) return;
       api.setLoading(true);
-      await apiRequest(`/admin/businesses/${api.businessId}/services/${serviceId}`, {
+      await apiRequest(`/admin/businesses/${businessId}/services/${serviceId}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
         ...api.authHeaders
@@ -135,10 +149,12 @@ export function useAdminCatalogServices(
   async function deleteService(serviceId: string) {
     api.resetError();
     api.resetSuccess();
+    const businessId = ensureBusinessId();
+    if (!businessId) return;
     try {
       if (!startLoad()) return;
       api.setLoading(true);
-      await apiRequest(`/admin/businesses/${api.businessId}/services/${serviceId}`, {
+      await apiRequest(`/admin/businesses/${businessId}/services/${serviceId}`, {
         method: "DELETE",
         ...api.authHeaders
       });

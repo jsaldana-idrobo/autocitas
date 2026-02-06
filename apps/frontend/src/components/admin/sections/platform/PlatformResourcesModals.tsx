@@ -131,15 +131,6 @@ export function PlatformResourcesModals({
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
               <div className="font-medium">{viewingResource.active ? "Activo" : "Inactivo"}</div>
             </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingResource(null)}
-              >
-                Cerrar
-              </button>
-            </div>
           </div>
         )}
       </Modal>

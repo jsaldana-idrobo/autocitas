@@ -1,5 +1,5 @@
-import { toIsoIfPossible } from "../utils";
-import { BlockItem } from "../types";
+import { toIsoIfPossible } from "../../utils";
+import { BlockItem } from "../../types";
 
 export type PlatformLoadGuard = {
   startLoad: () => boolean;

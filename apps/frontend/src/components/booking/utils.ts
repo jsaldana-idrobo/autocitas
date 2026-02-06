@@ -33,11 +33,16 @@ export function toDateTimeLocalValue(iso: string, timezone: string) {
 }
 
 export function formatTime(iso: string, timezone: string) {
-  return new Date(iso).toLocaleTimeString("es-CO", {
+  const raw = new Date(iso).toLocaleTimeString("en-US", {
     timeZone: timezone,
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    hour12: true
   });
+  return raw
+    .replace(/\./g, "")
+    .replace(/\s*(am|pm)$/i, " $1")
+    .toLowerCase();
 }
 
 export function formatDateTime(iso: string, timezone: string) {

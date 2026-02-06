@@ -47,7 +47,7 @@ export function CalendarHeader({
           Semana siguiente
         </button>
         <select
-          className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+          className="hidden rounded-xl border border-slate-200 px-3 py-1 text-xs md:inline-flex"
           value={intervalMinutes}
           onChange={(event) => onIntervalChange(Number(event.target.value))}
         >

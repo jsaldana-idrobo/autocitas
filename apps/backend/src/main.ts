@@ -8,23 +8,27 @@ const envLocal = resolve(process.cwd(), ".env.local");
 const envDefault = resolve(process.cwd(), ".env");
 config({ path: existsSync(envLocal) ? envLocal : envDefault });
 
-const { AppModule } = await import("./app.module");
-const app = await NestFactory.create(AppModule);
-app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true
-  })
-);
-app.enableCors({
-  origin: true,
-  credentials: true
-});
-app.setGlobalPrefix("api", {
-  exclude: [
-    { path: "/", method: RequestMethod.GET },
-    { path: "health", method: RequestMethod.GET }
-  ]
-});
-await app.listen(3000);
+async function bootstrap() {
+  const { AppModule } = await import("./app.module");
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true
+    })
+  );
+  app.enableCors({
+    origin: true,
+    credentials: true
+  });
+  app.setGlobalPrefix("api", {
+    exclude: [
+      { path: "/", method: RequestMethod.GET },
+      { path: "health", method: RequestMethod.GET }
+    ]
+  });
+  await app.listen(3000);
+}
+
+void bootstrap();

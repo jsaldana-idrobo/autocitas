@@ -33,7 +33,11 @@ export function useAdminTabController({
   calendar,
   fireAndForget
 }: TabControllerDeps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("services");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    if (role === "staff") return "appointments";
+    if (role === "platform_admin") return "platform_businesses";
+    return "services";
+  });
 
   useEffect(() => {
     if (role === "staff") {
@@ -137,152 +141,189 @@ export function useAdminTabController({
     ]);
   }, [appointments, catalog, role]);
 
+  const loadPlatformBusinessesIfNeeded = useCallback(async () => {
+    if (!platform.businessesLoaded) {
+      await platform.loadBusinesses(1, 25, "", "");
+    }
+  }, [platform]);
+
+  const loadPlatformResourcesIfNeeded = useCallback(async () => {
+    if (!platform.platformResourcesLoaded) {
+      await platform.loadPlatformResources(1, 25, "", "", "");
+    }
+  }, [platform]);
+
+  const loadPlatformServicesIfNeeded = useCallback(async () => {
+    if (!platform.platformServicesLoaded) {
+      await platform.loadPlatformServices({ page: 1, limit: 25 });
+    }
+  }, [platform]);
+
+  const loadPlatformBlocksIfNeeded = useCallback(async () => {
+    if (!platform.platformBlocksLoaded) {
+      await platform.loadPlatformBlocks({ page: 1, limit: 25 });
+    }
+  }, [platform]);
+
+  const platformTabHandlers = useMemo(() => {
+    const ensureBusinesses = async () => {
+      await loadPlatformBusinessesIfNeeded();
+    };
+    const ensureResources = async () => {
+      await loadPlatformResourcesIfNeeded();
+    };
+    const ensureServices = async () => {
+      await loadPlatformServicesIfNeeded();
+    };
+    const ensureBlocks = async () => {
+      await loadPlatformBlocksIfNeeded();
+    };
+
+    return {
+      platform_businesses: async () => {
+        if (!platform.businessesLoaded) {
+          await onPlatformBusinesses();
+        }
+      },
+      platform_owners: async () => {
+        await onPlatformOwners();
+      },
+      platform_staff: async () => {
+        await onPlatformStaff();
+      },
+      platform_appointments: async () => {
+        await onPlatformAppointments();
+      },
+      platform_services: async () => {
+        await ensureBusinesses();
+        await ensureResources();
+        await ensureServices();
+      },
+      platform_resources: async () => {
+        await ensureBusinesses();
+        await ensureResources();
+      },
+      platform_blocks: async () => {
+        await ensureBusinesses();
+        await ensureResources();
+        await ensureBlocks();
+      },
+      platform_hours: async () => {
+        await ensureBusinesses();
+      },
+      platform_policies: async () => {
+        await ensureBusinesses();
+      },
+      platform_calendar: async () => {
+        await ensureBusinesses();
+        await ensureResources();
+        await ensureServices();
+      }
+    } satisfies Partial<Record<TabKey, AsyncVoid>>;
+  }, [
+    loadPlatformBlocksIfNeeded,
+    loadPlatformBusinessesIfNeeded,
+    loadPlatformResourcesIfNeeded,
+    loadPlatformServicesIfNeeded,
+    onPlatformAppointments,
+    onPlatformBusinesses,
+    onPlatformOwners,
+    onPlatformStaff,
+    platform.businessesLoaded
+  ]);
+
+  const handlePlatformTab = useCallback(
+    (tab: TabKey) => {
+      const handler = platformTabHandlers[tab];
+      if (!handler) {
+        return false;
+      }
+      fireAndForget(Promise.resolve(handler()));
+      return true;
+    },
+    [fireAndForget, platformTabHandlers]
+  );
+
+  const businessTabHandlers = useMemo(() => {
+    return {
+      services: async () => {
+        if (!catalog.servicesLoaded) {
+          await catalog.loadServices(1, 25, "", "");
+        }
+      },
+      resources: async () => {
+        if (!catalog.resourcesLoaded) {
+          await catalog.loadResources(1, 25, "", "");
+        }
+      },
+      staff: async () => {
+        if (!catalog.staffLoaded) {
+          await Promise.all([catalog.loadStaff(1, 25, "", ""), catalog.ensureResourcesLoaded()]);
+        }
+      },
+      blocks: async () => {
+        if (!blocks.blocksLoaded) {
+          await onBlocksTab();
+        }
+      },
+      calendar: async () => {
+        if (!calendar.calendarLoaded) {
+          await Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()]);
+          await calendar.loadCalendarData();
+        }
+      },
+      business: async () => {
+        if (!businessSettings.businessLoaded) {
+          await businessSettings.loadBusinessSettings();
+        }
+      },
+      hours: async () => {
+        if (!businessSettings.businessLoaded) {
+          await businessSettings.loadBusinessSettings();
+        }
+      },
+      policies: async () => {
+        if (!businessSettings.businessLoaded) {
+          await businessSettings.loadBusinessSettings();
+        }
+      },
+      appointments: async () => {
+        if (!appointments.appointmentsLoaded) {
+          await onAppointmentsTab();
+        }
+      }
+    } satisfies Partial<Record<TabKey, AsyncVoid>>;
+  }, [
+    appointments.appointmentsLoaded,
+    blocks.blocksLoaded,
+    businessSettings,
+    calendar,
+    catalog,
+    onAppointmentsTab,
+    onBlocksTab
+  ]);
+
+  const handleBusinessTab = useCallback(
+    (tab: TabKey) => {
+      const handler = businessTabHandlers[tab];
+      if (!handler) {
+        return false;
+      }
+      fireAndForget(Promise.resolve(handler()));
+      return true;
+    },
+    [businessTabHandlers, fireAndForget]
+  );
+
   const handleTabSelect = useCallback(
     (tab: TabKey) => {
       setActiveTab(tab);
-      if (tab === "platform_businesses") {
-        if (!platform.businessesLoaded) {
-          fireAndForget(onPlatformBusinesses());
-        }
+      if (handlePlatformTab(tab)) {
         return;
       }
-      if (tab === "platform_owners") {
-        fireAndForget(onPlatformOwners());
-        return;
-      }
-      if (tab === "platform_staff") {
-        fireAndForget(onPlatformStaff());
-        return;
-      }
-      if (tab === "platform_appointments") {
-        fireAndForget(onPlatformAppointments());
-        return;
-      }
-      if (tab === "platform_services") {
-        fireAndForget(
-          (async () => {
-            if (!platform.businessesLoaded) {
-              await platform.loadBusinesses(1, 25, "", "");
-            }
-            if (!platform.platformResourcesLoaded) {
-              await platform.loadPlatformResources(1, 25, "", "", "");
-            }
-            if (!platform.platformServicesLoaded) {
-              await platform.loadPlatformServices({ page: 1, limit: 25 });
-            }
-          })()
-        );
-        return;
-      }
-      if (tab === "platform_resources") {
-        fireAndForget(
-          (async () => {
-            if (!platform.businessesLoaded) {
-              await platform.loadBusinesses(1, 25, "", "");
-            }
-            if (!platform.platformResourcesLoaded) {
-              await platform.loadPlatformResources(1, 25, "", "", "");
-            }
-          })()
-        );
-        return;
-      }
-      if (tab === "platform_blocks") {
-        fireAndForget(
-          (async () => {
-            if (!platform.businessesLoaded) {
-              await platform.loadBusinesses(1, 25, "", "");
-            }
-            if (!platform.platformResourcesLoaded) {
-              await platform.loadPlatformResources(1, 25, "", "", "");
-            }
-            if (!platform.platformBlocksLoaded) {
-              await platform.loadPlatformBlocks({ page: 1, limit: 25 });
-            }
-          })()
-        );
-        return;
-      }
-      if (tab === "platform_hours" || tab === "platform_policies" || tab === "platform_calendar") {
-        fireAndForget(
-          (async () => {
-            if (!platform.businessesLoaded) {
-              await platform.loadBusinesses(1, 25, "", "");
-            }
-            if (tab === "platform_calendar") {
-              if (!platform.platformResourcesLoaded) {
-                await platform.loadPlatformResources(1, 25, "", "", "");
-              }
-              if (!platform.platformServicesLoaded) {
-                await platform.loadPlatformServices({ page: 1, limit: 25 });
-              }
-            }
-          })()
-        );
-        return;
-      }
-      if (tab === "services") {
-        if (!catalog.servicesLoaded) {
-          fireAndForget(catalog.loadServices(1, 25, "", ""));
-        }
-        return;
-      }
-      if (tab === "resources") {
-        if (!catalog.resourcesLoaded) {
-          fireAndForget(catalog.loadResources(1, 25, "", ""));
-        }
-        return;
-      }
-      if (tab === "staff") {
-        if (!catalog.staffLoaded) {
-          fireAndForget(
-            Promise.all([catalog.loadStaff(1, 25, "", ""), catalog.ensureResourcesLoaded()])
-          );
-        }
-        return;
-      }
-      if (tab === "blocks") {
-        if (!blocks.blocksLoaded) {
-          fireAndForget(onBlocksTab());
-        }
-        return;
-      }
-      if (tab === "calendar") {
-        if (!calendar.calendarLoaded) {
-          fireAndForget(
-            Promise.all([catalog.ensureResourcesLoaded(), catalog.ensureServicesLoaded()])
-          );
-          fireAndForget(calendar.loadCalendarData());
-        }
-        return;
-      }
-      if (tab === "business" || tab === "hours" || tab === "policies") {
-        if (!businessSettings.businessLoaded) {
-          fireAndForget(businessSettings.loadBusinessSettings());
-        }
-        return;
-      }
-      if (tab === "appointments") {
-        if (!appointments.appointmentsLoaded) {
-          fireAndForget(onAppointmentsTab());
-        }
-      }
+      handleBusinessTab(tab);
     },
-    [
-      appointments,
-      blocks,
-      businessSettings,
-      calendar,
-      catalog,
-      fireAndForget,
-      onAppointmentsTab,
-      onBlocksTab,
-      onPlatformAppointments,
-      onPlatformBusinesses,
-      onPlatformOwners,
-      onPlatformStaff,
-      platform
-    ]
+    [handleBusinessTab, handlePlatformTab]
   );
 
   return {

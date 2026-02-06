@@ -41,7 +41,7 @@ export function PlatformHoursSection({
   }, [page, pageSize, onRefresh]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Horarios"
         subtitle="Horarios por negocio."
@@ -52,7 +52,7 @@ export function PlatformHoursSection({
         }
       />
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -92,6 +92,31 @@ export function PlatformHoursSection({
             )}
           </TableBody>
         </DataTable>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:hidden">
+        {businessRows.map((business) => (
+          <div key={business.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="text-base font-semibold text-slate-900">{business.name}</div>
+            <div className="text-xs text-slate-500">{business.timezone}</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => {
+                  const target = businesses.find((item) => item._id === business.id) ?? null;
+                  setEditingBusiness(target);
+                }}
+              >
+                Editar horarios
+              </button>
+            </div>
+          </div>
+        ))}
+        {businessRows.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay negocios registrados.
+          </div>
+        )}
       </div>
 
       <Pagination

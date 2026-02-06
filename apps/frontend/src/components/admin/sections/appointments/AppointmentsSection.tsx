@@ -61,7 +61,7 @@ export function AppointmentsSection({
   }, [appointmentsDate, appointmentsStatus, debouncedSearch, page, pageSize, loadAppointments]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Citas"
         subtitle="Administra las citas del negocio."
@@ -108,7 +108,7 @@ export function AppointmentsSection({
         </button>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -185,6 +185,60 @@ export function AppointmentsSection({
         </DataTable>
       </div>
 
+      <div className="mt-4 grid gap-3 md:hidden">
+        {appointments.map((item) => {
+          const serviceName = services.find((service) => service._id === item.serviceId)?.name;
+          const resourceName = resources.find((resource) => resource._id === item.resourceId)?.name;
+          const statusTone = (() => {
+            if (item.status === "booked") return "warning";
+            if (item.status === "completed") return "success";
+            return "danger";
+          })();
+          return (
+            <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-base font-semibold text-slate-900">{item.customerName}</div>
+                  <div className="text-xs text-slate-500">{item.customerPhone}</div>
+                </div>
+                <Badge tone={statusTone}>{item.status}</Badge>
+              </div>
+              <div className="mt-2 text-sm text-slate-700">{serviceName ?? "-"}</div>
+              <div className="text-xs text-slate-500">{resourceName ?? "-"}</div>
+              <div className="mt-2 text-xs text-slate-500">
+                {new Date(item.startTime).toLocaleString()} →{" "}
+                {new Date(item.endTime).toLocaleString()}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                  onClick={() => setViewingAppointment(item)}
+                >
+                  Ver
+                </button>
+                <button
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                  onClick={() => updateAppointmentStatus(item._id, "completed")}
+                >
+                  Completar
+                </button>
+                <button
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                  onClick={() => updateAppointmentStatus(item._id, "cancelled")}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {appointments.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay citas para los filtros actuales.
+          </div>
+        )}
+      </div>
+
       <Pagination
         total={total}
         page={page}
@@ -237,15 +291,6 @@ export function AppointmentsSection({
               <div className="font-medium">
                 {new Date(viewingAppointment.endTime).toLocaleString()}
               </div>
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingAppointment(null)}
-              >
-                Cerrar
-              </button>
             </div>
           </div>
         )}

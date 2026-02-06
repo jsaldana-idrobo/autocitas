@@ -54,7 +54,7 @@ export function BlocksSection({
   }, [page, pageSize, debouncedSearch, loadBlocks]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
       <SectionHeader
         title="Bloqueos"
         subtitle="Bloquea horarios no disponibles."
@@ -85,7 +85,7 @@ export function BlocksSection({
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 hidden md:block">
         <DataTable>
           <TableHead>
             <TableRow>
@@ -134,6 +134,47 @@ export function BlocksSection({
             )}
           </TableBody>
         </DataTable>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:hidden">
+        {blocks.map((block) => (
+          <div key={block._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="text-base font-semibold text-slate-900">
+              {block.reason || "Bloqueo"}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Inicio: {new Date(block.startTime).toLocaleString()}
+            </div>
+            <div className="text-xs text-slate-500">
+              Fin: {new Date(block.endTime).toLocaleString()}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => setViewingBlock(block)}
+              >
+                Ver
+              </button>
+              <button
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs"
+                onClick={() => setEditingBlock(block)}
+              >
+                Editar
+              </button>
+              <button
+                className="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600"
+                onClick={() => setDeletingBlock(block)}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        ))}
+        {blocks.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+            No hay bloqueos para los filtros actuales.
+          </div>
+        )}
       </div>
 
       <Pagination
@@ -242,15 +283,6 @@ export function BlocksSection({
                   viewingBlock.resourceId ||
                   "Todos"}
               </div>
-            </div>
-            <div className="md:col-span-2 flex justify-end">
-              <button
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm"
-                type="button"
-                onClick={() => setViewingBlock(null)}
-              >
-                Cerrar
-              </button>
             </div>
           </div>
         )}
