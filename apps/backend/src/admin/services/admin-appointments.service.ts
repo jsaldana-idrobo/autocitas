@@ -11,6 +11,8 @@ import type { Model } from "mongoose";
 import { Appointment } from "../../schemas/appointment.schema.js";
 import { Block } from "../../schemas/block.schema.js";
 import { Business } from "../../schemas/business.schema.js";
+import { Resource } from "../../schemas/resource.schema.js";
+import { Service } from "../../schemas/service.schema.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_APPOINTMENT_NOT_FOUND,
@@ -36,9 +38,39 @@ export class AdminAppointmentsService {
     @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>,
     @InjectModel(Block.name) private readonly blockModel: Model<Block>,
     @InjectModel(Business.name) private readonly businessModel: Model<Business>,
+    @InjectModel(Service.name) private readonly serviceModel: Model<Service>,
+    @InjectModel(Resource.name) private readonly resourceModel: Model<Resource>,
     private readonly businessContext: AdminBusinessContextService,
     private readonly catalogService: AdminCatalogService
   ) {}
+
+  private async enrichAppointments(
+    businessId: string,
+    appointments: Array<Record<string, unknown>>
+  ) {
+    if (appointments.length === 0) {
+      return appointments;
+    }
+    const [services, resources] = await Promise.all([
+      this.serviceModel.find({ businessId }).select({ _id: 1, name: 1 }).lean(),
+      this.resourceModel.find({ businessId }).select({ _id: 1, name: 1 }).lean()
+    ]);
+    const serviceLookup = new Map(
+      services.map((service) => [service._id.toString(), service.name])
+    );
+    const resourceLookup = new Map(
+      resources.map((resource) => [resource._id.toString(), resource.name])
+    );
+    return appointments.map((appointment) => {
+      const serviceId = appointment.serviceId?.toString();
+      const resourceId = appointment.resourceId?.toString();
+      return {
+        ...appointment,
+        serviceName: serviceId ? (serviceLookup.get(serviceId) ?? null) : null,
+        resourceName: resourceId ? (resourceLookup.get(resourceId) ?? null) : null
+      };
+    });
+  }
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
   async listAppointments(
@@ -96,7 +128,11 @@ export class AdminAppointmentsService {
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
         .lean();
-      return { items, total, page: options.page, limit: options.limit };
+      const enrichedItems = await this.enrichAppointments(
+        businessId,
+        items as Array<Record<string, unknown>>
+      );
+      return { items: enrichedItems, total, page: options.page, limit: options.limit };
     }
 
     const baseQuery = this.appointmentModel.find(query);
@@ -106,7 +142,8 @@ export class AdminAppointmentsService {
     } else {
       baseQuery.sort({ startTime: 1 });
     }
-    return baseQuery.lean();
+    const items = await baseQuery.lean();
+    return this.enrichAppointments(businessId, items as Array<Record<string, unknown>>);
   }
 
   async updateAppointmentStatus(

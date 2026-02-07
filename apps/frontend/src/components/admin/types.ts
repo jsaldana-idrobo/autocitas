@@ -77,7 +77,9 @@ export interface Policies {
 export interface AppointmentItem {
   _id: string;
   serviceId: string;
+  serviceName?: string | null;
   resourceId?: string;
+  resourceName?: string | null;
   customerName: string;
   customerPhone: string;
   startTime: string;

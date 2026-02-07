@@ -52,12 +52,14 @@ export function AppointmentDetail({
         <>
           <div className="text-sm">
             <div className="text-xs uppercase tracking-wide text-slate-400">Servicio</div>
-            <div className="font-medium">{serviceLookup.get(appointment.serviceId) ?? "-"}</div>
+            <div className="font-medium">
+              {serviceLookup.get(appointment.serviceId) ?? appointment.serviceName ?? "-"}
+            </div>
           </div>
           <div className="text-sm">
             <div className="text-xs uppercase tracking-wide text-slate-400">Recurso</div>
             <div className="font-medium">
-              {resourceLookup.get(appointment.resourceId ?? "") ?? "-"}
+              {resourceLookup.get(appointment.resourceId ?? "") ?? appointment.resourceName ?? "-"}
             </div>
           </div>
         </>

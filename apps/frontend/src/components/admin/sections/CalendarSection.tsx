@@ -184,7 +184,7 @@ export function CalendarSection({
                         {appt.customerName}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {service?.name ?? "Servicio"}
+                        {service?.name ?? appt.serviceName ?? "Servicio"}
                         {resourceLabel ? ` · ${resourceLabel}` : ""}
                       </div>
                     </div>

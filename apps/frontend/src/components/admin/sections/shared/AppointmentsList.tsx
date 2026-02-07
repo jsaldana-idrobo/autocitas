@@ -111,8 +111,9 @@ export function AppointmentsList({
           </TableHead>
           <TableBody>
             {appointments.map((item) => {
-              const serviceName = serviceLookup.get(item.serviceId) ?? "-";
-              const resourceName = resourceLookup.get(item.resourceId ?? "") ?? "-";
+              const serviceName = serviceLookup.get(item.serviceId) ?? item.serviceName ?? "-";
+              const resourceName =
+                resourceLookup.get(item.resourceId ?? "") ?? item.resourceName ?? "-";
               return (
                 <TableRow key={item._id}>
                   <TableCell>
@@ -166,8 +167,9 @@ export function AppointmentsList({
 
       <div className="mt-4 grid gap-3 md:hidden">
         {appointments.map((item) => {
-          const serviceName = serviceLookup.get(item.serviceId) ?? "-";
-          const resourceName = resourceLookup.get(item.resourceId ?? "") ?? "-";
+          const serviceName = serviceLookup.get(item.serviceId) ?? item.serviceName ?? "-";
+          const resourceName =
+            resourceLookup.get(item.resourceId ?? "") ?? item.resourceName ?? "-";
           return (
             <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <div className="flex items-start justify-between gap-3">

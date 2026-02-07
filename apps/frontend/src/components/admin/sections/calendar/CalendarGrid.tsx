@@ -108,8 +108,8 @@ export function CalendarGrid({
                   top;
                 const service = serviceMap.get(appt.serviceId);
                 const resourceLabel = appt.resourceId
-                  ? resourceMap.get(appt.resourceId)?.name
-                  : undefined;
+                  ? (resourceMap.get(appt.resourceId)?.name ?? appt.resourceName ?? undefined)
+                  : (appt.resourceName ?? undefined);
                 const statusClass = statusStyles[appt.status] || "bg-slate-100 text-slate-700";
                 const statusLabel = statusLabels[appt.status] || appt.status;
                 const accent = getServiceColor(appt.serviceId);
@@ -119,7 +119,7 @@ export function CalendarGrid({
                     className={`absolute left-1 right-1 overflow-hidden rounded-md p-1 text-left text-[10px] leading-tight ${statusClass}`}
                     style={{ top, height }}
                     onClick={() => onSelectAppointment(appt)}
-                    title={`${appt.customerName} · ${service?.name ?? "Servicio"} · ${statusLabel}${
+                    title={`${appt.customerName} · ${service?.name ?? appt.serviceName ?? "Servicio"} · ${statusLabel}${
                       resourceLabel ? ` · ${resourceLabel}` : ""
                     }`}
                   >
@@ -130,7 +130,9 @@ export function CalendarGrid({
                       />
                       <div className="truncate font-semibold">{appt.customerName}</div>
                     </div>
-                    <div className="truncate">{service?.name ?? "Servicio"}</div>
+                    <div className="truncate">
+                      {service?.name ?? appt.serviceName ?? "Servicio"}
+                    </div>
                     <div className="text-[9px]">
                       {new Date(appt.startTime).toLocaleTimeString([], {
                         hour: "2-digit",
