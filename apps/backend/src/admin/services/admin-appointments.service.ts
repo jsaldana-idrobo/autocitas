@@ -33,6 +33,29 @@ import {
 
 type AppointmentStatus = "booked" | "cancelled" | "completed";
 
+function toLookupId(value: unknown) {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const objectValue = value as {
+    toHexString?: () => string;
+    toString?: () => string;
+  };
+  if (typeof objectValue.toHexString === "function") {
+    return objectValue.toHexString();
+  }
+  if (typeof objectValue.toString === "function") {
+    const serialized = objectValue.toString();
+    return serialized === "[object Object]" ? null : serialized;
+  }
+
+  return null;
+}
+
 @Injectable()
 export class AdminAppointmentsService {
   constructor(
@@ -63,8 +86,8 @@ export class AdminAppointmentsService {
       resources.map((resource) => [resource._id.toString(), resource.name])
     );
     return appointments.map((appointment) => {
-      const serviceId = appointment.serviceId?.toString();
-      const resourceId = appointment.resourceId?.toString();
+      const serviceId = toLookupId(appointment.serviceId);
+      const resourceId = toLookupId(appointment.resourceId);
       return {
         ...appointment,
         serviceName: serviceId ? (serviceLookup.get(serviceId) ?? null) : null,

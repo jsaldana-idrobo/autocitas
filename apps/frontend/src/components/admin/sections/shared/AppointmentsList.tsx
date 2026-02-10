@@ -43,8 +43,12 @@ export function AppointmentsList({
     if (variant === "platform") {
       return <span className="capitalize">{item.status}</span>;
     }
-    const tone =
-      item.status === "booked" ? "warning" : item.status === "completed" ? "success" : "danger";
+    let tone: "warning" | "success" | "danger" = "danger";
+    if (item.status === "booked") {
+      tone = "warning";
+    } else if (item.status === "completed") {
+      tone = "success";
+    }
     return <Badge tone={tone}>{item.status}</Badge>;
   };
 

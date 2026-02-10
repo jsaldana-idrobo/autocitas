@@ -14,6 +14,27 @@ import { createPaginationParams, readFormString } from "../shared/utils";
 import type { PlatformLoadGuard } from "./utils";
 
 type ActiveFilter = "" | "active" | "inactive";
+type UsersQueryRef = MutableRefObject<{
+  page: number;
+  limit: number;
+  search: string;
+  active: string;
+}>;
+type PlatformUsersRole = "owner" | "staff";
+type PlatformUsersQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  active?: ActiveFilter;
+};
+type LoadPlatformUsersConfig = {
+  role: PlatformUsersRole;
+  queryRef: UsersQueryRef;
+  setItems: Dispatch<SetStateAction<StaffItem[]>>;
+  setTotal: Dispatch<SetStateAction<number>>;
+  setLoaded: Dispatch<SetStateAction<boolean>>;
+  errorMessage: string;
+};
 
 type UsersState = {
   ownerBusinessId: string;
@@ -61,18 +82,9 @@ export function useAdminPlatformUsers(
   const staffQueryRef = useRef({ page: 1, limit: 25, search: "", active: "" });
 
   const loadPlatformUsers = useCallback(
-    async (
-      role: "owner" | "staff",
-      queryRef: MutableRefObject<{ page: number; limit: number; search: string; active: string }>,
-      setItems: Dispatch<SetStateAction<StaffItem[]>>,
-      setTotal: Dispatch<SetStateAction<number>>,
-      setLoaded: Dispatch<SetStateAction<boolean>>,
-      errorMessage: string,
-      page = 1,
-      limit = 25,
-      search = "",
-      active: ActiveFilter = ""
-    ) => {
+    async (config: LoadPlatformUsersConfig, query: PlatformUsersQuery = {}) => {
+      const { role, queryRef, setItems, setTotal, setLoaded, errorMessage } = config;
+      const { page = 1, limit = 25, search = "", active = "" } = query;
       if (!startLoad()) return;
       api.setLoading(true);
       api.resetError();
@@ -103,16 +115,15 @@ export function useAdminPlatformUsers(
   const loadPlatformOwners = useCallback(
     async (page = 1, limit = 25, search = "", active: ActiveFilter = "") =>
       loadPlatformUsers(
-        "owner",
-        ownersQueryRef,
-        setPlatformOwners,
-        setPlatformOwnersTotal,
-        setPlatformOwnersLoaded,
-        "Error cargando owners",
-        page,
-        limit,
-        search,
-        active
+        {
+          role: "owner",
+          queryRef: ownersQueryRef,
+          setItems: setPlatformOwners,
+          setTotal: setPlatformOwnersTotal,
+          setLoaded: setPlatformOwnersLoaded,
+          errorMessage: "Error cargando owners"
+        },
+        { page, limit, search, active }
       ),
     [loadPlatformUsers]
   );
@@ -120,16 +131,15 @@ export function useAdminPlatformUsers(
   const loadPlatformStaff = useCallback(
     async (page = 1, limit = 25, search = "", active: ActiveFilter = "") =>
       loadPlatformUsers(
-        "staff",
-        staffQueryRef,
-        setPlatformStaff,
-        setPlatformStaffTotal,
-        setPlatformStaffLoaded,
-        "Error cargando staff",
-        page,
-        limit,
-        search,
-        active
+        {
+          role: "staff",
+          queryRef: staffQueryRef,
+          setItems: setPlatformStaff,
+          setTotal: setPlatformStaffTotal,
+          setLoaded: setPlatformStaffLoaded,
+          errorMessage: "Error cargando staff"
+        },
+        { page, limit, search, active }
       ),
     [loadPlatformUsers]
   );
