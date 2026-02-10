@@ -5,6 +5,7 @@ import { Block } from "../schemas/block.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import { Resource } from "../schemas/resource.schema.js";
 import { Service } from "../schemas/service.schema.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { CancelAppointmentDto } from "./dto/cancel-appointment.dto.js";
 import { CreateAppointmentDto } from "./dto/create-appointment.dto.js";
 import { RescheduleAppointmentDto } from "./dto/reschedule-appointment.dto.js";
@@ -22,7 +23,8 @@ export class PublicService {
     @InjectModel(Service.name) private readonly serviceModel: Model<Service>,
     @InjectModel(Resource.name) private readonly resourceModel: Model<Resource>,
     @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>,
-    @InjectModel(Block.name) private readonly blockModel: Model<Block>
+    @InjectModel(Block.name) private readonly blockModel: Model<Block>,
+    private readonly notifications: NotificationsService
   ) {}
 
   async getPublicBusiness(slug: string) {
@@ -46,7 +48,7 @@ export class PublicService {
   }
 
   async createAppointment(slug: string, payload: CreateAppointmentDto) {
-    return createAppointment(
+    const created = await createAppointment(
       this.businessModel,
       this.serviceModel,
       this.appointmentModel,
@@ -54,6 +56,8 @@ export class PublicService {
       slug,
       payload
     );
+    void this.notifications.sendCreationConfirmationForAppointment(String(created.appointmentId));
+    return created;
   }
 
   async listAppointmentsByPhone(slug: string, phone?: string) {

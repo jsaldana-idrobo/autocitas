@@ -1,6 +1,12 @@
 import React from "react";
 import type { AppointmentItem, BusinessResponse } from "./types";
-import { formatDateTime, INPUT_CLASS, LABEL_PHONE, toDateTimeLocalValue } from "./utils";
+import {
+  formatDateTime,
+  INPUT_CLASS,
+  LABEL_PHONE,
+  phoneForDisplay,
+  toDateTimeLocalValue
+} from "./utils";
 
 type ManageAppointmentModalProps = Readonly<{
   open: boolean;
@@ -122,7 +128,7 @@ export function ManageAppointmentModal({
                     onClick={() => {
                       setManageSelected(appt);
                       setManageName(appt.customerName);
-                      setManagePhone(appt.customerPhone);
+                      setManagePhone(phoneForDisplay(appt.customerPhone));
                       setManageStartTime(toDateTimeLocalValue(appt.startTime, timezone));
                     }}
                   >

@@ -1,7 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import type { AppointmentItem } from "./types";
-import { DISABLED_OPACITY, PHONE_MIN_LEN, normalizePhone, toDateTimeLocalValue } from "./utils";
+import {
+  DISABLED_OPACITY,
+  PHONE_MIN_LEN,
+  normalizePhone,
+  normalizePhoneToE164,
+  phoneForDisplay,
+  toDateTimeLocalValue
+} from "./utils";
 
 type ManageState = {
   manageOpen: boolean;
@@ -58,7 +65,7 @@ export function useBookingManage({ slug, timezone, loading, setLoading }: Manage
     () => normalizePhone(manageSearchPhone),
     [manageSearchPhone]
   );
-  const normalizedManageEditPhone = useMemo(() => normalizePhone(managePhone), [managePhone]);
+  const normalizedManageEditPhone = useMemo(() => normalizePhoneToE164(managePhone), [managePhone]);
   const originalStartLocal = manageSelected
     ? toDateTimeLocalValue(manageSelected.startTime, timezone)
     : "";
@@ -69,7 +76,7 @@ export function useBookingManage({ slug, timezone, loading, setLoading }: Manage
   const phoneChanged = useMemo(
     () =>
       !!manageSelected &&
-      normalizedManageEditPhone !== normalizePhone(manageSelected.customerPhone),
+      normalizedManageEditPhone !== normalizePhoneToE164(manageSelected.customerPhone),
     [manageSelected, normalizedManageEditPhone]
   );
   const phoneValid = normalizedManageEditPhone.length >= PHONE_MIN_LEN;
@@ -102,7 +109,7 @@ export function useBookingManage({ slug, timezone, loading, setLoading }: Manage
         setManageSelected(refreshed);
         if (refreshed) {
           setManageName(refreshed.customerName);
-          setManagePhone(refreshed.customerPhone);
+          setManagePhone(phoneForDisplay(refreshed.customerPhone));
           setManageStartTime(toDateTimeLocalValue(refreshed.startTime, timezone));
         }
       }

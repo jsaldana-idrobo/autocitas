@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { DateTime } from "luxon";
@@ -14,6 +15,7 @@ type AppointmentDoc = Appointment & { reminderSentHours?: number[] };
 export class NotificationsService {
   private readonly twilioClient?: ReturnType<typeof twilio>;
   private readonly fromNumber?: string;
+  private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
     @InjectModel(Appointment.name) private readonly appointmentModel: Model<AppointmentDoc>,
@@ -30,7 +32,7 @@ export class NotificationsService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async sendReminders() {
-    if (!this.twilioClient || !this.fromNumber) {
+    if (!this.isConfigured()) {
       return;
     }
 
@@ -51,26 +53,80 @@ export class NotificationsService {
         const business = await this.businessModel.findById(appointment.businessId).lean();
         if (!business) continue;
         const timezone = business.timezone || "America/Bogota";
-        const startLocal = DateTime.fromJSDate(appointment.startTime).setZone(timezone);
-        const message = `Hola ${appointment.customerName}, tienes una cita el ${startLocal.toFormat(
-          "dd/LL/yyyy"
-        )} a las ${startLocal.toFormat("HH:mm")}.`;
+        const message = this.buildReminderMessage(
+          appointment.customerName,
+          appointment.startTime,
+          timezone
+        );
 
-        try {
-          await this.twilioClient.messages.create({
-            to: appointment.customerPhone,
-            from: this.fromNumber,
-            body: message
-          });
-
+        const sent = await this.sendSms(appointment.customerPhone, message, "reminder");
+        if (sent) {
           await this.appointmentModel.updateOne(
             { _id: appointment._id },
             { $addToSet: { reminderSentHours: hours } }
           );
-        } catch {
-          // Ignore to avoid retry storms; next run will retry if needed.
         }
       }
+    }
+  }
+
+  async sendCreationConfirmationForAppointment(appointmentId: string) {
+    if (!this.isConfigured()) {
+      return;
+    }
+
+    const appointment = await this.appointmentModel.findById(appointmentId).lean();
+    if (!appointment || appointment.status !== "booked") {
+      return;
+    }
+
+    const business = await this.businessModel.findById(appointment.businessId).lean();
+    if (!business) {
+      return;
+    }
+
+    const timezone = business.timezone || "America/Bogota";
+    const message = this.buildCreationMessage(
+      appointment.customerName,
+      appointment.startTime,
+      timezone
+    );
+
+    await this.sendSms(appointment.customerPhone, message, "creation");
+  }
+
+  private isConfigured() {
+    return Boolean(this.twilioClient && this.fromNumber);
+  }
+
+  private buildCreationMessage(customerName: string, startTime: Date, timezone: string) {
+    const startLocal = DateTime.fromJSDate(startTime).setZone(timezone);
+    return `Hola ${customerName}, tu cita fue creada para el ${startLocal.toFormat(
+      "dd/LL/yyyy"
+    )} a las ${startLocal.toFormat("HH:mm")}.`;
+  }
+
+  private buildReminderMessage(customerName: string, startTime: Date, timezone: string) {
+    const startLocal = DateTime.fromJSDate(startTime).setZone(timezone);
+    return `Hola ${customerName}, tienes una cita el ${startLocal.toFormat("dd/LL/yyyy")} a las ${startLocal.toFormat("HH:mm")}.`;
+  }
+
+  private async sendSms(to: string, body: string, type: "creation" | "reminder") {
+    if (!this.twilioClient || !this.fromNumber) {
+      return false;
+    }
+
+    try {
+      await this.twilioClient.messages.create({
+        to,
+        from: this.fromNumber,
+        body
+      });
+      return true;
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`SMS ${type} failed for ${to}: ${details}`);
+      return false;
     }
   }
 }

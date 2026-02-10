@@ -3,6 +3,7 @@ export const PHONE_MIN_LEN = 7;
 export const LABEL_PHONE = "Telefono";
 export const INPUT_CLASS = "rounded-xl border border-slate-200 px-3 py-2";
 export const DISABLED_OPACITY = "opacity-60";
+const COUNTRY_CODE_CO = "57";
 
 export function getTodayInTimezone(timezone: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -64,4 +65,35 @@ export function formatDateTime(iso: string, timezone: string) {
 
 export function normalizePhone(value: string) {
   return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
+}
+
+export function normalizePhoneToE164(value: string) {
+  const compact = normalizePhone(value);
+  if (!compact) {
+    return "";
+  }
+
+  if (compact.startsWith("+")) {
+    const digits = compact.slice(1).replaceAll(/\D/g, "");
+    return digits ? `+${digits}` : "";
+  }
+
+  const digitsOnly = compact.replaceAll(/\D/g, "");
+  if (!digitsOnly) {
+    return "";
+  }
+
+  if (digitsOnly.startsWith(COUNTRY_CODE_CO)) {
+    return `+${digitsOnly}`;
+  }
+
+  return `+${COUNTRY_CODE_CO}${digitsOnly}`;
+}
+
+export function phoneForDisplay(value: string) {
+  const normalized = normalizePhoneToE164(value);
+  if (normalized.startsWith(`+${COUNTRY_CODE_CO}`)) {
+    return normalized.slice(3);
+  }
+  return normalized || normalizePhone(value);
 }

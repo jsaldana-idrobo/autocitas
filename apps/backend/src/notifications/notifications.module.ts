@@ -11,6 +11,7 @@ import { NotificationsService } from "./notifications.service.js";
       { name: Business.name, schema: BusinessSchema }
     ])
   ],
-  providers: [NotificationsService]
+  providers: [NotificationsService],
+  exports: [NotificationsService]
 })
 export class NotificationsModule {}

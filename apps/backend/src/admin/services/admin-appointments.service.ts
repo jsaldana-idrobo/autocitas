@@ -23,6 +23,7 @@ import {
 import { AdminBusinessContextService } from "./admin-business-context.service.js";
 import { AdminCatalogService } from "./admin-catalog.service.js";
 import { normalizePhoneToE164 } from "../../shared/phone.utils.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 import {
   assertWithinBusinessHours,
   buildAppointmentSearchQuery,
@@ -65,7 +66,8 @@ export class AdminAppointmentsService {
     @InjectModel(Service.name) private readonly serviceModel: Model<Service>,
     @InjectModel(Resource.name) private readonly resourceModel: Model<Resource>,
     private readonly businessContext: AdminBusinessContextService,
-    private readonly catalogService: AdminCatalogService
+    private readonly catalogService: AdminCatalogService,
+    private readonly notifications: NotificationsService
   ) {}
 
   private async enrichAppointments(
@@ -263,6 +265,7 @@ export class AdminAppointmentsService {
       endTime: endUtc.toJSDate(),
       status: "booked"
     });
+    void this.notifications.sendCreationConfirmationForAppointment(String(created._id));
 
     return {
       appointmentId: created._id,

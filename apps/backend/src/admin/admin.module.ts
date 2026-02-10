@@ -27,6 +27,7 @@ import { AdminCatalogService } from "./services/admin-catalog.service.js";
 import { AdminPlatformService } from "./services/admin-platform.service.js";
 import { AdminStaffService } from "./services/admin-staff.service.js";
 import { AuditModule } from "../audit/audit.module.js";
+import { NotificationsModule } from "../notifications/notifications.module.js";
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AuditModule } from "../audit/audit.module.js";
       signOptions: { expiresIn: "7d" }
     }),
     AuditModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: Appointment.name, schema: AppointmentSchema },
       { name: AdminUser.name, schema: AdminUserSchema },

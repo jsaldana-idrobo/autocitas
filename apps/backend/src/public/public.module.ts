@@ -6,6 +6,7 @@ import { Business, BusinessSchema } from "../schemas/business.schema.js";
 import { Resource, ResourceSchema } from "../schemas/resource.schema.js";
 import { Service, ServiceSchema } from "../schemas/service.schema.js";
 import { AuditModule } from "../audit/audit.module.js";
+import { NotificationsModule } from "../notifications/notifications.module.js";
 import { PublicController } from "./public.controller.js";
 import { PublicService } from "./public.service.js";
 
@@ -18,7 +19,8 @@ import { PublicService } from "./public.service.js";
       { name: Appointment.name, schema: AppointmentSchema },
       { name: Block.name, schema: BlockSchema }
     ]),
-    AuditModule
+    AuditModule,
+    NotificationsModule
   ],
   controllers: [PublicController],
   providers: [PublicService]
