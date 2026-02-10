@@ -5,6 +5,7 @@ import { Block } from "../../schemas/block.schema.js";
 import { Appointment } from "../../schemas/appointment.schema.js";
 import { Business } from "../../schemas/business.schema.js";
 import { Service } from "../../schemas/service.schema.js";
+import { normalizePhoneToE164 } from "../../shared/phone.utils.js";
 import {
   ERR_APPOINTMENT_CONFLICT,
   ERR_OUTSIDE_HOURS,
@@ -17,7 +18,7 @@ export const TEXT_SCORE = "textScore";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
 
 export function normalizePhone(value: string) {
-  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
+  return normalizePhoneToE164(value);
 }
 
 export function buildAppointmentSearchQuery(search?: string) {

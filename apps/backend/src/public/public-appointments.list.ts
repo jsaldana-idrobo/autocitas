@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import type { Model } from "mongoose";
 import { Appointment } from "../schemas/appointment.schema.js";
 import { Business } from "../schemas/business.schema.js";
+import { normalizePhoneToE164 } from "../shared/phone.utils.js";
 import { assertActiveBusiness, DEFAULT_TIMEZONE } from "./public.service.helpers.js";
 
 export async function listAppointmentsByPhone(
@@ -10,7 +11,8 @@ export async function listAppointmentsByPhone(
   slug: string,
   phone?: string
 ) {
-  if (!phone || phone.trim().length < 7) {
+  const normalizedPhone = phone ? normalizePhoneToE164(phone) : "";
+  if (normalizedPhone.length < 7) {
     return { appointments: [] };
   }
 
@@ -22,7 +24,7 @@ export async function listAppointmentsByPhone(
   const appointments = await appointmentModel
     .find({
       businessId: business._id,
-      customerPhone: phone.trim(),
+      customerPhone: normalizedPhone,
       status: { $ne: "cancelled" },
       startTime: { $gte: todayStartUtc }
     })

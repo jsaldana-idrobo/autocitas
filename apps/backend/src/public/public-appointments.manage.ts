@@ -5,6 +5,7 @@ import { Appointment } from "../schemas/appointment.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import { CancelAppointmentDto } from "./dto/cancel-appointment.dto.js";
 import { UpdatePublicAppointmentDto } from "./dto/update-public-appointment.dto.js";
+import { normalizePhoneToE164 } from "../shared/phone.utils.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_APPOINTMENT_NOT_FOUND,
@@ -70,7 +71,9 @@ export async function updatePublicAppointment(
 
   const update: Record<string, unknown> = {};
   if (payload.customerName) update.customerName = payload.customerName;
-  if (payload.newCustomerPhone) update.customerPhone = payload.newCustomerPhone.trim();
+  if (payload.newCustomerPhone) {
+    update.customerPhone = normalizePhoneToE164(payload.newCustomerPhone);
+  }
   if (Object.keys(update).length === 0) {
     throw new BadRequestException("No updates provided.");
   }

@@ -6,6 +6,7 @@ import { Appointment } from "../schemas/appointment.schema.js";
 import { Block } from "../schemas/block.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import { Service } from "../schemas/service.schema.js";
+import { normalizePhoneToE164 } from "../shared/phone.utils.js";
 import {
   DEFAULT_TIMEZONE,
   ERR_BUSINESS_NOT_FOUND,
@@ -172,7 +173,7 @@ export async function getBusinessAndAppointment(params: {
 }
 
 export function assertPhoneMatch(expectedPhone: string, providedPhone: string) {
-  const normalized = providedPhone.trim();
+  const normalized = normalizePhoneToE164(providedPhone);
   if (expectedPhone !== normalized) {
     throw new BadRequestException("Phone mismatch.");
   }

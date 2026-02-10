@@ -22,6 +22,7 @@ import {
 } from "./admin.constants.js";
 import { AdminBusinessContextService } from "./admin-business-context.service.js";
 import { AdminCatalogService } from "./admin-catalog.service.js";
+import { normalizePhoneToE164 } from "../../shared/phone.utils.js";
 import {
   assertWithinBusinessHours,
   buildAppointmentSearchQuery,
@@ -234,7 +235,7 @@ export class AdminAppointmentsService {
       serviceId: service._id,
       resourceId,
       customerName: payload.customerName.trim(),
-      customerPhone: payload.customerPhone.trim(),
+      customerPhone: normalizePhoneToE164(payload.customerPhone),
       startTime: startUtc.toJSDate(),
       endTime: endUtc.toJSDate(),
       status: "booked"

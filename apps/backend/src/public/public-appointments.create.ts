@@ -4,6 +4,7 @@ import { Block } from "../schemas/block.schema.js";
 import { Business } from "../schemas/business.schema.js";
 import { Service } from "../schemas/service.schema.js";
 import { CreateAppointmentDto } from "./dto/create-appointment.dto.js";
+import { normalizePhoneToE164 } from "../shared/phone.utils.js";
 import { STATUS_BOOKED } from "./public.service.helpers.js";
 import {
   assertNoConflicts,
@@ -40,7 +41,7 @@ export async function createAppointment(
     serviceId: service._id,
     resourceId,
     customerName: payload.customerName.trim(),
-    customerPhone: payload.customerPhone.trim(),
+    customerPhone: normalizePhoneToE164(payload.customerPhone),
     startTime: startUtc.toJSDate(),
     endTime: endUtc.toJSDate(),
     status: STATUS_BOOKED

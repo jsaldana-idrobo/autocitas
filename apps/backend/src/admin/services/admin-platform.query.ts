@@ -1,10 +1,11 @@
 import type { Model } from "mongoose";
+import { normalizePhoneToE164 } from "../../shared/phone.utils.js";
 
 export const TEXT_SCORE = "textScore";
 const PHONE_SEARCH_REGEX = /^[\d+()\-\s]+$/;
 
 export function normalizePhone(value: string) {
-  return value.replaceAll(/\s+/g, "").replaceAll(/[^\d+]/g, "");
+  return normalizePhoneToE164(value);
 }
 
 export function applyTextSearchSort<T>(
