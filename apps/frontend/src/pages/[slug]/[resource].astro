@@ -1,7 +1,7 @@
 ---
-import "../styles/global.css";
-import { BookingApp } from "../components/booking/BookingApp";
-const { slug } = Astro.params;
+import "../../styles/global.css";
+import { BookingApp } from "../../components/booking/BookingApp";
+const { slug, resource } = Astro.params;
 ---
 
 <html lang="es">
@@ -12,7 +12,11 @@ const { slug } = Astro.params;
   </head>
   <body class="min-h-screen text-slate-900">
     <main class="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-6">
-      {slug ? <BookingApp slug={slug} client:load /> : <div class="card p-6">Slug invalido.</div>}
+      {slug ? (
+        <BookingApp slug={slug} resourceIdentifier={resource} client:load />
+      ) : (
+        <div class="card p-6">Slug invalido.</div>
+      )}
     </main>
   </body>
 </html>

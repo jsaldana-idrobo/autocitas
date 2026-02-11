@@ -21,7 +21,10 @@ type PlatformResourcesActions = {
     active?: ActiveFilter,
     businessId?: string
   ) => Promise<void>;
-  createPlatformResource: (businessId: string, payload: { name: string }) => Promise<void>;
+  createPlatformResource: (
+    businessId: string,
+    payload: { name: string; slug?: string }
+  ) => Promise<void>;
   updatePlatformResource: (
     businessId: string,
     resourceId: string,
@@ -89,7 +92,10 @@ export function usePlatformResources(
     [api, endLoad, startLoad]
   );
 
-  async function createPlatformResource(businessId: string, payload: { name: string }) {
+  async function createPlatformResource(
+    businessId: string,
+    payload: { name: string; slug?: string }
+  ) {
     api.resetError();
     api.resetSuccess();
     try {

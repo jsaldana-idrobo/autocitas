@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import type { AvailabilitySlot, BusinessResponse } from "./types";
-import { DEFAULT_TIMEZONE, PHONE_MIN_LEN, getTodayInTimezone, normalizePhone } from "./utils";
+import {
+  DEFAULT_TIMEZONE,
+  PHONE_MIN_LEN,
+  findResourceIdByIdentifier,
+  getTodayInTimezone,
+  normalizePhone
+} from "./utils";
 import { useBookingManage } from "./useBookingManage";
 
-export function useBookingState(slug: string) {
+export function useBookingState(slug: string, resourceIdentifier?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<BusinessResponse | null>(null);
@@ -71,12 +77,31 @@ export function useBookingState(slug: string) {
       try {
         const data = await apiRequest<BusinessResponse>(`/public/businesses/${slug}`);
         setBusiness(data);
-        const defaultServiceId = data.services[0]?._id ?? "";
+
+        let defaultServiceId = data.services[0]?._id ?? "";
+        let defaultResourceId = findResourceIdByIdentifier(data.resources, resourceIdentifier);
+
+        if (defaultResourceId) {
+          const serviceForResource = data.services.find((item) => {
+            if (!item.allowedResourceIds?.length) {
+              return true;
+            }
+            return item.allowedResourceIds.includes(defaultResourceId);
+          });
+
+          if (serviceForResource) {
+            defaultServiceId = serviceForResource._id;
+          } else {
+            defaultResourceId = "";
+          }
+        }
+
         setServiceId(defaultServiceId);
+        setResourceId(defaultResourceId);
         const today = getTodayInTimezone(data.business.timezone || DEFAULT_TIMEZONE);
         setDate(today);
         if (defaultServiceId) {
-          fireAndForget(loadAvailability(today, defaultServiceId));
+          fireAndForget(loadAvailability(today, defaultServiceId, defaultResourceId || undefined));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo cargar el negocio");
@@ -86,7 +111,7 @@ export function useBookingState(slug: string) {
     }
 
     fireAndForget(loadBusiness());
-  }, [fireAndForget, loadAvailability, slug]);
+  }, [fireAndForget, loadAvailability, resourceIdentifier, slug]);
 
   async function handleBooking() {
     if (!serviceId || !selectedSlot || !customerName.trim() || !normalizedPhone) {
@@ -123,10 +148,17 @@ export function useBookingState(slug: string) {
 
   const handleServiceChange = (nextService: string) => {
     setServiceId(nextService);
-    setResourceId("");
     setSelectedSlot(null);
+    const nextServiceData = business?.services.find((item) => item._id === nextService);
+    const nextResourceId =
+      resourceId &&
+      (!nextServiceData?.allowedResourceIds?.length ||
+        nextServiceData.allowedResourceIds.includes(resourceId))
+        ? resourceId
+        : "";
+    setResourceId(nextResourceId);
     if (date) {
-      fireAndForget(loadAvailability(date, nextService));
+      fireAndForget(loadAvailability(date, nextService, nextResourceId || undefined));
     }
   };
 

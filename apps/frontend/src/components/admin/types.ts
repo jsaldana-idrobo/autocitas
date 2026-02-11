@@ -33,6 +33,7 @@ export interface ResourceItem {
   _id: string;
   businessId?: string;
   name: string;
+  slug?: string;
   active: boolean;
 }
 

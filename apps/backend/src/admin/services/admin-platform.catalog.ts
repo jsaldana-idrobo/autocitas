@@ -10,6 +10,10 @@ import { applyTextSearchSort } from "./admin-platform.query.js";
 const ERR_INVALID_BUSINESS_ID = "Invalid businessId.";
 const ERR_INVALID_RESOURCE_ID = "Invalid resourceId.";
 
+function escapeRegex(value: string) {
+  return value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function listPlatformServices(
   serviceModel: Model<Service>,
@@ -105,16 +109,14 @@ export async function listPlatformResources(
     query.active = false;
   }
   const resourceSearch = options?.search?.trim() ?? "";
-  const hasResourceSearch = resourceSearch.length > 0;
-  if (hasResourceSearch) {
-    query.$text = { $search: resourceSearch };
+  if (resourceSearch.length > 0) {
+    const regex = new RegExp(escapeRegex(resourceSearch), "i");
+    query.$or = [{ name: regex }, { slug: regex }];
   }
 
   if (options?.page && options?.limit) {
     const total = await resourceModel.countDocuments(query);
-    const baseQuery = applyTextSearchSort(resourceModel.find(query), hasResourceSearch, {
-      name: 1
-    });
+    const baseQuery = resourceModel.find(query).sort({ name: 1 });
     const items = await baseQuery
       .skip((options.page - 1) * options.limit)
       .limit(options.limit)
@@ -122,7 +124,7 @@ export async function listPlatformResources(
     return { items, total, page: options.page, limit: options.limit };
   }
 
-  return applyTextSearchSort(resourceModel.find(query), hasResourceSearch, { name: 1 }).lean();
+  return resourceModel.find(query).sort({ name: 1 }).lean();
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity

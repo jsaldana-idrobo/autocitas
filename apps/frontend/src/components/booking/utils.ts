@@ -1,3 +1,5 @@
+import type { ResourceItem } from "./types";
+
 export const DEFAULT_TIMEZONE = "America/Bogota";
 export const PHONE_MIN_LEN = 7;
 export const LABEL_PHONE = "Telefono";
@@ -96,4 +98,50 @@ export function phoneForDisplay(value: string) {
     return normalized.slice(3);
   }
   return normalized || normalizePhone(value);
+}
+
+export function toUrlSlug(value: string) {
+  const plain = value
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+/g, "")
+    .replaceAll(/-+$/g, "");
+
+  return plain || "recurso";
+}
+
+export function normalizeResourceIdentifier(value: string) {
+  return value
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]/g, "");
+}
+
+export function findResourceIdByIdentifier(resources: ResourceItem[], resourceIdentifier?: string) {
+  if (!resourceIdentifier) {
+    return "";
+  }
+
+  const normalizedTarget = normalizeResourceIdentifier(resourceIdentifier);
+  if (!normalizedTarget) {
+    return "";
+  }
+
+  const matched = resources.filter((resource) => {
+    const candidates = [resource.name, resource.slug].filter((value): value is string =>
+      Boolean(value)
+    );
+    return candidates.some(
+      (candidate) => normalizeResourceIdentifier(candidate) === normalizedTarget
+    );
+  });
+
+  if (matched.length !== 1) {
+    return "";
+  }
+
+  return matched[0]?._id ?? "";
 }

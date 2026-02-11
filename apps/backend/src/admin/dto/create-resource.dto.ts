@@ -5,6 +5,10 @@ export class CreateResourceDto {
   name!: string;
 
   @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 }

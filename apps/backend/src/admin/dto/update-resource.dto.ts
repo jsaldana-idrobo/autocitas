@@ -6,6 +6,10 @@ export class UpdateResourceDto {
   name?: string;
 
   @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 }

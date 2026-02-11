@@ -68,7 +68,7 @@ export function ResourcesSection({
       <div className="mt-4 flex flex-wrap gap-3">
         <input
           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          placeholder="Buscar por nombre"
+          placeholder="Buscar por nombre o slug"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -109,6 +109,7 @@ export function ResourcesSection({
           }}
         >
           <InputField name="name" label="Nombre" />
+          <InputField name="slug" label="Slug URL (opcional)" />
           <div className="md:col-span-2 flex justify-end gap-2">
             <button
               type="button"
@@ -158,6 +159,10 @@ export function ResourcesSection({
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
               <div className="font-medium">{viewingResource.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Slug URL</div>
+              <div className="font-medium">{viewingResource.slug || "-"}</div>
             </div>
           </div>
         )}

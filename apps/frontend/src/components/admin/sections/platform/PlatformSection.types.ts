@@ -79,7 +79,7 @@ export type PlatformSectionProps = Readonly<{
   ) => void;
   onUpdateService: (businessId: string, serviceId: string, payload: Partial<ServiceItem>) => void;
   onDeleteService: (businessId: string, serviceId: string) => void;
-  onCreateResource: (businessId: string, payload: { name: string }) => void;
+  onCreateResource: (businessId: string, payload: { name: string; slug?: string }) => void;
   onUpdateResource: (
     businessId: string,
     resourceId: string,

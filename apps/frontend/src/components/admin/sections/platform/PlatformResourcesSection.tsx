@@ -81,7 +81,7 @@ export function PlatformResourcesSection({
       <div className="mt-4 flex flex-wrap gap-3">
         <input
           className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          placeholder="Buscar por nombre o ID"
+          placeholder="Buscar por nombre o slug"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />

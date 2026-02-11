@@ -4,7 +4,10 @@ import { LoadingCard } from "./LoadingCard";
 import { ManageAppointmentModal } from "./ManageAppointmentModal";
 import { useBookingState } from "./useBookingState";
 
-export function BookingApp({ slug }: Readonly<{ slug: string }>) {
+export function BookingApp({
+  slug,
+  resourceIdentifier
+}: Readonly<{ slug: string; resourceIdentifier?: string }>) {
   const {
     loading,
     error,
@@ -53,7 +56,7 @@ export function BookingApp({ slug }: Readonly<{ slug: string }>) {
     handleResourceChange,
     handleOpenManage,
     fireAndForget
-  } = useBookingState(slug);
+  } = useBookingState(slug, resourceIdentifier);
 
   if (loading && !business) {
     return <LoadingCard />;

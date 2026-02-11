@@ -73,8 +73,10 @@ export function useAdminCatalogResources(
     api.resetError();
     api.resetSuccess();
     const form = new FormData(event.currentTarget);
+    const slug = readFormString(form, "slug");
     const payload = {
-      name: readFormString(form, "name")
+      name: readFormString(form, "name"),
+      slug: slug || undefined
     };
     if (!payload.name) {
       api.setError("Nombre es obligatorio.");

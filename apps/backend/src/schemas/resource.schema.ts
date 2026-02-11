@@ -12,10 +12,14 @@ export class Resource {
   @Prop({ required: true })
   name!: string;
 
+  @Prop()
+  slug?: string;
+
   @Prop({ default: true })
   active!: boolean;
 }
 
 export const ResourceSchema = SchemaFactory.createForClass(Resource);
 ResourceSchema.index({ businessId: 1, active: 1, name: 1 });
+ResourceSchema.index({ businessId: 1, slug: 1 }, { unique: true, sparse: true });
 ResourceSchema.index({ name: "text" });

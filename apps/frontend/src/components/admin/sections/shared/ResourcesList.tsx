@@ -56,6 +56,7 @@ export function ResourcesList({
                 {showBusiness && <TableCell>{renderBusinessLabel(resource)}</TableCell>}
                 <TableCell>
                   <div className="font-medium">{resource.name}</div>
+                  {resource.slug && <div className="text-xs text-slate-500">{resource.slug}</div>}
                 </TableCell>
                 <TableCell>
                   <Badge tone={resource.active ? "success" : "warning"}>
@@ -115,6 +116,7 @@ export function ResourcesList({
                   <div className="text-sm text-slate-500">{renderBusinessLabel(resource)}</div>
                 )}
                 <div className="text-base font-semibold text-slate-900">{resource.name}</div>
+                {resource.slug && <div className="text-xs text-slate-500">{resource.slug}</div>}
               </div>
               <Badge tone={resource.active ? "success" : "warning"}>
                 {resource.active ? "Activo" : "Inactivo"}

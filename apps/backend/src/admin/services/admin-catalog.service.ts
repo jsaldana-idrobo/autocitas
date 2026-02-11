@@ -18,6 +18,22 @@ import { AdminBusinessContextService } from "./admin-business-context.service.js
 const TEXT_SCORE = "textScore";
 const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
 const ERR_SERVICE_NOT_FOUND = "Service not found";
+const DEFAULT_RESOURCE_SLUG = "recurso";
+
+function escapeRegex(value: string) {
+  return value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function toResourceSlug(value: string) {
+  const normalized = value
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+/g, "")
+    .replaceAll(/-+$/g, "");
+  return normalized || DEFAULT_RESOURCE_SLUG;
+}
 
 function applyTextSearchSort<T>(
   query: ReturnType<Model<T>["find"]>,
@@ -40,6 +56,29 @@ export class AdminCatalogService {
     @InjectModel(Resource.name) private readonly resourceModel: Model<Resource>,
     private readonly businessContext: AdminBusinessContextService
   ) {}
+
+  private async resolveUniqueResourceSlug(
+    businessId: string,
+    input: string,
+    excludeResourceId?: string
+  ) {
+    const base = toResourceSlug(input);
+    let candidate = base;
+    let counter = 2;
+
+    while (
+      await this.resourceModel.exists({
+        businessId,
+        slug: candidate,
+        ...(excludeResourceId ? { _id: { $ne: excludeResourceId } } : {})
+      })
+    ) {
+      candidate = `${base}-${counter}`;
+      counter += 1;
+    }
+
+    return candidate;
+  }
 
   async listServices(
     businessId: string,
@@ -135,16 +174,16 @@ export class AdminCatalogService {
     await this.businessContext.getBusinessContext(businessId);
     const query: Record<string, unknown> = { businessId };
     const searchTerm = options?.search?.trim() ?? "";
-    const hasSearch = searchTerm.length > 0;
-    if (hasSearch) {
-      query.$text = { $search: searchTerm };
+    if (searchTerm.length > 0) {
+      const regex = new RegExp(escapeRegex(searchTerm), "i");
+      query.$or = [{ name: regex }, { slug: regex }];
     }
     if (options?.active === "true") query.active = true;
     if (options?.active === "false") query.active = false;
 
     if (options?.page && options?.limit) {
       const total = await this.resourceModel.countDocuments(query);
-      const baseQuery = applyTextSearchSort(this.resourceModel.find(query), hasSearch, { name: 1 });
+      const baseQuery = this.resourceModel.find(query).sort({ name: 1 });
       const items = await baseQuery
         .skip((options.page - 1) * options.limit)
         .limit(options.limit)
@@ -152,15 +191,18 @@ export class AdminCatalogService {
       return { items, total, page: options.page, limit: options.limit };
     }
 
-    return applyTextSearchSort(this.resourceModel.find(query), hasSearch, { name: 1 }).lean();
+    return this.resourceModel.find(query).sort({ name: 1 }).lean();
   }
 
   async createResource(businessId: string, payload: CreateResourceDto) {
     await this.businessContext.getBusinessContext(businessId);
+    const slugSource = payload.slug?.trim() || payload.name;
+    const slug = await this.resolveUniqueResourceSlug(businessId, slugSource);
 
     return this.resourceModel.create({
       businessId,
       name: payload.name,
+      slug,
       active: payload.active ?? true
     });
   }
@@ -176,8 +218,19 @@ export class AdminCatalogService {
       throw new BadRequestException(ERR_NO_UPDATES);
     }
 
+    const current = await this.resourceModel.findOne({ _id: resourceId, businessId }).lean();
+    if (!current) {
+      throw new NotFoundException(ERR_RESOURCE_NOT_FOUND);
+    }
+
+    const update: Record<string, unknown> = { ...payload };
+    if (payload.slug !== undefined) {
+      const slugSource = payload.slug.trim() || payload.name?.trim() || current.name;
+      update.slug = await this.resolveUniqueResourceSlug(businessId, slugSource, resourceId);
+    }
+
     const resource = await this.resourceModel
-      .findOneAndUpdate({ _id: resourceId, businessId }, payload, { new: true })
+      .findOneAndUpdate({ _id: resourceId, businessId }, update, { new: true })
       .lean();
 
     if (!resource) {

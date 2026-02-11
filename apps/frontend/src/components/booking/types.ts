@@ -20,6 +20,7 @@ export interface ServiceItem {
 export interface ResourceItem {
   _id: string;
   name: string;
+  slug?: string;
 }
 
 export interface AvailabilitySlot {

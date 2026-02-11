@@ -21,7 +21,7 @@ type PlatformResourcesModalsProps = Readonly<{
   deletingResource: ResourceItem | null;
   setDeletingResource: (value: ResourceItem | null) => void;
   authHeaders: { token: string };
-  onCreate: (businessId: string, payload: { name: string }) => void;
+  onCreate: (businessId: string, payload: { name: string; slug?: string }) => void;
   onUpdate: (businessId: string, resourceId: string, payload: Partial<ResourceItem>) => void;
   onDelete: (businessId: string, resourceId: string) => void;
 }>;
@@ -53,10 +53,11 @@ export function PlatformResourcesModals({
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             const name = readFormString(form, "name");
+            const slug = readFormString(form, "slug");
             if (!createBusinessId || !name) {
               return;
             }
-            onCreate(createBusinessId, { name });
+            onCreate(createBusinessId, { name, slug: slug || undefined });
             event.currentTarget.reset();
             setCreateBusinessId("");
             setCreateOpen(false);
@@ -72,6 +73,7 @@ export function PlatformResourcesModals({
             required
           />
           <InputField name="name" label="Nombre" />
+          <InputField name="slug" label="Slug URL (opcional)" />
           <div className="md:col-span-2 flex justify-end gap-2">
             <button
               type="button"
@@ -131,6 +133,10 @@ export function PlatformResourcesModals({
             <div className="text-sm">
               <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
               <div className="font-medium">{viewingResource.active ? "Activo" : "Inactivo"}</div>
+            </div>
+            <div className="text-sm md:col-span-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Slug URL</div>
+              <div className="font-medium">{viewingResource.slug || "-"}</div>
             </div>
           </div>
         )}
