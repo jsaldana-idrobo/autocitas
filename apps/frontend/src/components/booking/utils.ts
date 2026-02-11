@@ -7,6 +7,27 @@ export const INPUT_CLASS = "rounded-xl border border-slate-200 px-3 py-2";
 export const DISABLED_OPACITY = "opacity-60";
 const COUNTRY_CODE_CO = "57";
 
+function stripDiacritics(value: string) {
+  let result = "";
+  for (const char of value.normalize("NFD")) {
+    const code = char.charCodeAt(0);
+    if (code >= 0x0300 && code <= 0x036f) {
+      continue;
+    }
+    result += char;
+  }
+  return result;
+}
+
+function isAsciiLetterOrDigit(char: string) {
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 0x30 && code <= 0x39) ||
+    (code >= 0x61 && code <= 0x7a) ||
+    (code >= 0x41 && code <= 0x5a)
+  );
+}
+
 export function getTodayInTimezone(timezone: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -101,23 +122,38 @@ export function phoneForDisplay(value: string) {
 }
 
 export function toUrlSlug(value: string) {
-  const plain = value
-    .normalize("NFD")
-    .replaceAll(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, "-")
-    .replaceAll(/^-+/g, "")
-    .replaceAll(/-+$/g, "");
+  const source = stripDiacritics(value).toLowerCase();
+  let plain = "";
+  let lastWasDash = false;
+
+  for (const char of source) {
+    if (isAsciiLetterOrDigit(char)) {
+      plain += char;
+      lastWasDash = false;
+      continue;
+    }
+    if (plain.length > 0 && !lastWasDash) {
+      plain += "-";
+      lastWasDash = true;
+    }
+  }
+
+  if (plain.endsWith("-")) {
+    plain = plain.slice(0, -1);
+  }
 
   return plain || "recurso";
 }
 
 export function normalizeResourceIdentifier(value: string) {
-  return value
-    .normalize("NFD")
-    .replaceAll(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]/g, "");
+  const source = stripDiacritics(value).toLowerCase();
+  let normalized = "";
+  for (const char of source) {
+    if (isAsciiLetterOrDigit(char)) {
+      normalized += char;
+    }
+  }
+  return normalized;
 }
 
 export function findResourceIdByIdentifier(resources: ResourceItem[], resourceIdentifier?: string) {

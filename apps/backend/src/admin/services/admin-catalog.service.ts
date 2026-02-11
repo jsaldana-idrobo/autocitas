@@ -20,18 +20,52 @@ const ERR_INVALID_SERVICE_ID = "Invalid serviceId.";
 const ERR_SERVICE_NOT_FOUND = "Service not found";
 const DEFAULT_RESOURCE_SLUG = "recurso";
 
+function stripDiacritics(value: string) {
+  let result = "";
+  for (const char of value.normalize("NFD")) {
+    const code = char.charCodeAt(0);
+    if (code >= 0x0300 && code <= 0x036f) {
+      continue;
+    }
+    result += char;
+  }
+  return result;
+}
+
+function isAsciiLetterOrDigit(char: string) {
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 0x30 && code <= 0x39) ||
+    (code >= 0x61 && code <= 0x7a) ||
+    (code >= 0x41 && code <= 0x5a)
+  );
+}
+
 function escapeRegex(value: string) {
   return value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function toResourceSlug(value: string) {
-  const normalized = value
-    .normalize("NFD")
-    .replaceAll(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, "-")
-    .replaceAll(/^-+/g, "")
-    .replaceAll(/-+$/g, "");
+  const source = stripDiacritics(value).toLowerCase();
+  let normalized = "";
+  let lastWasDash = false;
+
+  for (const char of source) {
+    if (isAsciiLetterOrDigit(char)) {
+      normalized += char;
+      lastWasDash = false;
+      continue;
+    }
+    if (normalized.length > 0 && !lastWasDash) {
+      normalized += "-";
+      lastWasDash = true;
+    }
+  }
+
+  if (normalized.endsWith("-")) {
+    normalized = normalized.slice(0, -1);
+  }
+
   return normalized || DEFAULT_RESOURCE_SLUG;
 }
 
