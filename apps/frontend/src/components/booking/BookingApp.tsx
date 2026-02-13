@@ -10,6 +10,7 @@ export function BookingApp({
 }: Readonly<{ slug: string; resourceIdentifier?: string }>) {
   const {
     loading,
+    availabilityLoading,
     error,
     business,
     serviceId,
@@ -85,6 +86,7 @@ export function BookingApp({
         error={error}
         confirmation={confirmation}
         loading={loading}
+        availabilityLoading={availabilityLoading}
         canSubmit={canSubmit}
         service={service}
         timezone={timezone}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../lib/api";
 import type { AvailabilitySlot, BusinessResponse } from "./types";
 import {
@@ -12,6 +12,7 @@ import { useBookingManage } from "./useBookingManage";
 
 export function useBookingState(slug: string, resourceIdentifier?: string) {
   const [loading, setLoading] = useState(false);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<BusinessResponse | null>(null);
   const [serviceId, setServiceId] = useState("");
@@ -22,22 +23,28 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const availabilityRequestIdRef = useRef(0);
   const fireAndForget = useCallback((promise: Promise<unknown>) => {
     promise.catch(() => {});
   }, []);
 
   const normalizedPhone = normalizePhone(customerPhone);
-  const canSubmit =
-    !!serviceId &&
-    !!selectedSlot &&
-    customerName.trim().length > 0 &&
-    normalizedPhone.length >= PHONE_MIN_LEN;
   const timezone = business?.business.timezone || DEFAULT_TIMEZONE;
 
   const service = useMemo(
     () => business?.services.find((item) => item._id === serviceId) ?? null,
     [business, serviceId]
   );
+
+  // UX: always force selecting a professional before showing availability / enabling booking.
+  const isResourceRequired = true;
+
+  const canSubmit =
+    !!serviceId &&
+    !!selectedSlot &&
+    customerName.trim().length > 0 &&
+    normalizedPhone.length >= PHONE_MIN_LEN &&
+    (!isResourceRequired || !!resourceId);
 
   const availableResources = useMemo(() => {
     if (!business) return [];
@@ -52,19 +59,25 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
   const loadAvailability = useCallback(
     async (selectedDate: string, selectedService: string, selectedResource?: string) => {
       if (!selectedDate || !selectedService) return;
-      setLoading(true);
+      const requestId = ++availabilityRequestIdRef.current;
+      setAvailabilityLoading(true);
       setError(null);
+      setSlots([]);
+      setSelectedSlot(null);
       try {
         const resourceQuery = selectedResource ? `&resourceId=${selectedResource}` : "";
         const data = await apiRequest<{ slots: AvailabilitySlot[] }>(
           `/public/businesses/${slug}/availability?date=${selectedDate}&serviceId=${selectedService}${resourceQuery}`
         );
+        if (requestId !== availabilityRequestIdRef.current) return;
         setSlots(data.slots);
-        setSelectedSlot(null);
       } catch (err) {
+        if (requestId !== availabilityRequestIdRef.current) return;
         setError(err instanceof Error ? err.message : "No se pudo cargar disponibilidad");
       } finally {
-        setLoading(false);
+        if (requestId === availabilityRequestIdRef.current) {
+          setAvailabilityLoading(false);
+        }
       }
     },
     [slug]
@@ -101,7 +114,9 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
         const today = getTodayInTimezone(data.business.timezone || DEFAULT_TIMEZONE);
         setDate(today);
         if (defaultServiceId) {
-          fireAndForget(loadAvailability(today, defaultServiceId, defaultResourceId || undefined));
+          if (defaultResourceId) {
+            fireAndForget(loadAvailability(today, defaultServiceId, defaultResourceId));
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo cargar el negocio");
@@ -120,6 +135,10 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
     }
     if (normalizedPhone.length < PHONE_MIN_LEN) {
       setError("Ingresa un telefono valido.");
+      return;
+    }
+    if (isResourceRequired && !resourceId) {
+      setError("Selecciona un profesional antes de reservar.");
       return;
     }
     setLoading(true);
@@ -158,19 +177,34 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
         : "";
     setResourceId(nextResourceId);
     if (date) {
-      fireAndForget(loadAvailability(date, nextService, nextResourceId || undefined));
+      if (nextResourceId) {
+        fireAndForget(loadAvailability(date, nextService, nextResourceId));
+      } else {
+        setSlots([]);
+        setSelectedSlot(null);
+      }
     }
   };
 
   const handleDateChange = (value: string) => {
     setDate(value);
-    fireAndForget(loadAvailability(value, serviceId, resourceId));
+    if (resourceId) {
+      fireAndForget(loadAvailability(value, serviceId, resourceId));
+      return;
+    }
+    setSlots([]);
+    setSelectedSlot(null);
   };
 
   const handleResourceChange = (value: string) => {
     setResourceId(value);
     if (date) {
-      fireAndForget(loadAvailability(date, serviceId, value || undefined));
+      if (value) {
+        fireAndForget(loadAvailability(date, serviceId, value));
+        return;
+      }
+      setSlots([]);
+      setSelectedSlot(null);
     }
   };
 
@@ -189,6 +223,7 @@ export function useBookingState(slug: string, resourceIdentifier?: string) {
     customerPhone,
     confirmation,
     canSubmit,
+    availabilityLoading,
     timezone,
     service,
     availableResources,

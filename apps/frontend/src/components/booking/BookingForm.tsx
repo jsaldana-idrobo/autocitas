@@ -22,6 +22,7 @@ type BookingFormProps = Readonly<{
   error: string | null;
   confirmation: string | null;
   loading: boolean;
+  availabilityLoading: boolean;
   canSubmit: boolean;
   service: ServiceItem | null;
   timezone: string;
@@ -48,6 +49,7 @@ export function BookingForm({
   error,
   confirmation,
   loading,
+  availabilityLoading,
   canSubmit,
   service,
   timezone,
@@ -60,6 +62,9 @@ export function BookingForm({
   onCustomerPhoneChange,
   onOpenManage
 }: BookingFormProps) {
+  const isResourceRequired = true;
+  const SKELETON_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6"];
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="card p-6">
@@ -117,24 +122,40 @@ export function BookingForm({
         <div className="mt-6">
           <p className="text-sm font-medium">Horarios disponibles</p>
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {slots.length === 0 && (
+            {isResourceRequired && !resourceId && (
               <span className="text-sm text-slate-500 col-span-3">
-                Sin disponibilidad para esta fecha.
+                Selecciona un profesional para ver horarios.
               </span>
             )}
-            {slots.map((slot) => (
-              <button
-                key={slot.startTime}
-                className={`w-full rounded-full px-3 py-2 text-xs font-medium leading-none tabular-nums sm:text-sm ${
-                  selectedSlot === slot.startTime
-                    ? "bg-primary-600 text-white"
-                    : "bg-white text-slate-700 shadow-sm"
-                }`}
-                onClick={() => onSlotSelect(slot.startTime)}
-              >
-                <span className="whitespace-nowrap">{formatTime(slot.startTime, timezone)}</span>
-              </button>
-            ))}
+            {!!resourceId && availabilityLoading && (
+              <>
+                {SKELETON_KEYS.map((key) => (
+                  <div key={key} className="h-9 rounded-full bg-slate-100 animate-pulse" />
+                ))}
+              </>
+            )}
+            {(!isResourceRequired || !!resourceId) &&
+              !availabilityLoading &&
+              slots.length === 0 && (
+                <span className="text-sm text-slate-500 col-span-3">
+                  Sin disponibilidad para esta fecha.
+                </span>
+              )}
+            {(!isResourceRequired || !!resourceId) &&
+              !availabilityLoading &&
+              slots.map((slot) => (
+                <button
+                  key={slot.startTime}
+                  className={`w-full rounded-full px-3 py-2 text-xs font-medium leading-none tabular-nums sm:text-sm ${
+                    selectedSlot === slot.startTime
+                      ? "bg-primary-600 text-white"
+                      : "bg-white text-slate-700 shadow-sm"
+                  }`}
+                  onClick={() => onSlotSelect(slot.startTime)}
+                >
+                  <span className="whitespace-nowrap">{formatTime(slot.startTime, timezone)}</span>
+                </button>
+              ))}
           </div>
         </div>
       </section>
